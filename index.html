@@ -77,9 +77,17 @@ button, input, select { font: inherit; color: inherit; }
 .iconbtn svg { width: 20px; height: 20px; }
 .iconbtn:hover { box-shadow: inset 0 0 0 1px var(--line); }
 .scroll { overflow-y: auto; padding: 18px 22px 26px; display: flex; flex-direction: column; gap: 16px; min-height: 0; flex: 1; }
-.btn:focus-visible, .opt:focus-visible, .choice:focus-visible, .rt:focus-visible, .gbtn:focus-visible, .iconbtn:focus-visible, .chipbtn:focus-visible, .pillbtn:focus-visible { outline: 2px solid #141414; outline-offset: 2px; }
+.rbtn:focus-visible, .btn:focus-visible, .opt:focus-visible, .choice:focus-visible, .rt:focus-visible, .gbtn:focus-visible, .iconbtn:focus-visible, .chipbtn:focus-visible, .pillbtn:focus-visible { outline: 2px solid #141414; outline-offset: 2px; }
 
+#stage { display: flex; flex-direction: column; gap: 16px; }
 #head { display: flex; flex-direction: column; gap: 14px; }
+.h-top { display: flex; justify-content: space-between; align-items: flex-end; gap: 12px; }
+.h-left { display: flex; flex-direction: column; gap: 14px; min-width: 0; }
+.h-nav { flex: none; display: flex; gap: 8px; }
+.rbtn { width: 46px; height: 46px; border-radius: 50%; border: 0; padding: 0; background: #141414; color: var(--acc); display: grid; place-items: center; cursor: pointer; transition: transform .15s; }
+.rbtn:hover { transform: translateY(-1px); }
+.rbtn:active { transform: scale(.94); }
+.rbtn svg { width: 22px; height: 22px; }
 .h-title { font-weight: 500; font-size: 2rem; line-height: 1.05; letter-spacing: -.02em; margin: 0; }
 .h-badges { display: flex; gap: 6px; flex-wrap: wrap; }
 .badge { font-weight: 500; font-size: .85rem; padding: 4px 11px; border-radius: 999px; background: #141414; color: #fff; }
@@ -274,7 +282,7 @@ ol.steps li.dest .chip { background: var(--acc); color: var(--acc-ink); padding:
   .leaflet-control-attribution { font-size: 9px; }
   .geo-pill:has(#geo:not(.bad)) { display: none; }
   .leaflet-top.leaflet-right { top: max(8px, env(safe-area-inset-top)); right: 6px; }
-  .panel { border-radius: 0; overflow: visible; }
+  .panel { border-radius: 0; overflow: visible; overflow: clip; }
   .topbar { padding: 16px max(16px, env(safe-area-inset-right)) 0 max(16px, env(safe-area-inset-left)); }
   .scroll { overflow: visible; padding: 16px max(16px, env(safe-area-inset-right)) calc(26px + env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left)); }
   #chapbox { margin: -4px -16px 0; padding: 0 16px; }
@@ -312,9 +320,11 @@ ol.steps li.dest .chip { background: var(--acc); color: var(--acc-ink); padding:
       <button class="iconbtn" id="theme" type="button"></button>
     </div>
     <div class="scroll">
-      <div id="head"></div>
-      <div id="score"></div>
-      <div id="play"></div>
+      <div id="stage">
+        <div id="head"></div>
+        <div id="score"></div>
+        <div id="play"></div>
+      </div>
       <div class="sec"><h3>Routen <small id="count"></small></h3><button id="shuffle" class="pillbtn" type="button">Zufällig</button></div>
       <div id="chapbox"></div>
       <div id="routes"></div>
@@ -1571,7 +1581,15 @@ function header() {
   mid.innerHTML = ICON_CAR; line.append(el('i'), mid, el('i'));
   names.append(el('span', '', r.from), el('span', '', r.to));
   tl.append(top, line, names);
-  h.append(el('h2', 'h-title', 'Route ' + r.n), badges, tl);
+  const row = el('div', 'h-top'), left = el('div', 'h-left'), nav = el('div', 'h-nav');
+  left.append(el('h2', 'h-title', 'Route ' + r.n), badges);
+  [[-1, 'Vorige Route', 'M6 15l6-6 6 6'], [1, 'Nächste Route', 'M6 9l6 6 6-6']].forEach(([d, label, path]) => {
+    const b = el('button', 'rbtn'); b.type = 'button'; b.title = label + ' (Pfeiltaste ' + (d < 0 ? '↑' : '↓') + ')'; b.setAttribute('aria-label', label);
+    b.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="${path}"/></svg>`;
+    b.onclick = () => swipeRoute(d); nav.append(b);
+  });
+  row.append(left, nav);
+  h.append(row, tl);
 }
 function chip(label, cls = '') {
   const c = el('span', 'chip ' + cls, stepName(label)); const n = stepNote(label); if (n) c.append(el('small', '', n)); return c;
@@ -1601,17 +1619,46 @@ function geoNotice(p) {
   } else box.append(el('span', '', 'Straßennetz wird geladen … die Linien erscheinen gleich.'));
   p.append(box);
 }
+let swiping = false;
+function swipeRoute(dir) {
+  const V = inChap(), i = V.indexOf(state.route), r = V[(i + dir + V.length) % V.length];
+  const go = () => { if (state.mode === 'lernen') openRoute(r); else { pick(r); renderList(); } };
+  const st = $('#stage');
+  if (reduced() || !st.animate) { go(); scrollPanelTop(); return; }
+  if (swiping) return; swiping = true; setTimeout(() => { swiping = false; }, 1500); // Sicherheitsnetz, falls eine Animation hängt
+  const out = st.animate([{ transform: 'none', opacity: 1 }, { transform: `translateY(${-dir * 35}%)`, opacity: 0 }], { duration: 170, easing: 'cubic-bezier(.4,0,1,1)', fill: 'forwards' });
+  out.onfinish = () => {
+    go();
+    if (matchMedia('(max-width: 760px)').matches) window.scrollTo({ top: 0 }); else document.querySelector('.scroll').scrollTop = 0;
+    const inn = st.animate([{ transform: `translateY(${dir * 55}%)`, opacity: 0 }, { transform: 'none', opacity: 1 }], { duration: 380, easing: 'cubic-bezier(.2,.8,.2,1)' });
+    out.cancel(); inn.onfinish = inn.oncancel = () => { swiping = false; };
+  };
+}
 function openRoute(r) { state.playing = false; stopAnim(); state.open = true; pick(r); renderList(); }
+// ‹ › unter „Route“: eine Straße zurück / weiter
 function routeNav() {
-  const V = inChap(), i = V.indexOf(state.route), prev = V[(i - 1 + V.length) % V.length], next = V[(i + 1) % V.length];
-  const nav = el('div', 'rnav');
-  const pb = el('button', 'btn nav-b', '‹'); pb.type = 'button'; pb.title = 'Vorige Route: ' + prev.from; pb.setAttribute('aria-label', 'Vorige Route ' + prev.n);
-  const nb = el('button', 'btn nav-b', '›'); nb.type = 'button'; nb.title = 'Nächste Route: ' + next.from; nb.setAttribute('aria-label', 'Nächste Route ' + next.n);
-  pb.onclick = e => { e.stopPropagation(); openRoute(prev); };
-  nb.onclick = e => { e.stopPropagation(); openRoute(next); };
-  const t = el('span', 'nav-t', 'Route'); t.title = `Route ${state.route.n} · ${i + 1} von ${V.length}`;
+  const n = state.route.steps.length, nav = el('div', 'rnav');
+  const pb = el('button', 'btn nav-b', '‹'); pb.type = 'button'; pb.title = 'Vorige Straße'; pb.setAttribute('aria-label', 'Vorige Straße');
+  const nb = el('button', 'btn nav-b', '›'); nb.type = 'button'; nb.title = 'Nächste Straße'; nb.setAttribute('aria-label', 'Nächste Straße');
+  pb.disabled = !STREETS || state.playing || state.step === 0;
+  nb.disabled = !STREETS || state.playing || state.step >= n;
+  pb.onclick = e => { e.stopPropagation(); stepBack(); };
+  nb.onclick = e => { e.stopPropagation(); advanceStep(); };
+  const t = el('span', 'nav-t', 'Route'); t.title = `Straße ${state.step} von ${n}`;
   nav.append(pb, t, nb);
   return nav;
+}
+// letzte Straße wieder wegnehmen; die Karte schaut auf die Stelle, an der es weitergeht
+function stepBack() {
+  if (state.step <= 0) return;
+  state.playing = false; state.paused = false; stopAnim();
+  routeLayer.clearLayers(); flashLayer.clearLayers(); errLayer.clearLayers();
+  state.step--;
+  for (let k = 0; k < state.step; k++) drawSeg(k);
+  showPoints(false); render();
+  const paths = routePaths(state.route) || [], prev = state.step > 0 ? paths[state.step - 1] : null, r = state.route;
+  const pt = prev ? prev[prev.length - 1] : r.start ? [r.start[0], r.start[1]] : null;
+  if (pt) { camSeq++; map.panTo(pt, { animate: !reduced() }); }
 }
 function lernenBody(box) {
   const r = state.route;
@@ -1916,16 +1963,18 @@ function finish(p) {
 function nextBar() {
   const bar = el('div', 'bar');
   const again = el('button', 'btn', 'Nochmal'); again.onclick = reset;
-  const nx = el('button', 'btn primary', 'Nächste Route'); nx.onclick = () => nextRoute(false);
+  const nx = el('button', 'btn primary', 'Nächste Route'); nx.onclick = () => swipeRoute(1);
   const rnd = el('button', 'btn', 'Zufällig (schwache zuerst)'); rnd.onclick = () => nextRoute(true);
   bar.append(again, nx, rnd); return bar;
 }
 
 document.addEventListener('keydown', e => {
-  if (state.mode !== 'lernen' || !state.open || e.target.closest('input, textarea, select')) return;
-  const V = inChap(), i = V.indexOf(state.route);
-  if (e.key === 'ArrowRight') { e.preventDefault(); openRoute(V[(i + 1) % V.length]); }
-  if (e.key === 'ArrowLeft') { e.preventDefault(); openRoute(V[(i - 1 + V.length) % V.length]); }
+  if (!shown() || (e.target instanceof Element && e.target.closest('input, textarea, select, button'))) return;
+  if (e.key === 'ArrowDown') { e.preventDefault(); swipeRoute(1); }
+  if (e.key === 'ArrowUp') { e.preventDefault(); swipeRoute(-1); }
+  if (state.mode !== 'lernen' || !STREETS || state.playing) return;
+  if (e.key === 'ArrowRight' && state.step < state.route.steps.length) { e.preventDefault(); advanceStep(); }
+  if (e.key === 'ArrowLeft') { e.preventDefault(); stepBack(); }
 });
 document.querySelectorAll('.tab').forEach(t => t.onclick = () => { state.mode = t.dataset.mode; reset(); renderList(); $('#score').textContent = ''; });
 $('#shuffle').onclick = () => { if (state.mode === 'lernen') state.open = true; nextRoute(true); scrollPanelTop(); };
