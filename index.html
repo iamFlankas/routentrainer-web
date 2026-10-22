@@ -95,7 +95,8 @@ button, input, select { font: inherit; color: inherit; }
 .tl-mid { position: relative; width: 40px; height: 40px; border-radius: 50%; background: var(--acc); color: var(--acc-ink); display: grid; place-items: center; box-shadow: 0 0 0 6px var(--card); }
 .tl-mid svg { width: 20px; height: 20px; }
 .tl-names { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 8px; font-size: .95rem; line-height: 1.25; }
-.tl-names span:last-child { text-align: right; }
+.tl-names span { justify-self: start; background: #141414; color: var(--acc); border-radius: 14px; padding: 6px 12px; font-weight: 500; }
+.tl-names span:last-child { justify-self: end; text-align: right; }
 .hint { margin: 0; color: var(--on-panel-muted); }
 .card .hint { color: var(--muted); }
 #score:empty { display: none; }
@@ -140,7 +141,8 @@ ol.steps li.dest .chip { background: var(--acc); color: var(--acc-ink); padding:
 .bar.row3 { flex-wrap: nowrap; }
 .bar.row3 .btn { flex: 1 1 0; min-width: 0; padding: 10px 8px; justify-content: center; white-space: nowrap; }
 .btn.playbtn { background: #141414; color: var(--acc); }
-.nav-b { width: 38px; height: 38px; padding: 0 0 3px; font-size: 1.3rem; line-height: 1; }
+.nav-b { width: 38px; height: 38px; padding: 0 0 3px; font-size: 1.3rem; line-height: 1; background: var(--acc); color: #141414; font-weight: 600; }
+.nav-b:hover { box-shadow: inset 0 0 0 1.5px #141414; }
 .nav-t { font-size: 1rem; font-weight: 600; letter-spacing: .01em; }
 .opts { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
 .opt { padding: 14px 16px; border: 0; border-radius: 20px; background: var(--card); cursor: pointer; text-align: left; }
@@ -225,6 +227,17 @@ ol.steps li.dest .chip { background: var(--acc); color: var(--acc-ink); padding:
 .leaflet-tooltip { font-family: var(--font); border-radius: 10px; }
 .skiplabel { position: absolute; transform: translate(-50%, -150%); background: var(--bad); color: #fff; font: 600 13px var(--font); padding: 3px 10px; border-radius: 999px; white-space: nowrap; box-shadow: 0 1px 4px rgba(0,0,0,.3); transition: opacity .5s ease; }
 .fade .skiplabel { opacity: 0; }
+/* richtige Straße: grüner Ring mit Häkchen */
+.okpulse { position: absolute; left: -17px; top: -17px; width: 34px; height: 34px; border-radius: 50%; display: grid; place-items: center; background: #2bb673; color: #fff; box-shadow: 0 0 0 0 rgba(43,182,115,.55); animation: okpop .85s ease-out forwards; }
+.okpulse svg { width: 18px; height: 18px; }
+@keyframes okpop { 0% { transform: scale(.3); opacity: 0; box-shadow: 0 0 0 0 rgba(43,182,115,.55); } 25% { transform: scale(1.08); opacity: 1; } 40% { transform: scale(1); } 75% { opacity: 1; box-shadow: 0 0 0 16px rgba(43,182,115,0); } 100% { transform: scale(.85); opacity: 0; box-shadow: 0 0 0 16px rgba(43,182,115,0); } }
+/* Ziel erreicht: Konfetti */
+.confetti { position: absolute; left: 0; top: 0; pointer-events: none; }
+.confetti i { position: absolute; left: -3px; top: -5px; width: 7px; height: 11px; border-radius: 2px; background: var(--c); box-shadow: 0 0 0 .5px rgba(0,0,0,.18); opacity: 0; animation: confetti 1.6s cubic-bezier(.2,.7,.3,1) var(--d) forwards; }
+@keyframes confetti {
+  0% { transform: translate(0, 0) rotate(0) scale(.5); opacity: 1; }
+  45% { transform: translate(calc(var(--x) * .8), var(--y)) rotate(calc(var(--r) * .5)) scale(1); opacity: 1; }
+  100% { transform: translate(var(--x), calc(var(--y) + 70px)) rotate(var(--r)) scale(.9); opacity: 0; } }
 .pinmarker { overflow: visible; }
 .pinwrap { position: relative; display: block; width: 0; height: 0; }
 .pindot { position: absolute; left: -6px; top: -6px; width: 12px; height: 12px; border-radius: 50%; border: 2px solid #fff; box-shadow: 0 1px 3px rgba(0,0,0,.4); }
@@ -1695,7 +1708,7 @@ function renderReihe(p) {
   state.opts.list.forEach(o => {
     const b = el('button', 'opt'); b.type = 'button'; b.append(chip(o.label));
     b.onclick = () => {
-      if (o.ok) { drawSeg(state.step, { animate: 700, label: stepName(state.route.steps[state.step]) }); state.step++; render(); }
+      if (o.ok) { drawSeg(state.step, { animate: 700, label: stepName(state.route.steps[state.step]) }); state.step++; if (state.step >= state.route.steps.length) celebrate(); render(); }
       else { state.errors++; b.classList.add('no'); b.disabled = true; $('#score').textContent = state.errors + ' Fehler'; }
     };
     grid.append(b);
@@ -1802,6 +1815,31 @@ function markSkipped(i) {
   setTimeout(() => { const el = m.getElement(); if (el) el.classList.add('fade'); }, 2400);
   setTimeout(() => errLayer.removeLayer(m), 3000);
 }
+// richtige Straße getroffen: kurzer grüner Ring mit Häkchen an der getippten Stelle
+function okPulse(latlng) {
+  if (reduced()) return;
+  const html = '<span class="okpulse"><svg viewBox="0 0 24 24"><path d="M6 12.5l4 4 8-9" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></span>';
+  const m = L.marker(latlng, { interactive: false, keyboard: false, icon: L.divIcon({ className: 'arrow', html, iconSize: [0, 0], iconAnchor: [0, 0] }) }).addTo(errLayer);
+  setTimeout(() => errLayer.removeLayer(m), 900);
+}
+// am Ziel angekommen: kleines Konfetti am Zielpunkt
+const CONFETTI = ['#f7c831', '#1d3fbf', '#ff6a00', '#2bb673', '#141414', '#ffffff'];
+function celebrate() {
+  if (reduced()) return;
+  const r = state.route, gen = drawGen;
+  setTimeout(() => {
+    if (gen !== drawGen || r !== state.route) return;
+    const paths = (routePaths(r) || []).filter(Boolean), last = paths.length ? paths[paths.length - 1] : null;
+    const pt = r.goal ? [r.goal[0], r.goal[1]] : last ? last[last.length - 1] : null; if (!pt) return;
+    let html = '<span class="confetti">';
+    for (let i = 0; i < 40; i++) {
+      const a = Math.random() * Math.PI * 2, d = 35 + Math.random() * 75;
+      html += `<i style="--x:${Math.round(Math.cos(a) * d)}px;--y:${Math.round(Math.sin(a) * d * 0.6 - 45)}px;--r:${Math.round(Math.random() * 900 - 450)}deg;--d:${Math.round(Math.random() * 150)}ms;--c:${CONFETTI[i % CONFETTI.length]}"></i>`;
+    }
+    const m = L.marker(pt, { interactive: false, keyboard: false, icon: L.divIcon({ className: 'arrow', html: html + '</span>', iconSize: [0, 0], iconAnchor: [0, 0] }) }).addTo(errLayer);
+    setTimeout(() => errLayer.removeLayer(m), 2000);
+  }, 800);
+}
 function streetHit(e) {
   const cp = map.latLngToContainerPoint(e.latlng);
   const pxDist = (k) => {
@@ -1830,6 +1868,7 @@ function advanceStep() {
   drawSeg(state.step, { animate: 700, label: stepName(r.steps[state.step]) });
   state.step++;
   if (state.mode === 'lernen' && state.step >= r.steps.length) setTimeout(() => { clearLabel(); showPoints(true); }, 800);
+  if (state.step >= r.steps.length) celebrate();
   render();
 }
 function onMapClick(e) {
@@ -1842,7 +1881,7 @@ function onMapClick(e) {
   let ok;
   if (seg) ok = segHit(e, seg);
   else ok = h.pxDist(want) <= h.TOL;
-  if (ok) { advanceStep(); return; }
+  if (ok) { okPulse(e.latlng); advanceStep(); return; }
   // übernächste Straße richtig getroffen? dann die ausgelassene rot zeigen und weitermachen
   const segNext = (routePaths(state.route) || [])[state.step + 1];
   if (segNext && state.step + 1 < state.route.steps.length && segHit(e, segNext)) {
