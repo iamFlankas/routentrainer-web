@@ -10,10 +10,10 @@
 <style>
 /* Layout: große abgerundete Karte links (mit schwebenden Glas-Knöpfen), helle Leiste rechts; am Handy Karte oben, Leiste darunter */
 :root {
-  --page: #0e0e0e; --panel: rgba(246, 178, 52, .9); --on-panel: #141414; --on-panel-muted: rgba(20, 20, 20, .62); --card: #ffffff; --fg: #141414; --muted: #8a8984; --line: #dcdad4; --soft: #f3f2ee;
+  --page: #0e0e0e; --panel: rgba(250, 216, 96, .96); --on-panel: #141414; --on-panel-muted: rgba(20, 20, 20, .62); --card: #ffffff; --fg: #141414; --muted: #8a8984; --line: #dcdad4; --soft: #f3f2ee;
   --dark: #151515; --dark-fg: #f4f3ef; --dark-muted: #9a9993;
-  --acc: #f6b234; --acc-ink: #1a1a1a;
-  --route: #f59f0b; --route-ink: #1a1a1a; --warn: #3d6bff;
+  --acc: #f7c831; --acc-ink: #1a1a1a;
+  --route: #1d3fbf; --route-ink: #fff; --warn: #ff6a00;
   --good: #1f8a45; --good-bg: #e2f3e8; --bad: #d23b2f; --bad-bg: #fbe5e2;
   --glass: rgba(28, 28, 28, .46); --glass-line: rgba(255, 255, 255, .22);
   --font: "Outfit", "Helvetica Neue", Arial, sans-serif;
@@ -134,8 +134,11 @@ ol.steps li.dest .chip { background: var(--acc); color: var(--acc-ink); padding:
 .btn:disabled { opacity: .4; cursor: default; }
 .playbtn { display: inline-flex; align-items: center; gap: 8px; }
 .rnav { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.bar.row3 { flex-wrap: nowrap; }
+.bar.row3 .btn { flex: 1 1 0; min-width: 0; padding: 10px 8px; justify-content: center; white-space: nowrap; }
+.btn.playbtn { background: #141414; color: var(--acc); }
 .nav-b { width: 38px; height: 38px; padding: 0 0 3px; font-size: 1.3rem; line-height: 1; }
-.nav-t { font-size: .85rem; color: var(--muted); }
+.nav-t { font-size: 1rem; font-weight: 600; letter-spacing: .01em; }
 .opts { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
 .opt { padding: 14px 16px; border: 0; border-radius: 20px; background: var(--card); cursor: pointer; text-align: left; }
 .opt .chip { background: none; padding: 0; font-size: 1rem; }
@@ -670,11 +673,12 @@ function buildPath(g, A, B, uturn, fallback) {
 }
 
 // ---------- Ausweich-Wegsuche über das ganze Netz ----------
-function globalGraph(streets) {
+// slow: optional Map/WeakMap Weg -> Faktor (Fußgängerzonen, Fußwege …): solche Stücke zählen entsprechend länger
+function globalGraph(streets, slow) {
   const idx = new Map(), co = [], adj = [], keys = Object.keys(streets);
   const node = p => { const k = p[0].toFixed(6) + ',' + p[1].toFixed(6); if (!idx.has(k)) { idx.set(k, co.length); co.push(p); adj.push([]); } return idx.get(k); };
   keys.forEach((key, ki) => {
-    for (const w of streets[key]) { let prev = null; for (const p of w) { const n = node(p); if (prev != null && prev !== n) { const d = dist(co[prev], co[n]); adj[prev].push([n, d, ki]); adj[n].push([prev, d, ki]); } prev = n; } }
+    for (const w of streets[key]) { const f = (slow && slow.get(w)) || 1; let prev = null; for (const p of w) { const n = node(p); if (prev != null && prev !== n) { const d = dist(co[prev], co[n]) * f; adj[prev].push([n, d, ki]); adj[n].push([prev, d, ki]); } prev = n; } }
   });
   return { idx, co, adj, keys };
 }
@@ -702,8 +706,8 @@ function globalPath(G, a, b, key, penalty = 6) {
 
 // ---------- Ganze Route als ein Weg ----------
 // Netz mit Straßen-Zugehörigkeit je Knoten + kurzen Brücken über Datenlücken
-function routeNet(streets, needKeys) {
-  const G = globalGraph(streets);
+function routeNet(streets, needKeys, slow) {
+  const G = globalGraph(streets, slow);
   const keyIdx = new Map(G.keys.map((k, i) => [k, i]));
   const nk = G.co.map(() => []);
   G.keys.forEach((key, ki) => { for (const w of streets[key]) for (const p of w) { const n = G.idx.get(p[0].toFixed(6) + ',' + p[1].toFixed(6)); if (!nk[n].includes(ki)) nk[n].push(ki); } });
@@ -1083,14 +1087,14 @@ function corridor(route) {
   } });
   return (route._sub = sub);
 }
-function globalFor(route) { return route._global || (route._global = globalGraph(corridor(route))); }
+function globalFor(route) { return route._global || (route._global = globalGraph(corridor(route), SLOW)); }
 const SPEEDS = { langsam: 2300, normal: 1600, schnell: 900 };
 state.speed = 'normal';
 let anim = null, labelHead = null;
 function graphFor(k) { if (!STREETS || !STREETS[k]) return null; return GRAPH[k] || (GRAPH[k] = streetGraph(STREETS[k])); }
 function placeKey(text) { const k = streetKey(String(text).split(/[–\/]/)[0]); return STREETS && STREETS[k] ? k : null; }
 function routeKeys(route) { return searchKeys(route.steps, k => !!STREETS[k]); }
-function netFor(route) { return route._net || (route._net = routeNet(corridor(route), route.steps.map(streetKey).concat(routeKeys(route).keys))); }
+function netFor(route) { return route._net || (route._net = routeNet(corridor(route), route.steps.map(streetKey).concat(routeKeys(route).keys), SLOW)); }
 // Punkt etwa m Meter vor dem Ende von pts (rückwärts gemessen)
 function pointBack(pts, m) { let acc = 0; for (let i = pts.length - 1; i > 0; i--) { acc += dist(pts[i], pts[i - 1]); if (acc >= m) return pts[i - 1]; } return pts[0]; }
 function pointAhead(pts, m) { let acc = 0; for (let i = 1; i < pts.length; i++) { acc += dist(pts[i - 1], pts[i]); if (acc >= m) return pts[i]; } return pts[pts.length - 1]; }
@@ -1366,8 +1370,13 @@ function flash(i) {
 
 // --- Straßennetz laden (ganz Wien von der Stadt Wien + Autobahnen) ---
 let geoState = 'idle', geoError = '';
-const WIEN_WFS = 'https://data.wien.gv.at/daten/geo?service=WFS&request=GetFeature&version=1.1.0&typeName=ogdwien:STRASSENGRAPHOGD&srsName=EPSG:4326&outputFormat=json&propertyName=FEATURENAME,SHAPE';
-const IDB_KEY = 'strassennetz-wien-v1';
+const WIEN_WFS = 'https://data.wien.gv.at/daten/geo?service=WFS&request=GetFeature&version=1.1.0&typeName=ogdwien:STRASSENGRAPHOGD&srsName=EPSG:4326&outputFormat=json&propertyName=FEATURENAME,FOW,SHAPE';
+// v2: mit Art der Fahrbahn (FOW), damit Fußgängerzonen und Fußwege gemieden werden
+const IDB_KEY = 'strassennetz-wien-v2';
+// Art der Fahrbahn laut Stadt Wien -> wie viel länger ein Meter dort für die Wegsuche zählt
+// (Fußgängerzonen und Parkplätze nur ungern – Taxis dürfen manchmal durch –, Fußwege, Stiegen, MTB-Strecken praktisch nie)
+const SLOW_FOW = { 6: 6, 12: 6, 14: 6, 15: 40, 16: 40, 18: 40, 220: 40 };
+let SLOW = new WeakMap(); // Weg -> Faktor
 // größerer Browser-Speicher (IndexedDB) statt localStorage
 function idb() { return new Promise((ok, no) => { try { const r = indexedDB.open('routentrainer', 1); r.onupgradeneeded = () => r.result.createObjectStore('kv'); r.onsuccess = () => ok(r.result); r.onerror = () => no(r.error); } catch (e) { no(e); } }); }
 async function idbGet(k) { try { const db = await idb(); return await new Promise(ok => { const q = db.transaction('kv').objectStore('kv').get(k); q.onsuccess = () => ok(q.result); q.onerror = () => ok(null); }); } catch (e) { return null; } }
@@ -1380,15 +1389,15 @@ async function timedFetch(url, init, ms) {
 }
 async function fromWien() {
   const data = await timedFetch(WIEN_WFS, {}, 90000);
-  const s = {};
+  const s = {}, slow = {}; // slow: key -> { Index des Wegs: Faktor }
   (data.features || []).forEach(f => {
     const name = f.properties && f.properties.FEATURENAME, g = f.geometry; if (!name || !g) return;
     const lines = g.type === 'LineString' ? [g.coordinates] : g.type === 'MultiLineString' ? g.coordinates : [];
-    const k = streetKey(name);
-    lines.forEach(l => (s[k] = s[k] || []).push(l.map(c => [+c[1].toFixed(6), +c[0].toFixed(6)])));
+    const k = streetKey(name), fac = SLOW_FOW[f.properties.FOW];
+    lines.forEach(l => { const a = s[k] = s[k] || []; if (fac) (slow[k] = slow[k] || {})[a.length] = fac; a.push(l.map(c => [+c[1].toFixed(6), +c[0].toFixed(6)])); });
   });
   if (Object.keys(s).length < 1000) throw new Error('unvollständige Antwort');
-  return s;
+  return { s, slow };
 }
 // Autobahnen und Auffahrten (OpenStreetMap, fest eingebaut): "key:lat,lng,dlat,dlng,…;…" in 1e-5 Grad
 function motorways() {
@@ -1401,9 +1410,11 @@ function motorways() {
   });
   return s;
 }
-function useStreets(s, how) {
+function useStreets(s, how, slow) {
   const hw = motorways(); for (const k in hw) s[k] = (s[k] || []).concat(hw[k]);
   STREETS = densify(s); STREET_BB = {};
+  // Autobahnen hängen hinten an, die Indizes der Wiener Wege bleiben gleich
+  SLOW = new WeakMap(); for (const k in slow || {}) for (const i in slow[k]) if (STREETS[k] && STREETS[k][i]) SLOW.set(STREETS[k][i], slow[k][i]);
   for (const k in STREETS) { let a = 90, b = 180, c = -90, d = -180; for (const w of STREETS[k]) for (const p of w) { if (p[0] < a) a = p[0]; if (p[1] < b) b = p[1]; if (p[0] > c) c = p[0]; if (p[1] > d) d = p[1]; } STREET_BB[k] = [a, b, c, d]; }
   geoState = 'ok'; WAYGRID = null; PATHS.clear(); ROUTES.forEach(r => { r._sub = r._net = r._global = null; }); for (const k in GRAPH) delete GRAPH[k];
   geoReady(how);
@@ -1411,13 +1422,14 @@ function useStreets(s, how) {
 async function loadStreets() {
   const status = $('#geo');
   const cached = await idbGet(IDB_KEY);
-  if (cached && cached.s) return useStreets(cached.s, 'aus dem Speicher');
+  idbDel('strassennetz-wien-v1'); // alter Stand ohne Fahrbahn-Art
+  if (cached && cached.s) return useStreets(cached.s, 'aus dem Speicher', cached.slow);
   geoState = 'loading'; geoError = ''; status.classList.remove('bad');
   status.textContent = 'Straßennetz von ganz Wien wird geladen … (einmalig, ca. 10 MB)'; render();
   try {
-    const s = await fromWien();
-    await idbSet(IDB_KEY, { s, src: 'Stadt Wien', at: Date.now() });
-    return useStreets(s, 'geladen (Stadt Wien)');
+    const { s, slow } = await fromWien();
+    await idbSet(IDB_KEY, { s, slow, src: 'Stadt Wien', at: Date.now() });
+    return useStreets(s, 'geladen (Stadt Wien)', slow);
   } catch (e) {
     geoState = 'failed'; geoError = e.name === 'AbortError' ? 'Zeitüberschreitung' : (e.message || String(e));
     status.textContent = 'Straßennetz nicht geladen: ' + geoError;
@@ -1581,14 +1593,14 @@ function routeNav() {
   const nb = el('button', 'btn nav-b', '›'); nb.type = 'button'; nb.title = 'Nächste Route: ' + next.from; nb.setAttribute('aria-label', 'Nächste Route ' + next.n);
   pb.onclick = e => { e.stopPropagation(); openRoute(prev); };
   nb.onclick = e => { e.stopPropagation(); openRoute(next); };
-  nav.append(pb, el('span', 'nav-t', `Route ${state.route.n} · ${V.indexOf(state.route) + 1} von ${V.length}`), nb);
+  const t = el('span', 'nav-t', 'Route'); t.title = `Route ${state.route.n} · ${i + 1} von ${V.length}`;
+  nav.append(pb, t, nb);
   return nav;
 }
 function lernenBody(box) {
   const r = state.route;
   box.append(routeNav());
-  box.append(el('p', 'hint', STREETS ? 'Lass die Route ablaufen – oder tipp die Straßen der Reihe nach an, in der Liste oder direkt auf der Karte.' : 'Lass die Route Schritt für Schritt ablaufen.'));
-  const bar = el('div', 'bar');
+  const bar = el('div', 'bar row3');
   const ICON_PLAY = '<svg viewBox="0 0 16 16" width="13" height="13" aria-hidden="true"><path d="M4 2.5v11l9-5.5z" fill="currentColor"/></svg>';
   const ICON_PAUSE = '<svg viewBox="0 0 16 16" width="13" height="13" aria-hidden="true"><path d="M3.5 2.5h3v11h-3zM9.5 2.5h3v11h-3z" fill="currentColor"/></svg>';
   const play = el('button', 'btn primary playbtn');
@@ -1596,9 +1608,9 @@ function lernenBody(box) {
   play.onclick = e => { e.stopPropagation(); if (state.playing) pauseRoute(); else playRoute(!!state.paused); };
   bar.append(play);
   if (STREETS) {
-    const all = el('button', 'btn', 'Route anzeigen');
+    const all = el('button', 'btn', 'Anzeigen'); all.title = 'Ganze Route anzeigen';
     all.onclick = e => { e.stopPropagation(); state.playing = false; drawAll(); state.step = r.steps.length; fitRoute(); render(); };
-    const hide = el('button', 'btn', 'Ausblenden');
+    const hide = el('button', 'btn', 'Zurücksetzen'); hide.title = 'Route ausblenden und von vorne beginnen';
     hide.disabled = state.step === 0 && !state.playing;
     hide.onclick = e => { e.stopPropagation(); clearRoute(); };
     bar.append(all, hide);
