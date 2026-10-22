@@ -66,19 +66,18 @@ button, input, select { font: inherit; color: inherit; }
 .status::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: var(--acc); }
 /* --- Leiste rechts --- */
 .panel { background: var(--panel); color: var(--on-panel); border-radius: var(--r); display: flex; flex-direction: column; min-height: 0; overflow: hidden; }
-.search, .iconbtn, .card, .chip, .btn, .opt, .choice, .chipbtn, .pillbtn, .notice, .status { color: var(--fg); }
+.chapdd, .iconbtn, .card, .chip, .btn, .opt, .choice, .pillbtn, .notice, .status { color: var(--fg); }
 .topbar { display: flex; gap: 10px; align-items: center; padding: 22px 22px 6px; }
-.search { flex: 1; display: flex; align-items: center; gap: 10px; background: var(--card); border-radius: 999px; padding: 0 16px; height: 48px; }
-.search svg { flex: none; width: 18px; height: 18px; color: var(--muted); }
-.search input { flex: 1; min-width: 0; border: 0; outline: 0; background: none; font-size: .95rem; }
-.search input::placeholder { color: var(--muted); }
-.search:focus-within { box-shadow: 0 0 0 2px #141414; }
+.chapdd { position: relative; flex: 1; min-width: 0; display: flex; align-items: center; gap: 10px; background: var(--card); border-radius: 999px; padding: 0 16px; height: 48px; cursor: pointer; }
+.chapdd svg { flex: none; width: 18px; height: 18px; color: var(--muted); }
+.chapdd select { flex: 1; min-width: 0; height: 100%; border: 0; outline: 0; background: none; font-size: .95rem; font-weight: 500; -webkit-appearance: none; appearance: none; padding-right: 26px; cursor: pointer; text-overflow: ellipsis; }
+.chapdd .dd-chev { position: absolute; right: 16px; pointer-events: none; color: var(--fg); }
+.chapdd:focus-within { box-shadow: 0 0 0 2px #141414; }
 .iconbtn { flex: none; width: 48px; height: 48px; border-radius: 50%; border: 0; background: var(--card); display: grid; place-items: center; cursor: pointer; padding: 0; }
 .iconbtn svg { width: 20px; height: 20px; }
 .iconbtn:hover { box-shadow: inset 0 0 0 1px var(--line); }
 .scroll { overflow-y: auto; padding: 18px 22px 26px; display: flex; flex-direction: column; gap: 16px; min-height: 0; flex: 1; }
-.rbtn:focus-visible, .btn:focus-visible, .opt:focus-visible, .choice:focus-visible, .rt:focus-visible, .gbtn:focus-visible, .iconbtn:focus-visible, .chipbtn:focus-visible, .pillbtn:focus-visible { outline: 2px solid #141414; outline-offset: 2px; }
-
+.rbtn:focus-visible, .btn:focus-visible, .opt:focus-visible, .choice:focus-visible, .rt:focus-visible, .gbtn:focus-visible, .iconbtn:focus-visible, .pillbtn:focus-visible { outline: 2px solid #141414; outline-offset: 2px; }
 #stage { display: flex; flex-direction: column; gap: 16px; }
 #head { display: flex; flex-direction: column; gap: 14px; }
 .h-top { display: flex; justify-content: space-between; align-items: flex-end; gap: 12px; }
@@ -103,7 +102,7 @@ button, input, select { font: inherit; color: inherit; }
 .tl-mid { position: relative; width: 40px; height: 40px; border-radius: 50%; background: var(--acc); color: var(--acc-ink); display: grid; place-items: center; box-shadow: 0 0 0 6px var(--card); }
 .tl-mid svg { width: 20px; height: 20px; }
 .tl-names { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 8px; font-size: .95rem; line-height: 1.25; }
-.tl-names span { justify-self: start; background: #141414; color: var(--acc); border-radius: 14px; padding: 6px 12px; font-weight: 500; }
+.tl-names span { text-wrap: balance; justify-self: start; background: #141414; color: var(--acc); border-radius: 14px; padding: 6px 12px; font-weight: 500; }
 .tl-names span:last-child { justify-self: end; text-align: right; }
 .hint { margin: 0; color: var(--on-panel-muted); }
 .card .hint { color: var(--muted); }
@@ -179,11 +178,6 @@ ol.steps li.dest .chip { background: var(--acc); color: var(--acc-ink); padding:
 .sec h3 small { font-size: .85rem; color: var(--on-panel-muted); font-weight: 400; margin-left: 4px; }
 .pillbtn { border: 0; background: var(--card); border-radius: 999px; padding: 9px 16px; font-size: .88rem; cursor: pointer; }
 .pillbtn:hover { box-shadow: inset 0 0 0 1px var(--line); }
-#chapbox { display: flex; gap: 6px; overflow-x: auto; scrollbar-width: none; margin: -4px -22px 0; padding: 0 22px; }
-#chapbox::-webkit-scrollbar { display: none; }
-.chipbtn { flex: none; border: 0; background: var(--card); border-radius: 999px; padding: 8px 14px; font-size: .85rem; cursor: pointer; white-space: nowrap; }
-.chipbtn b { font-weight: 600; margin-right: 4px; }
-.chipbtn.on { background: var(--fg); color: var(--card); }
 #routes { display: flex; flex-direction: column; gap: 8px; }
 .chap-h { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; font-size: .85rem; color: var(--on-panel-muted); padding: 10px 6px 0; }
 .chap-h b { font-weight: 600; color: var(--on-panel); }
@@ -285,7 +279,6 @@ ol.steps li.dest .chip { background: var(--acc); color: var(--acc-ink); padding:
   .panel { border-radius: 0; overflow: visible; overflow: clip; }
   .topbar { padding: 16px max(16px, env(safe-area-inset-right)) 0 max(16px, env(safe-area-inset-left)); }
   .scroll { overflow: visible; padding: 16px max(16px, env(safe-area-inset-right)) calc(26px + env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left)); }
-  #chapbox { margin: -4px -16px 0; padding: 0 16px; }
   .h-title { font-size: 1.6rem; }
   .opts { grid-template-columns: 1fr; }
 }
@@ -316,7 +309,7 @@ ol.steps li.dest .chip { background: var(--acc); color: var(--acc-ink); padding:
   </main>
   <aside class="panel">
     <div class="topbar">
-      <label class="search"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="6.5"/><path d="M20 20l-4-4"/></svg><input id="q" type="search" placeholder="Route, Ort oder Straße suchen" autocomplete="off" aria-label="Routen durchsuchen"></label>
+      <label class="chapdd"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l9 5-9 5-9-5z"/><path d="M3 13l9 5 9-5"/></svg><select id="chap" aria-label="Kapitel wählen"></select><svg class="dd-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg></label>
       <button class="iconbtn" id="theme" type="button"></button>
     </div>
     <div class="scroll">
@@ -326,7 +319,6 @@ ol.steps li.dest .chip { background: var(--acc); color: var(--acc-ink); padding:
         <div id="play"></div>
       </div>
       <div class="sec"><h3>Routen <small id="count"></small></h3><button id="shuffle" class="pillbtn" type="button">Zufällig</button></div>
-      <div id="chapbox"></div>
       <div id="routes"></div>
       <div class="foot"><span>Daten: Stadt Wien, basemap.at, OpenStreetMap</span><button id="reload" type="button">Straßennetz neu laden</button></div>
     </div>
@@ -846,16 +838,11 @@ const POOL = streetPool(ROUTES);
 const STORE_KEY = 'taxi-routen-wien-v2', GEO_KEY = 'taxi-routen-1bez-geo-v1', CHAP_KEY = 'taxi-kapitel-v1';
 let STREETS = null; // key -> [[ [lat,lng], ... ], ...]
 let STREET_BB = {}; // key -> [minLat, minLng, maxLat, maxLng]
-let state = { mode: 'lernen', route: ROUTES[0], step: 0, errors: 0, done: false, open: false, chap: -1, q: '' };
+let state = { mode: 'lernen', route: ROUTES[0], step: 0, errors: 0, done: false, open: false, chap: -1 };
 try { const v = localStorage.getItem(CHAP_KEY); const c = v == null ? -1 : +v; if (c >= 0 && c < CHAPTERS.length) state.chap = c; } catch (e) {}
 // Routen des gewählten Kapitels (oder alle)
 function inChap() { return state.chap < 0 ? ROUTES : ROUTES.filter(r => r.chap === state.chap); }
-// dazu die Suche: Routennummer, Start, Ziel oder eine Straße der Route
-const norm = s => String(s).toLowerCase().replace(/ß/g, 'ss').replace(/strasse/g, 'str');
-function visible() {
-  const q = norm(state.q).trim(), V = inChap(); if (!q) return V;
-  return V.filter(r => String(r.n) === q || norm([r.from, r.to, ...r.steps].join(' ')).includes(q));
-}
+function visible() { return inChap(); }
 function setChap(c) {
   state.chap = c; try { localStorage.setItem(CHAP_KEY, String(c)); } catch (e) {}
   const v = inChap(); if (!v.includes(state.route)) { state.open = false; state.route = v[0]; reset(); }
@@ -1487,16 +1474,15 @@ function chapHead(c) {
   h.append(el('b', '', `${c + 1} · ${CHAPTERS[c].name}`), el('span', '', `${rs[0].n}–${rs[rs.length - 1].n}`));
   h.title = CHAPTERS[c].sub; return h;
 }
-// Kapitel als Chips über der Liste
+// Kapitel-Auswahl oben in der Leiste (Dropdown)
 function renderChaps() {
-  const box = $('#chapbox'); box.innerHTML = '';
-  const chip = (c, label) => {
-    const b = el('button', 'chipbtn' + (state.chap === c ? ' on' : '')); b.type = 'button';
-    if (c >= 0) { b.append(el('b', '', String(c + 1))); b.title = CHAPTERS[c].sub; }
-    b.append(label); b.onclick = () => setChap(c); return b;
-  };
-  box.append(chip(-1, `Alle ${ROUTES.length}`));
-  CHAPTERS.forEach((c, i) => box.append(chip(i, c.name)));
+  const sel = $('#chap');
+  if (!sel.options.length) {
+    const opt = (v, t) => { const o = el('option', '', t); o.value = String(v); sel.append(o); };
+    opt(-1, `Alle Kapitel · ${ROUTES.length} Routen`);
+    CHAPTERS.forEach((c, i) => opt(i, `${i + 1} · ${c.name} · ${ROUTES.filter(r => r.chap === i).length} Routen`));
+  }
+  sel.value = String(state.chap);
 }
 
 // --- Rendering ---
@@ -1575,11 +1561,11 @@ function header() {
     return;
   }
   const badges = el('div', 'h-badges');
-  badges.append(el('span', 'badge', `Kapitel ${r.chap + 1} · ${CHAPTERS[r.chap].name}`), el('span', 'badge soft', 'Skript ' + r.orig));
+  badges.append(el('span', 'badge', `Kapitel ${r.chap + 1} · ${CHAPTERS[r.chap].name}`));
   const tl = el('div', 'card'), top = el('div', 'tl-top'), line = el('div', 'tl-line'), mid = el('span', 'tl-mid'), names = el('div', 'tl-names');
   top.append(el('span', '', 'Strecke'), el('span', 'status', r.steps.length + ' Straßen'));
   mid.innerHTML = ICON_CAR; line.append(el('i'), mid, el('i'));
-  names.append(el('span', '', r.from), el('span', '', r.to));
+  names.append(el('span', 'fitw', r.from), el('span', 'fitw', r.to));
   tl.append(top, line, names);
   const row = el('div', 'h-top'), left = el('div', 'h-left'), nav = el('div', 'h-nav');
   left.append(el('h2', 'h-title', 'Route ' + r.n), badges);
@@ -1600,8 +1586,20 @@ const MODES = {
   auswahl: ['Auswahl', 'Welche Variante stimmt mit dem Skript überein?'],
   fahren: ['Nachfahren', 'Wie bei der mündlichen Prüfung: Straßen auf der Karte antippen'],
 };
+// Felder mit umbrochenem Text so schmal wie die längste Zeile machen (CSS allein lässt sie volle Breite)
+function fitWidths(root) {
+  (root || document).querySelectorAll('.fitw').forEach(e => {
+    e.style.width = '';
+    const r = document.createRange(); r.selectNodeContents(e); const rects = [...r.getClientRects()];
+    if (rects.length < 2) return;
+    const cs = getComputedStyle(e), w = Math.max(...rects.map(x => x.right)) - Math.min(...rects.map(x => x.left));
+    e.style.width = Math.ceil(w + parseFloat(cs.paddingLeft) + parseFloat(cs.paddingRight) + 1) + 'px';
+  });
+}
+addEventListener('resize', () => fitWidths($('#head')));
+if (document.fonts) document.fonts.ready.then(() => fitWidths($('#head')));
 function render() {
-  header();
+  header(); fitWidths($('#head'));
   $('#modeTitle').textContent = MODES[state.mode][0]; $('#modeSub').textContent = MODES[state.mode][1];
   document.querySelectorAll('.tab').forEach(t => t.classList.toggle('on', t.dataset.mode === state.mode));
   const p = $('#play'); p.innerHTML = '';
@@ -1978,7 +1976,7 @@ document.addEventListener('keydown', e => {
 });
 document.querySelectorAll('.tab').forEach(t => t.onclick = () => { state.mode = t.dataset.mode; reset(); renderList(); $('#score').textContent = ''; });
 $('#shuffle').onclick = () => { if (state.mode === 'lernen') state.open = true; nextRoute(true); scrollPanelTop(); };
-$('#q').addEventListener('input', e => { state.q = e.target.value; renderList(); });
+$('#chap').onchange = e => setChap(+e.target.value);
 // Knöpfe auf der Karte
 $('#zin').onclick = () => { camSeq++; map.zoomIn(); };
 $('#zout').onclick = () => { camSeq++; map.zoomOut(); };
