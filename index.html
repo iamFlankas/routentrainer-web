@@ -1,0 +1,1789 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Routentrainer Wien</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=Barlow:wght@400;500;600&display=swap">
+<style>
+/* Layout: Taxischild-Leiste links, Wandplan rechts; am Handy Karte oben, Leiste darunter */
+:root {
+  --bg: #f3f1ea; --panel: #fbfaf6; --fg: #1b1a17; --muted: #6b675c; --line: #dcd8cb;
+  --taxi: #ffd21f; --taxi-ink: #1b1a17; --route: #1d3fbf; --warn: #ff6a00;
+  --good: #1f7a3a; --good-bg: #e3f1e6; --bad: #b3261e; --bad-bg: #f8e3e1;
+  --display: "Barlow Condensed", "Arial Narrow", sans-serif; --body: "Barlow", "Helvetica Neue", Arial, sans-serif;
+  --mapbg: #ece9e1;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #141412; --panel: #1c1b18; --fg: #efece3; --muted: #a39e90; --line: #34322c;
+  --good: #6fd08d; --good-bg: #1d3324; --bad: #ff8a80; --bad-bg: #3a1f1c; color-scheme: dark; } }
+:root[data-theme="dark"] { --bg: #141412; --panel: #1c1b18; --fg: #efece3; --muted: #a39e90; --line: #34322c;
+  --good: #6fd08d; --good-bg: #1d3324; --bad: #ff8a80; --bad-bg: #3a1f1c; color-scheme: dark; }
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+html, body { height: 100%; margin: 0; }
+body { background: var(--bg); color: var(--fg); font: 16px/1.45 var(--body); display: grid; grid-template-columns: minmax(340px, 430px) 1fr; }
+aside { background: var(--panel); border-right: 1px solid var(--line); display: flex; flex-direction: column; min-height: 0; overflow: hidden; }
+#map { height: 100%; min-height: 0; background: var(--mapbg); }
+.leaflet-container { background: var(--mapbg); }
+.sign { background: var(--taxi); color: var(--taxi-ink); padding: 12px max(16px, env(safe-area-inset-left, 0px)) 10px; display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
+.sign h1 { font: 700 1.6rem/1 var(--display); letter-spacing: .06em; text-transform: uppercase; margin: 0; }
+.sign span { font: 600 .8rem var(--body); letter-spacing: .08em; text-transform: uppercase; }
+.tabs { display: grid; grid-template-columns: repeat(4, 1fr); border-bottom: 1px solid var(--line); }
+.tab { font: 600 .95rem var(--display); letter-spacing: .05em; text-transform: uppercase; padding: 10px 4px; border: 0; background: none; color: var(--muted); border-bottom: 3px solid transparent; cursor: pointer; }
+.tab.on { color: var(--fg); border-bottom-color: var(--taxi); }
+.tab:focus-visible, .btn:focus-visible, .opt:focus-visible, .choice:focus-visible, .rt:focus-visible { outline: 2px solid var(--route); outline-offset: 2px; }
+.scroll { overflow-y: auto; padding: 14px 16px 24px; display: flex; flex-direction: column; gap: 14px; min-height: 0; flex: 1; }
+#head { display: flex; flex-direction: column; gap: 2px; }
+.h-top { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+.badge { font: 700 .8rem var(--display); letter-spacing: .08em; text-transform: uppercase; background: var(--fg); color: var(--panel); padding: 2px 8px; border-radius: 3px; }
+.badge.warn { background: var(--warn); color: #fff; }
+.h-from { font: 700 1.5rem/1.1 var(--display); margin: 6px 0 0; text-wrap: balance; }
+.h-to { font: 600 1.1rem var(--display); color: var(--muted); }
+.hint { margin: 0; color: var(--muted); }
+#score { font: 600 .85rem var(--body); color: var(--bad); }
+.chip { display: inline-flex; align-items: baseline; gap: 6px; padding: 4px 9px; border-radius: 4px; background: var(--bg); border: 1px solid var(--line); font-weight: 500; }
+.chip small { font-size: .72rem; color: var(--muted); }
+.chip.ok { border-color: var(--good); background: var(--good-bg); }
+.chip.diff { border-color: var(--bad); background: var(--bad-bg); }
+.chip.dest { background: var(--taxi); color: var(--taxi-ink); border-color: var(--taxi); font-weight: 600; }
+.chain { display: flex; flex-wrap: wrap; gap: 5px; }
+.chain .chip:not(:last-child)::after { content: "›"; margin-left: 6px; color: var(--muted); }
+.chain.small .chip { font-size: .85rem; padding: 2px 7px; }
+ol.steps { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 4px; counter-reset: s; }
+ol.steps li { display: flex; align-items: center; gap: 10px; cursor: pointer; counter-increment: s; }
+ol.steps li::before { content: counter(s); font: 600 .8rem var(--display); color: var(--muted); width: 1.4em; text-align: right; font-variant-numeric: tabular-nums; }
+ol.steps li.dest::before { content: ""; }
+ol.steps li.past .chip { border-color: var(--taxi); background: color-mix(in srgb, var(--taxi) 22%, var(--bg)); }
+ol.steps li.next .chip { border-style: dashed; border-color: var(--muted); }
+ol.steps li.now .chip { background: var(--taxi); color: var(--taxi-ink); border-color: var(--taxi); }
+ol.steps li.now .chip small { color: var(--taxi-ink); opacity: .7; }
+.notice { display: flex; flex-direction: column; gap: 6px; align-items: flex-start; padding: 10px 12px; border-radius: 6px; background: var(--bad-bg); color: var(--fg); font-size: .9rem; }
+.notice strong { color: var(--bad); }
+.bar { display: flex; flex-wrap: wrap; gap: 8px; }
+.btn { font: 600 .95rem var(--body); padding: 8px 14px; border-radius: 6px; border: 1px solid var(--line); background: var(--panel); color: var(--fg); cursor: pointer; }
+.btn.primary { background: var(--fg); color: var(--panel); border-color: var(--fg); }
+.btn:disabled { opacity: .45; cursor: default; }
+.opts { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.opt { padding: 10px; border: 1px solid var(--line); border-radius: 6px; background: var(--panel); cursor: pointer; text-align: left; color: var(--fg); }
+.opt .chip { border: 0; background: none; padding: 0; font-size: 1rem; }
+.opt:hover { border-color: var(--fg); }
+.opt.no { border-color: var(--bad); background: var(--bad-bg); animation: shake .3s; }
+@keyframes shake { 25% { transform: translateX(-4px); } 75% { transform: translateX(4px); } }
+.choice { display: grid; grid-template-columns: auto 1fr; gap: 6px 10px; text-align: left; padding: 10px; border: 1px solid var(--line); border-radius: 6px; background: var(--panel); color: var(--fg); cursor: pointer; font: inherit; }
+.choice:hover:not(:disabled) { border-color: var(--fg); }
+.choice .letter { font: 700 1.3rem/1 var(--display); background: var(--taxi); color: var(--taxi-ink); width: 1.6em; height: 1.6em; display: grid; place-items: center; border-radius: 4px; }
+.choice .why { grid-column: 2; font-size: .85rem; color: var(--bad); }
+.choice.right { border: 2px solid var(--good); }
+.choice.wrong { border: 2px solid var(--bad); }
+.result { margin: 0; padding: 10px 12px; border-radius: 6px; display: flex; flex-direction: column; gap: 4px; }
+.result.good { background: var(--good-bg); color: var(--good); }
+.result.bad { background: var(--bad-bg); color: var(--bad); }
+.feedback { margin: 0; min-height: 1.4em; color: var(--bad); font-weight: 500; }
+.prog { height: 4px; background: var(--line); border-radius: 2px; overflow: hidden; }
+.prog i { display: block; height: 100%; background: var(--route); transition: width .3s; }
+.sec { font: 700 .85rem var(--display); letter-spacing: .1em; text-transform: uppercase; color: var(--muted); display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--line); padding-top: 12px; }
+.sec button { font: 600 .8rem var(--body); text-transform: none; letter-spacing: 0; border: 0; background: none; color: var(--route); cursor: pointer; }
+#routes { display: flex; flex-direction: column; gap: 2px; }
+.rt { display: grid; grid-template-columns: 2em 1fr auto; gap: 8px; align-items: center; text-align: left; padding: 6px 8px; border: 0; border-radius: 5px; background: none; color: var(--fg); cursor: pointer; font: inherit; }
+.rt:hover { background: var(--bg); }
+.rt.on { background: var(--taxi); color: var(--taxi-ink); }
+.rt-n { font: 700 1.1rem var(--display); text-align: right; font-variant-numeric: tabular-nums; }
+.rt-t { display: flex; flex-direction: column; min-width: 0; font-size: .88rem; line-height: 1.25; }
+.rt-to { opacity: .7; }
+.rt-lv { display: flex; gap: 3px; }
+.rt-lv i { width: 7px; height: 7px; border-radius: 50%; border: 1px solid currentColor; opacity: .5; }
+.rt-lv i.f { background: var(--good); border-color: var(--good); opacity: 1; }
+.rt.on .rt-lv i.f { background: var(--taxi-ink); border-color: var(--taxi-ink); }
+#geo { font-size: .78rem; color: var(--muted); }
+#geo.bad { color: var(--bad); }
+.foot { font-size: .78rem; color: var(--muted); display: flex; justify-content: space-between; gap: 8px; flex-wrap: wrap; }
+.foot button { border: 0; background: none; color: var(--route); font: inherit; cursor: pointer; padding: 0; }
+@media (max-width: 760px) {
+  body { display: flex; flex-direction: column; height: auto; min-height: 100%; }
+  #map { height: 55vh; order: -1; position: sticky; top: 0; z-index: 1; }
+  aside { border-right: 0; overflow: visible; }
+  .scroll { overflow: visible; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+  .opts { grid-template-columns: 1fr; }
+}
+@media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
+.leaflet-marker-icon.arrow { background: none; border: 0; }
+.arrow .pass { display: block; width: 12px; height: 12px; border-radius: 50%; background: var(--route); border: 2px solid #fff; opacity: .8; }
+.arrow .blink { display: block; width: 30px; height: 30px; border-radius: 50%; background: var(--warn); border: 3px solid #fff; box-shadow: 0 0 0 0 var(--warn); animation: blink .5s ease-in-out 5 alternate; }
+@keyframes blink { from { opacity: 1; transform: scale(1); } to { opacity: .15; transform: scale(.6); } }
+.pinmarker { overflow: visible; }
+.skiplabel { position: absolute; transform: translate(-50%, -150%); background: var(--bad); color: #fff; font: 600 13px var(--body); padding: 3px 8px; border-radius: 4px; white-space: nowrap; box-shadow: 0 1px 4px rgba(0,0,0,.3); transition: opacity .5s ease; }
+.fade .skiplabel { opacity: 0; }
+.pinwrap { position: relative; display: block; width: 0; height: 0; }
+.pindot { position: absolute; left: -5px; top: -5px; width: 10px; height: 10px; border-radius: 50%; border: 2px solid #fff; box-shadow: 0 1px 3px rgba(0,0,0,.4); }
+.pindot.start { background: var(--taxi); }
+.pindot.goal { background: var(--taxi-ink); }
+.pinstem { position: absolute; left: 0; top: -1px; height: 2px; background: rgba(27,26,23,.75); transform-origin: 0 50%; }
+.pinwrap .pin { position: absolute; transform: translate(-50%, -50%); cursor: pointer; }
+.playbtn { display: inline-flex; align-items: center; gap: 7px; }
+.pin { display: inline-flex; align-items: center; gap: 4px; padding: 2px 6px 2px 2px; border-radius: 6px; border: 2px solid #fff; box-shadow: 0 1px 4px rgba(0,0,0,.35); white-space: nowrap; font: 700 10px/1 var(--display); letter-spacing: .08em; }
+.pin.start { background: #fff; color: var(--taxi-ink); }
+.pin.goal { background: var(--taxi-ink); color: #fff; }
+.ico { display: inline-flex; align-items: center; justify-content: center; height: 18px; min-width: 18px; border-radius: 4px; }
+.ico.taxi { background: var(--taxi); color: var(--taxi-ink); padding: 0 4px; font: 700 10px/1 var(--display); letter-spacing: .06em; }
+.ico.hotel { background: #1d5fbf; color: #fff; }
+.ico.ort { background: #7a4b2a; color: #fff; }
+.ico.klinik { background: #c4262e; color: #fff; }
+.ico.bahn { background: #2f6b3a; color: #fff; }
+.ico.flug { background: #44506b; color: #fff; }
+.orig { font: 500 .78rem var(--body); color: var(--muted); margin: 0; }
+.h-top .orig { margin-left: 8px; }
+.chap-h { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; font: 700 .82rem var(--display); letter-spacing: .08em; text-transform: uppercase; color: var(--muted); padding: 14px 8px 4px; border-bottom: 1px solid var(--line); margin-bottom: 4px; }
+.chap-h span { font: 500 .78rem var(--body); letter-spacing: 0; text-transform: none; font-variant-numeric: tabular-nums; }
+.chapsel { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; font: 700 .82rem var(--display); letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+.chapsel select { flex: 1 1 200px; min-width: 0; font: 500 .92rem var(--body); text-transform: none; letter-spacing: 0; padding: 7px 8px; border: 1px solid var(--line); border-radius: 6px; background: var(--panel); color: var(--fg); }
+.chapsel small { flex-basis: 100%; font: 500 .78rem var(--body); letter-spacing: 0; text-transform: none; }
+#chapbox:not(:empty) { margin-bottom: 4px; }
+.acc { display: flex; flex-direction: column; gap: 4px; }
+.acc-item { border-radius: 6px; }
+.acc-item.open { background: var(--bg); box-shadow: inset 0 0 0 1px var(--line); }
+.acc .rt { width: 100%; grid-template-columns: 2em 1fr auto auto; }
+.chev { font-size: .9rem; opacity: .7; width: 1em; text-align: center; }
+.acc-wrap { display: grid; grid-template-rows: 0fr; transition: grid-template-rows .3s ease; }
+.acc-item.expanded .acc-wrap { grid-template-rows: 1fr; }
+.acc-body { overflow: hidden; min-height: 0; }
+.acc-inner { display: flex; flex-direction: column; gap: 10px; padding: 10px 10px 14px; opacity: 0; transform: translateY(-6px); transition: opacity .25s ease .05s, transform .3s ease; }
+.acc-item.expanded .acc-inner { opacity: 1; transform: none; }
+.chev { transition: transform .3s ease; }
+.acc-item.expanded .chev { transform: rotate(90deg); }
+.acc-item { transition: background-color .3s ease; }
+.rnav { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.nav-b { padding: 2px 14px 5px; font-size: 1.35rem; line-height: 1; }
+.nav-t { font: 600 .8rem var(--body); color: var(--muted); }
+.filterctl { font: 14px var(--body); color: var(--taxi-ink); }
+.fbtn { display: flex; align-items: center; gap: 6px; background: #fff; color: var(--taxi-ink); border: 0; border-radius: 6px; padding: 8px 12px; font: 600 14px var(--body); box-shadow: 0 1px 5px rgba(0,0,0,.3); cursor: pointer; }
+.fbtn b { background: var(--taxi); border-radius: 9px; min-width: 18px; padding: 0 5px; font-size: 12px; line-height: 18px; text-align: center; }
+.fbtn b:empty { display: none; }
+.fpanel { margin-top: 6px; background: #fff; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,.25); padding: 6px; width: 270px; display: flex; flex-direction: column; }
+.frow { display: grid; grid-template-columns: auto 1fr auto; gap: 10px; align-items: center; padding: 8px; border-radius: 6px; cursor: pointer; }
+.frow:hover { background: #f3f1ea; }
+.frow input { width: 18px; height: 18px; accent-color: #1b1a17; margin: 0; }
+.fl { display: block; font-weight: 600; }
+.fs { display: block; font-size: 12px; color: #6b675c; }
+.fst { font-size: 11px; color: #b3261e; white-space: nowrap; }
+.bez { display: inline-block; font: 700 12px var(--display); letter-spacing: .06em; text-transform: uppercase; color: #5b4b8a; background: rgba(255,255,255,.75); padding: 1px 6px; border-radius: 3px; white-space: nowrap; }
+.ico.lm { height: 22px; min-width: 22px; }
+.arrow svg { display: block; transform-origin: 50% 50%; filter: drop-shadow(0 1px 1px rgba(0,0,0,.35)); }
+.leaflet-tooltip.headlabel { background: var(--route); color: #fff; border: 0; border-radius: 4px; font: 600 13px var(--body); padding: 3px 8px; box-shadow: 0 1px 4px rgba(0,0,0,.3); }
+.leaflet-tooltip.headlabel::before { display: none; }
+.leaflet-tooltip.headlabel { opacity: .92 !important; }
+.speed { display: inline-flex; align-items: center; gap: 2px; margin-left: auto; font-size: .8rem; color: var(--muted); }
+.speed span { margin-right: 4px; }
+.sp { border: 1px solid var(--line); background: var(--panel); color: var(--fg); font: 500 .8rem var(--body); padding: 4px 8px; cursor: pointer; }
+.sp:first-of-type { border-radius: 5px 0 0 5px; } .sp:last-of-type { border-radius: 0 5px 5px 0; }
+.sp.on { background: var(--fg); color: var(--panel); border-color: var(--fg); }
+</style>
+</head>
+<body>
+<aside>
+  <div class="sign"><h1>Routentrainer</h1><span>Wien · 160 Routen · 8 Kapitel</span></div>
+  <nav class="tabs">
+    <button class="tab on" data-mode="lernen" type="button">Lernen</button>
+    <button class="tab" data-mode="reihe" type="button">Reihe</button>
+    <button class="tab" data-mode="auswahl" type="button">Auswahl</button>
+    <button class="tab" data-mode="fahren" type="button">Nachfahren</button>
+  </nav>
+  <div class="scroll">
+    <div id="head"></div>
+    <div id="score"></div>
+    <div id="play" style="display:flex;flex-direction:column;gap:12px"></div>
+    <div class="sec">Routen <button id="shuffle" type="button">Zufällig</button></div>
+    <div id="chapbox"></div>
+    <div id="routes"></div>
+    <div class="foot"><span id="geo"></span><button id="reload" type="button">Straßennetz neu laden</button></div>
+  </div>
+</aside>
+<div id="map"></div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script>
+// Alle Prüfungsrouten (Union Taxischule Skript + neuer Katalog), neu nummeriert 1–160 in Kapiteln
+const CHAPTERS = [{"name": "Innere Stadt", "sub": "1. Bezirk"}, {"name": "Nordwest", "sub": "Alsergrund · Hernals · Währing · Döbling"}, {"name": "West", "sub": "Neubau · Josefstadt · Rudolfsheim · Ottakring · Penzing"}, {"name": "Südwest", "sub": "Meidling · Hietzing · Liesing"}, {"name": "Süd", "sub": "Wieden · Margareten · Mariahilf · Favoriten"}, {"name": "Ost", "sub": "Leopoldstadt · Landstraße · Simmering · Flughafen"}, {"name": "Nord", "sub": "Brigittenau · Floridsdorf"}, {"name": "Donaustadt", "sub": "Kagran · Kaisermühlen · Seestadt"}];
+const ROUTES = [
+  {"n":1,"orig":"1","chap":0,"from":"Rotenturmstraße – Taxistandplatz","to":"Börse","steps":["Marienbrücke","Obere Donaustr","Salztorbrücke","Salztorgasse","Vorlaufstr","Marc-Aurel-Str","Hoher Markt","Wipplingerstr","Börseplatz","Wipplingerstr"],"dest":"Börse","start":[48.211865,16.376315,"Taxistandplatz Rotenturmstraße 24","taxi"],"goal":[48.214866,16.366249,"Börse – Wipplingerstraße 34","ort","boerse"]},
+  {"n":2,"orig":"2","chap":0,"from":"Laurenzerberg – Taxistandplatz","to":"Hotel Wandl","steps":["Schwedenbrücke","Obere Donaustr","Salztorbrücke","Salztorgasse","Vorlaufstr","Marc-Aurel-Str","Hoher Markt","Tuchlauben","Brandstätte","Bauernmarkt","Freisingergasse","Petersplatz"],"dest":"Hotel Wandl","start":[48.211262,16.378467,"Taxistandplatz Laurenzerberg 5","taxi"],"goal":[48.209704,16.370387,"Hotel Wandl – Petersplatz 9","hotel"]},
+  {"n":3,"orig":"3","chap":0,"from":"Burgring – Taxistandplatz","to":"Ankeruhr","steps":["Babenbergerstr (Bus-Spur)","Nibelungengasse","Eschenbachgasse","Elisabethstr","Babenbergerstr","Burgring","Heldenplatz (Sonderspur)","In der Burg","Michaelerplatz","Reitschulgasse","Habsburgergasse (Sonderspur)","Graben","Jungferngasse","Petersplatz","Milchgasse","Tuchlauben","Brandstätte","Bauernmarkt","Hoher Markt"],"dest":"Ankeruhr","start":[48.204083,16.363101,"Taxistandplatz Burgring 5","taxi"],"goal":[48.210898,16.373393,"Ankeruhr – Hoher Markt 10-11","ort","ankeruhr"]},
+  {"n":4,"orig":"4","chap":0,"from":"Hotel Marriott","to":"Hotel Wandl","steps":["Parkring Nebenfahrbahn","Weihburggasse","Coburgbastei","Liebenberggasse","Cobdengasse","Zedlitzgasse","Schulerstr (Sonderspur)","Stephansplatz","Rotenturmstr","Lichtensteg","Hoher Markt","Tuchlauben","Brandstätte","Bauernmarkt","Freisingergasse","Petersplatz"],"dest":"Hotel Wandl","start":[48.20527,16.378252,"Hotel Marriott – Taxistandplatz Parkring ggü. 12","taxi"],"goal":[48.209704,16.370387,"Hotel Wandl – Petersplatz 9","hotel"]},
+  {"n":5,"orig":"5 (neu)","chap":0,"from":"Neuer Markt","to":"Stephansplatz","steps":["Neuer Markt","Plankengasse","Dorotheergasse","Stallburggasse","Habsburgergasse (Sonderspur)","Graben","Jungferngasse","Petersplatz","Milchgasse","Tuchlauben","Brandstätte"],"dest":"Stephansplatz","start":[48.206125,16.370838,"Neuer Markt","ort"],"goal":[48.208984,16.372992,"Stephansplatz – Taxistandplatz ggü. 7","taxi"]},
+  {"n":6,"orig":"6","chap":0,"from":"Petersplatz","to":"Ballhausplatz","steps":["Milchgasse","Tuchlauben","Brandstätte","Bauernmarkt","Hoher Markt","Wipplingerstr","Renngasse","Freyung","Strauchgasse","Herrengasse","Bankgasse","Löwelstr","Ballhausplatz"],"dest":"Ballhausplatz","start":[48.20968,16.370064,"Taxistandplatz Petersplatz 7-8","taxi"],"goal":[48.208386,16.363781,"Ballhausplatz 2","ort","kanzleramt"]},
+  {"n":7,"orig":"7","chap":0,"from":"Schottengasse – Taxistandplatz","to":"Albertina / Haupteingang","steps":["Schottengasse","Freyung","Strauchgasse","Herrengasse (Sonderspur)","Michaelerplatz","Reitschulgasse","Josefsplatz","Augustinerstr","Albertinaplatz"],"dest":"Albertina / Haupteingang","start":[48.213482,16.362856,"Taxistandplatz Schottengasse ggü. 6-8","taxi"],"goal":[48.204734,16.368348,"Albertina – Albertinaplatz 1","ort","albertina"]},
+  {"n":8,"orig":"8","chap":0,"from":"Hoher Markt – Taxistandplatz","to":"Hotel Ritz-Carlton","steps":["Hoher Markt","Marc-Aurel-Str (umkehren)","Hoher Markt","Tuchlauben","Brandstätte","Rotenturmstr","Wollzeile","Dr.-Karl-Lueger-Platz","Parkring","Schubertring"],"dest":"Hotel Ritz-Carlton","start":[48.211204,16.37252,"Taxistandplatz Hoher Markt 8-9","taxi"],"goal":[48.202464,16.376214,"Hotel Ritz-Carlton – Schubertring 5-7","hotel"]},
+  {"n":9,"orig":"9","chap":0,"from":"Singerstraße – Taxistandplatz","to":"Laurenzerberg","steps":["Liliengasse","Weihburggasse","Franziskanerplatz","Weihburggasse","Coburgbastei","Liebenberggasse","Cobdengasse","Zedlitzgasse","Schulerstr (Sonderspur)","Stephansplatz","Rotenturmstr","Fleischmarkt","Laurenzerberg"],"dest":"Laurenzerberg","start":[48.207603,16.372856,"Taxistandplatz Singerstraße 8","taxi"],"goal":[48.210656,16.378092,"Taxistandplatz Laurenzerberg 1-3","taxi"]},
+  {"n":10,"orig":"10 (neu)","chap":0,"from":"Stephansplatz","to":"Burgtheater (Haupteingang) – Universitätsring Nebenfahrbahn","steps":["Rotenturmstr","Lichtensteg","Hoher Markt","Wipplingerstr","Renngasse","Freyung","Strauchgasse","Herrengasse","Bankgasse","Josef-Meinrad-Platz"],"dest":"Burgtheater (Haupteingang) – Universitätsring Nebenfahrbahn","start":[48.208984,16.372992,"Taxistandplatz Stephansplatz ggü. 7","taxi"],"goal":[48.210351,16.360997,"Burgtheater – Universitätsring 2","ort","burgtheater"]},
+  {"n":11,"orig":"11 (neu)","chap":0,"from":"Stephansplatz","to":"Staatsoper – Opernring (Nebenfahrbahn)","steps":["Rotenturmstr","Wollzeile","Dr.-Karl-Lueger-Platz","Parkring","Schubertring","Kärntner Ring","Kärntner Str"],"dest":"Staatsoper – Opernring (Nebenfahrbahn)","start":[48.208984,16.372992,"Taxistandplatz Stephansplatz ggü. 7","taxi"],"goal":[48.202762,16.368855,"Staatsoper – Opernring 2","ort","oper"]},
+  {"n":12,"orig":"12","chap":0,"from":"Stubenring – Taxistandplatz","to":"Hotel am Stephansplatz","steps":["Parkring","Zedlitzgasse","Schulerstr (Sonderspur)","Stephansplatz","Rotenturmstr","Lichtensteg","Hoher Markt","Tuchlauben","Brandstätte","Bauernmarkt","Jasomirgottstr"],"dest":"Hotel am Stephansplatz","start":[48.207702,16.380669,"Taxistandplatz Stubenring 20-24","taxi"],"goal":[48.208911,16.371979,"Hotel am Stephansplatz – Stephansplatz 9","hotel"]},
+  {"n":13,"orig":"13","chap":0,"from":"Stubenring – Taxistandplatz","to":"Lugeck","steps":["Dr.-Karl-Lueger-Platz","Dominikaner Bastei","Barbaragasse","Postgasse","Bäckerstr","Dr. Ignaz-Seipel-Platz","Sonnenfelsgasse","Lugeck"],"dest":"Lugeck","start":[48.207702,16.380669,"Taxistandplatz Stubenring 20-24","taxi"],"goal":[48.210035,16.37481,"Lugeck 1-2","ort","lugeck"]},
+  {"n":14,"orig":"14","chap":0,"from":"Schottenring / Wipplingerstraße – Taxistandplatz","to":"Hotel Park Hyatt","steps":["Schottenring","Börsegasse","Börseplatz","Börsegasse","Renngasse","Freyung","Heidenschuß","Am Hof"],"dest":"Hotel Park Hyatt","start":[48.214948,16.365686,"Taxistandplatz Wipplingerstraße 35-37","taxi"],"goal":[48.210647,16.368003,"Hotel Park Hyatt – Am Hof 2","hotel"]},
+  {"n":15,"orig":"15 (neu)","chap":0,"from":"Hotel Anantara Palais Hansen Vienna","to":"Hotel Topazz – Lichtensteg (Fahrt um 23.00 Uhr)","steps":["Schottenring (Nebenfahrbahn)","Gonzagagasse","Schottenring","Franz-Josefs-Kai","Salztorgasse","Vorlaufstr","Marc-Aurel-Str","Hoher Markt"],"dest":"Hotel Topazz – Lichtensteg (Fahrt um 23.00 Uhr)","start":[48.216283,16.367979,"Hotel Kempinski – Taxistandplatz Schottenring ggü. 20-24","taxi"],"goal":[48.210294,16.373555,"Hotel Topazz – Lichtensteg 3","hotel"]},
+  {"n":16,"orig":"16","chap":0,"from":"Am Hof","to":"Hotel Rathauspark","steps":["Heidenschuß","Strauchgasse","Herrengasse","Freyung","Teinfaltstr","Löwelstr","Universitätsring","Rathausplatz","Grillparzerstr","Ebendorferstr","Liebiggasse","Rathausstr"],"dest":"Hotel Rathauspark","start":[48.210708,16.367609,"Taxistandplatz Am Hof ggü. 3-4","taxi"],"goal":[48.213251,16.35689,"Hotel Rathauspark – Rathausstraße 17","hotel"]},
+  {"n":17,"orig":"17","chap":0,"from":"Georg-Coch-Platz – Postsparkasse","to":"Hotel Royal","steps":["Biberstr","Rosenbursenstr","Stubenring","Parkring","Liebenberggasse","Seilerstätte","Singerstr"],"dest":"Hotel Royal","start":[48.209973,16.381195,"Postsparkasse – Georg-Coch-Platz 2","ort","postsparkasse"],"goal":[48.207893,16.372354,"Hotel Royal – Singerstraße 3","hotel"]},
+  {"n":18,"orig":"18","chap":0,"from":"Ballhausplatz","to":"K+K Palais Hotel","steps":["Schaufler Gasse","Michaelerplatz","Herrengasse","Freyung","Tiefer Graben","Börsegasse","Werdertorgasse","Gonzagagasse","Rudolfsplatz"],"dest":"K+K Palais Hotel","start":[48.208386,16.363781,"Ballhausplatz 2","ort","kanzleramt"],"goal":[48.213812,16.371429,"K+K Palais Hotel – Rudolfsplatz 11","hotel"]},
+  {"n":19,"orig":"19 (neu)","chap":0,"from":"Ringturm – Taxistandplatz","to":"Mandarin Oriental Vienna – Riemergasse (Fahrt 5.00–21.00 Uhr)","steps":["Zelinkagasse","Gonzagagasse","Rudolfsplatz","Heinrichsgasse","Salzgries","Morzinplatz","Franz-Josefs-Kai","Schwedenplatz","Franz-Josefs-Kai","Julius-Raab-Platz","Stubenring","Parkring","Zedlitzgasse"],"dest":"Mandarin Oriental Vienna – Riemergasse (Fahrt 5.00–21.00 Uhr)","start":[48.216659,16.370475,"Ringturm – Taxistandplatz Zelinkagasse 14","taxi"],"goal":[48.207068,16.377204,"Mandarin Oriental Vienna – Riemergasse (Fahrt 5.00–21.00 Uhr)","hotel"]},
+  {"n":20,"orig":"20","chap":0,"from":"Petersplatz","to":"Hotel Park Hyatt","steps":["Petersplatz","Milchgasse","Tuchlauben","Brandstätte","Bauernmarkt","Hoher Markt","Wipplingerstr","Renngasse","Freyung","Heidenschuß","Am Hof"],"dest":"Hotel Park Hyatt","start":[48.20968,16.370064,"Taxistandplatz Petersplatz 7-8","taxi"],"goal":[48.210647,16.368003,"Hotel Park Hyatt – Am Hof 2","hotel"]},
+  {"n":21,"orig":"121","chap":0,"from":"Stephansplatz","to":"Naschmarkt","steps":["Rotenturmstr","Wollzeile","Dr.-Karl-Lueger-Platz","Parkring","Schubertring","Kärntner Ring","Opernring","Operngasse","Friedrichstr","Linke Wienzeile"],"dest":"Naschmarkt","start":[48.208464,16.372044,"Stephansplatz","ort"],"goal":[48.19818,16.362622,"Naschmarkt","ort"]},
+  {"n":22,"orig":"206","chap":1,"from":"Karmeliterplatz – Taxistandplatz","to":"Sensengasse / Zahnklinik","steps":["Schmelzgasse","Karmeliterplatz","Kleine Sperlgasse","Hollandstr","Obere Donaustr","Roßauer Brücke","Türkenstr","Schlickplatz","Hörlgasse","Währinger Str"],"dest":"Sensengasse / Zahnklinik","start":[48.215785,16.38239,"Karmeliterplatz – Taxistandplatz Große Mohrengasse 20","taxi"],"goal":[48.218956,16.356521,"Sensengasse / Zahnklinik","klinik"]},
+  {"n":23,"orig":"111","chap":1,"from":"Heldenplatz / Hofburg","to":"Neuwaldegger Straße / Höhenstraße","steps":["Burgring","Dr.-Karl-Renner-Ring","Universitätsring","Rathausplatz","Grillparzerstr","Landesgerichtsstr","Alser Str","Kinderspitalgasse","Hebragasse","Zimmermannplatz","Lazarettgasse","Jörgerstr","Elterleinplatz","Hernalser Hauptstr","Dornbacher Str","Vollbadgasse","Alszeile","Dornbacher Str"],"dest":"Neuwaldegger Straße / Höhenstraße","start":[48.206693,16.363004,"Heldenplatz / Hofburg","ort"],"goal":[48.235437,16.290542,"Neuwaldegger Straße / Höhenstraße","ort"]},
+  {"n":24,"orig":"1602","chap":1,"from":"Ottakringer Straße – Taxistandplatz","to":"Neuwaldegger Straße","steps":["Weinheimergasse","Arnethgasse","Sandleitengasse","Güpferlingstr","Dornbacher Str","Vollbadgasse","Alszeile","Dornbacher Str"],"dest":"Neuwaldegger Straße","start":[48.212683,16.325079,"Ottakringer Straße – Taxistandplatz Ottakringer Straße 1","taxi"],"goal":[48.235437,16.290542,"Neuwaldegger Straße","ort"]},
+  {"n":25,"orig":"1702","chap":1,"from":"Neuwaldegger Straße","to":"Hotel Regina – Taxistandplatz","steps":["Dornbacher Str","Hernalser Hauptstr","Elterleinplatz","Hernalser Hauptstr","Hernalser Gürtel","Lazarettgasse","Zimmermannplatz","Lazarettgasse","Sensengasse","Währinger Str","Rooseveltplatz"],"dest":"Hotel Regina – Taxistandplatz","start":[48.235437,16.290542,"Neuwaldegger Straße","ort"],"goal":[48.223655,16.351215,"Hotel Regina – Taxistandplatz Währinger Straße 68 70","taxi"]},
+  {"n":26,"orig":"1704 (neu)","chap":1,"from":"Neuwaldegger Straße","to":"St. Anna Kinderspital (Haupteingang)","steps":["Neuwaldegger Str","Dornbacher Str","Hernalser Hauptstr","Elterleinplatz","Hernalser Hauptstr","Kinderspitalgasse","Hebragasse","Zimmermannplatz","Mariannengasse","Mauthnergasse","Kinderspitalgasse"],"dest":"St. Anna Kinderspital (Haupteingang)","start":[48.23944,16.272245,"Neuwaldegger Straße","ort"],"goal":[48.216216,16.344376,"St. Anna Kinderspital (Haupteingang)","klinik"]},
+  {"n":27,"orig":"1705","chap":1,"from":"Dornbach / Vollbadgasse","to":"Hofburg / Kongresszentrum","steps":["Dornbacher Str","Hernalser Hauptstr","Elterleinplatz","Hernalser Hauptstr","Kinderspitalgasse","Hebragasse","Alser Str","Universitätsstr","Schottengasse","Freyung","Strauchgasse","Herrengasse","Michaelerplatz","In der Burg","Heldenplatz"],"dest":"Hofburg / Kongresszentrum","start":[48.228175,16.301896,"Dornbach / Vollbadgasse","ort"],"goal":[48.206535,16.365142,"Hofburg / Kongresszentrum","ort"]},
+  {"n":28,"orig":"103","chap":1,"from":"Bellariastraße – Taxistandplatz","to":"Gentzgasse / Gersthof","steps":["Hansenstr","Schmerlingplatz","Auerspergstr","Landesgerichtsstr","Friedrich-Schmidt-Platz","Landesgerichtsstr","Garnisongasse","Schwarzspanierstr","Währinger Str","Währinger Gürtel"],"dest":"Gentzgasse / Gersthof","start":[48.20624,16.359773,"Bellariastraße – Taxistandplatz Bellariastraße ggü. 2-4","taxi"],"goal":[48.231929,16.32876,"Gentzgasse / Gersthof","ort"]},
+  {"n":29,"orig":"105 (neu)","chap":1,"from":"Hotel Hilton Vienna Plaza","to":"Neustift am Walde – Taxistandplatz","steps":["Schottenring (Nebenfahrbahn)","Hohenstaufengasse","Liechtensteinstr","Alserbachstr","Sechsschimmelgasse","Gentzgasse","Gersthofer Str","Pötzleinsdorfer Str","Khevenhüllerstr","Neustift am Walde"],"dest":"Neustift am Walde – Taxistandplatz","start":[48.215515,16.364686,"Hotel Hilton Vienna Plaza","hotel"],"goal":[48.251048,16.301012,"Neustift am Walde – Taxistandplatz Neustift am Walde 79","taxi"]},
+  {"n":30,"orig":"1504","chap":1,"from":"Westbahnhof – Haupteingang","to":"Neustift am Walde","steps":["Europaplatz","Mariahilfer Str","Neubaugürtel","Lerchenfelder Gürtel","Hernalser Gürtel","Jörgerstr","Martinstr","Währinger Str","Aumannplatz","Gentzgasse","Gersthofer Str","Pötzleinsdorfer Str","Khevenhüllerstr"],"dest":"Neustift am Walde","start":[48.195901,16.338353,"Westbahnhof – Haupteingang","bahn"],"goal":[48.249068,16.306195,"Neustift am Walde","ort"]},
+  {"n":31,"orig":"1801","chap":1,"from":"Herbeckstraße – Gersthof / Taxistandplatz","to":"City Air Terminal – CAT","steps":["Gersthofer Str","Währinger Str","Semperstr","Schulgasse","Währinger Str","Schottengasse","Schottenring","Franz-Josefs-Kai","Schwedenplatz","Franz-Josefs-Kai","Julius-Raab-Platz","Stubenring","Oskar-Kokoschka-Platz","Kleine Marxerbrücke","Marxergasse"],"dest":"City Air Terminal – CAT","start":[48.231209,16.327428,"Herbeckstraße – Taxistandplatz Herbeckstraße 1-7","taxi"],"goal":[48.208384,16.384461,"City Air Terminal – CAT","flug"]},
+  {"n":32,"orig":"109","chap":1,"from":"Burgring – Taxistandplatz","to":"Armbrustergasse – Taxistandplatz","steps":["Babenbergerstr","Museumsplatz","Museumstr","Auerspergstr","Landesgerichtsstr","Friedrich-Schmidt-Platz","Landesgerichtsstr","Garnisongasse","Schwarzspanierstr","Währinger Str","Nußdorfer Str","Döblinger Hauptstr","Hohe Warte","Grinzinger Str"],"dest":"Armbrustergasse – Taxistandplatz","start":[48.204161,16.362998,"Burgring – Taxistandplatz Burgring 5","taxi"],"goal":[48.253898,16.354912,"Armbrustergasse – Taxistandplatz Grinzinger Straße 81","taxi"]},
+  {"n":33,"orig":"112","chap":1,"from":"Heldenplatz / Hofburg","to":"Grinzinger Allee / Grinzing","steps":["Burgring","Dr.-Karl-Renner-Ring","Universitätsring","Schottengasse","Währinger Str","Nußdorfer Str","Döblinger Hauptstr","Billrothstr"],"dest":"Grinzinger Allee / Grinzing","start":[48.206693,16.363004,"Heldenplatz / Hofburg","ort"],"goal":[48.247962,16.341813,"Grinzinger Allee / Grinzing","ort"]},
+  {"n":34,"orig":"116","chap":1,"from":"Schottengasse – Taxistandplatz","to":"Nußdorfer Platz – Taxistandplatz","steps":["Schottenring","Hohenstaufengasse","Liechtensteinstr","Liechtenwerder Platz","Heiligenstädter Str"],"dest":"Nußdorfer Platz – Taxistandplatz","start":[48.213542,16.362737,"Schottengasse – Taxistandplatz Schottengasse 11","taxi"],"goal":[48.260097,16.366993,"Nußdorfer Platz – Taxistandplatz Nußdorfer Platz ggü. 2","taxi"]},
+  {"n":35,"orig":"203 (neu)","chap":1,"from":"Praterstern – Taxistandplatz im Rondeau","to":"Nußdorfer Platz – Taxistandplatz","steps":["Praterstern","Nordbahnstr","Dresdner Str","Höchstädtplatz","Dresdner Str","Lorenz-Müller-Gasse","Heiligenstädter Brücke","Gunoldstr","Muthgasse","Leopold-Ungar-Platz","Muthgasse","Grinzinger Str","Heiligenstädter Str"],"dest":"Nußdorfer Platz – Taxistandplatz","start":[48.218242,16.393346,"Praterstern – Taxistandplatz Praterstern Kiss & Ride Bereich","taxi"],"goal":[48.260097,16.366993,"Nußdorfer Platz – Taxistandplatz Nußdorfer Platz ggü. 2","taxi"]},
+  {"n":36,"orig":"701 (neu)","chap":1,"from":"Kirchengasse – Taxistandplatz","to":"Privatklinik Döbling","steps":["Kirchengasse","Kellermanngasse","Piaristengasse","Florianigasse","Kochgasse","Laudongasse","Lange Gasse","Spitalgasse","Nußdorfer Str","Heiligenstädter Str","Liechtenwerder Platz","Heiligenstädter Str"],"dest":"Privatklinik Döbling","start":[48.199876,16.352674,"Kirchengasse – Taxistandplatz Kirchengasse 1","taxi"],"goal":[48.23971,16.359233,"Privatklinik Döbling","klinik"]},
+  {"n":37,"orig":"1405","chap":1,"from":"Linzer Straße Hütteldorf / Endstelle Straßenbahnlinie 49","to":"Neustift am Walde","steps":["Hüttelbergstr","Amundsenstr","Neuwaldegger Str","Höhenstr","Keylwerthgasse","Hameaustr"],"dest":"Neustift am Walde","start":[48.202381,16.255718,"Linzer Straße Hütteldorf / Endstelle Straßenbahnlinie 49","bahn"],"goal":[48.250994,16.301896,"Neustift am Walde","ort"]},
+  {"n":38,"orig":"1701 (neu)","chap":1,"from":"Hernalser Hauptstraße / Wattgasse – Taxistandplatz","to":"Obkirchergasse – Taxistandplatz","steps":["Hernalser Hauptstr","Wattgasse","Lidlgasse","Gersthofer Str","Türkenschanzplatz","Max-Emanuel-Str","Peter-Jordan-Str","Linnéplatz","Hans-Richter-Gasse","Hartäckerstr","Cottagegasse","Krottenbachstr","Obkirchergasse","Sonnbergplatz","Obkirchergasse"],"dest":"Obkirchergasse – Taxistandplatz","start":[48.226453,16.307856,"Hernalser Hauptstraße – Taxistandplatz Hernalser Hauptstraße 230","taxi"],"goal":[48.245585,16.342488,"Obkirchergasse – Taxistandplatz Obkirchergasse 38-44","taxi"]},
+  {"n":39,"orig":"1704","chap":1,"from":"Neuwaldegger Straße / Höhenstraße","to":"Grinzing – Taxistandplatz","steps":["Höhenstr","Keylwerthgasse","Hameaustr","Neustift am Walde","Rathstr","Agnesgasse","Sieveringer Str","Daringergasse","Grinzinger Allee"],"dest":"Grinzing – Taxistandplatz","start":[48.240619,16.2796,"Neuwaldegger Straße / Höhenstraße","ort"],"goal":[48.255747,16.342644,"Grinzing – Taxistandplatz Himmelstraße 2","taxi"]},
+  {"n":40,"orig":"1803 (neu)","chap":1,"from":"Universität für Bodenkultur","to":"Friedrich-Engels-Platz – Taxistandplatz","steps":["Gregor-Mendel-Str","Linnéplatz","Peter-Jordan-Str","Hardtgasse","Döblinger Hauptstr","Radelmayergasse","Heiligenstädter Str","Gunoldstr","Heiligenstädter Brücke","Lorenz-Müller-Gasse","Adalbert-Stifter-Str"],"dest":"Friedrich-Engels-Platz – Taxistandplatz","start":[48.236564,16.33755,"Universität für Bodenkultur","ort"],"goal":[48.244066,16.37889,"Friedrich-Engels-Platz – Taxistandplatz Friedrich-Engels-Platz 23","taxi"]},
+  {"n":41,"orig":"1901","chap":1,"from":"Nußdorfer Platz – Taxistandplatz","to":"Schwedenplatz","steps":["Heiligenstädter Str","Grinzinger Str","Muthgasse","Holzgasse","Nußdorfer Lände","Heiligenstädter Lände","Spittelauer Lände","Roßauer Lände","Franz-Josefs-Kai"],"dest":"Schwedenplatz","start":[48.260097,16.366993,"Nußdorfer Platz – Taxistandplatz Nußdorfer Platz ggü. 2","taxi"],"goal":[48.211792,16.377606,"Schwedenplatz","ort"]},
+  {"n":42,"orig":"1902","chap":1,"from":"Obkirchergasse – Taxistandplatz","to":"Schuhmeierplatz","steps":["Sieveringer Str","Friedlgasse","Krottenbachstr","Cottagegasse","Hartäckerstr","Hans-Richter-Gasse","Linnéplatz","Peter-Jordan-Str","Max-Emanuel-Str","Türkenschanzplatz","Gersthofer Str","Lidlgasse","Wattgasse","Familienplatz","Wattgasse"],"dest":"Schuhmeierplatz","start":[48.245585,16.342488,"Obkirchergasse – Taxistandplatz Obkirchergasse 38-44","taxi"],"goal":[48.210838,16.318795,"Schuhmeierplatz","ort"]},
+  {"n":43,"orig":"1903","chap":1,"from":"Silbergasse – Taxistandplatz","to":"Börse","steps":["Billrothstr","Döblinger Hauptstr","Nußdorfer Str","Viriotgasse","Liechtensteinstr","Kolingasse","Schlickplatz","Börsegasse"],"dest":"Börse","start":[48.243447,16.34897,"Silbergasse – Taxistandplatz Silbergasse 1","taxi"],"goal":[48.215648,16.365989,"Börse","ort"]},
+  {"n":44,"orig":"1903 (neu)","chap":1,"from":"Krankenanstalt Rudolfinerhaus","to":"Franz-Josefs-Bahnhof","steps":["Billrothstr","Döblinger Hauptstr","Heiligenstädter Str","Liechtenwerder Platz","Josef-Holaubek-Platz","Nordbergbrücke","Spittelauer Lände","Alserbachstr","Nordbergstr"],"dest":"Franz-Josefs-Bahnhof","start":[48.24332,16.34739,"Krankenanstalt Rudolfinerhaus","klinik"],"goal":[48.225549,16.361145,"Franz-Josefs-Bahnhof","bahn"]},
+  {"n":45,"orig":"1905","chap":1,"from":"Hardtgasse – Taxistandplatz","to":"AUVA-Traumazentrum Wien Lorenz Böhler","steps":["Hardtgasse","Döblinger Hauptstr","Radelmayergasse","Heiligenstädter Str","Gunoldstr","Heiligenstädter Brücke","Lorenz-Müller-Gasse","Dresdner Str","Donaueschingenstr"],"dest":"AUVA-Traumazentrum Wien Lorenz Böhler","start":[48.237004,16.350001,"Hardtgasse – Taxistandplatz Hardtgasse 1 7","taxi"],"goal":[48.236916,16.383794,"AUVA-Traumazentrum Wien Lorenz Böhler","klinik"]},
+  {"n":46,"orig":"1906","chap":1,"from":"Am Kahlenberg","to":"Hotel Hilton Danube","steps":["Höhenstr","Cobenzlgasse","Feilergasse","Himmelstr","Grinzinger Allee","Grinzinger Str","Muthgasse","Gunoldstr","Heiligenstädter Brücke","Lorenz-Müller-Gasse","Adalbert-Stifter-Str","Friedrich-Engels-Platz","Handelskai"],"dest":"Hotel Hilton Danube","start":[48.274714,16.336779,"Am Kahlenberg","ort"],"goal":[48.213972,16.421477,"Hotel Hilton Danube","hotel"]},
+  {"n":47,"orig":"302 (neu)","chap":2,"from":"Neulinggasse – Taxistandplatz","to":"Museumsquartier","steps":["Neulinggasse (Sonderspur)","Zaunergasse","Lisztstr (Sonderspur)","Lothringerstr","Karlsplatz","Friedrichstr","Getreidemarkt","Museumsplatz"],"dest":"Museumsquartier","start":[48.199118,16.388049,"Neulinggasse – Taxistandplatz Neulinggasse 22-26","taxi"],"goal":[48.203193,16.359342,"Museumsquartier","ort"]},
+  {"n":48,"orig":"307","chap":2,"from":"Belvedere – Taxistandplatz","to":"Stadthalle","steps":["Prinz-Eugen-Str","Theresianumgasse","Mommsengasse","Wiedner Gürtel","Margaretengürtel","Linke Wienzeile","Gumpendorfer Gürtel","Mariahilfer Gürtel","Neubaugürtel","Urban-Loritz-Platz","Hütteldorfer Str"],"dest":"Stadthalle","start":[48.19095,16.379795,"Belvedere – Taxistandplatz Prinz-Eugen-Straße 60","taxi"],"goal":[48.201937,16.332504,"Stadthalle","ort"]},
+  {"n":49,"orig":"702 (neu)","chap":2,"from":"Volkstheater","to":"Klinik Penzing","steps":["Neustiftgasse","Koppstr","Pfenninggeldgasse","Gablenzgasse","Spetterbrücke","Gutraterplatz","Wernhardtstr","Joachimsthalerplatz","Flötzersteig","Spiegelgrundstr","Baumgartner Höhe"],"dest":"Klinik Penzing","start":[48.2052,16.356991,"Volkstheater","ort"],"goal":[48.205328,16.273259,"Klinik Penzing","klinik"]},
+  {"n":50,"orig":"902 (neu)","chap":2,"from":"AKH – Haupteingang","to":"Bahnhof Hütteldorf","steps":["Währinger Gürtel (innerer)","Fuchsthallergasse","Währinger Gürtel (äußerer)","Hernalser Gürtel","Ottakringer Str","Johann-Nepomuk-Berger-Platz","Ottakringer Str","Weinheimergasse","Huttengasse","Gutraterplatz","Wernhardtstr","Joachimsthalerplatz","Flötzersteig","Linzer Str","Bahnhofstr","Keißlergasse"],"dest":"Bahnhof Hütteldorf","start":[48.220044,16.347912,"AKH – Haupteingang","klinik"],"goal":[48.197873,16.261428,"Bahnhof Hütteldorf","bahn"]},
+  {"n":51,"orig":"1205 (neu)","chap":2,"from":"Eichenstraße / Bahnhof Wien Meidling – Taxistandplatz","to":"Linzer Straße / Endstelle Straßenbahnlinie 49","steps":["Eichenstr","Edelsinnstr","Koppreitergasse","Ruckergasse","Tivoligasse","Aichholzgasse","Schönbrunner Str","Grünbergstr","Schönbrunner Brücke","Linke Wienzeile","Hadikgasse","Zehetnergasse","Linzer Str"],"dest":"Linzer Straße / Endstelle Straßenbahnlinie 49","start":[48.175283,16.335883,"Eichenstraße – Taxistandplatz Eichenstraße 25","taxi"],"goal":[48.202381,16.255718,"Linzer Straße / Endstelle Straßenbahnlinie 49","bahn"]},
+  {"n":52,"orig":"1303","chap":2,"from":"Lainzer Platz – Taxistandplatz","to":"Hanusch-Krankenhaus","steps":["Lainzer Str","Münichreiterstr","Stadlergasse","St.-Veit-Gasse","Baumgartenbrücke","Zehetnergasse","Seckendorfstr","Heinrich-Collin-Str"],"dest":"Hanusch-Krankenhaus","start":[48.175666,16.284151,"Lainzer Platz – Taxistandplatz Lainzer Straße 151-153","taxi"],"goal":[48.199555,16.291749,"Hanusch-Krankenhaus","klinik"]},
+  {"n":53,"orig":"1401","chap":2,"from":"Klinik Penzing","to":"Allgemeines Krankenhaus / Haupteingang","steps":["Baumgartner Höhe","Spiegelgrundstr","Flötzersteig","Joachimsthalerplatz","Wernhardtstr","Gutraterplatz","Spetterbrücke","Gablenzgasse","Lerchenfelder Gürtel","Hernalser Gürtel","Währinger Gürtel"],"dest":"Allgemeines Krankenhaus / Haupteingang","start":[48.205328,16.273259,"Klinik Penzing","klinik"],"goal":[48.221982,16.346476,"Allgemeines Krankenhaus / Haupteingang","klinik"]},
+  {"n":54,"orig":"1402","chap":2,"from":"Hanusch-Krankenhaus","to":"Friedrich-Schmidt-Platz / Rathaus","steps":["Heinrich-Collin-Str","Ameisbachzeile","Flötzersteig","Joachimsthalerplatz","Wernhardtstr","Gutraterplatz","Spetterbrücke","Gablenzgasse","Burggasse","Museumstr","Auerspergstr","Landesgerichtsstr"],"dest":"Friedrich-Schmidt-Platz / Rathaus","start":[48.199555,16.291749,"Hanusch-Krankenhaus","klinik"],"goal":[48.210839,16.357298,"Friedrich-Schmidt-Platz / Rathaus","ort"]},
+  {"n":55,"orig":"1403","chap":2,"from":"Hanusch-Krankenhaus","to":"Europaplatz / Westbahnhof","steps":["Heinrich-Collin-Str","Ameisbachzeile","Lützowgasse","Linzer Str","Felberstr"],"dest":"Europaplatz / Westbahnhof","start":[48.199555,16.291749,"Hanusch-Krankenhaus","klinik"],"goal":[48.197139,16.338214,"Europaplatz / Westbahnhof","bahn"]},
+  {"n":56,"orig":"1404","chap":2,"from":"Hütteldorf / Endstelle Straßenbahnlinie 49","to":"Busbahnhof Südtiroler Platz","steps":["Linzer Str","Bergmillergasse","Brauhausbrücke","Wientalstr","Hackinger Kai","Hietzinger Kai","Schönbrunner Schloßstr","Schönbrunner Str","Gaudenzdorfer Gürtel","Margaretengürtel","Wiedner Gürtel"],"dest":"Busbahnhof Südtiroler Platz","start":[48.202381,16.255718,"Hütteldorf / Endstelle Straßenbahnlinie 49","bahn"],"goal":[48.185065,16.372165,"Busbahnhof Südtiroler Platz","bahn"]},
+  {"n":57,"orig":"1503","chap":2,"from":"Westbahnhof – Haupteingang","to":"Heinrich-Collin-Straße / Hanusch-Krankenhaus","steps":["Europaplatz","Mariahilfer Str","Linzer Str","Lützowgasse","Ameisbachzeile"],"dest":"Heinrich-Collin-Straße / Hanusch-Krankenhaus","start":[48.195901,16.338353,"Westbahnhof – Haupteingang","bahn"],"goal":[48.198907,16.293631,"Heinrich-Collin-Straße / Hanusch-Krankenhaus","klinik"]},
+  {"n":58,"orig":"1701","chap":2,"from":"Kalvarienberggasse – Taxistandplatz","to":"Baumgartner Friedhof","steps":["Kalvarienberggasse","Ottakringer Str","Johann-Nepomuk-Berger-Platz","Ottakringer Str","Roseggergasse","Thaliastr","Maroltingergasse","Joachimsthalerplatz","Flötzersteig","Waidhausenstr"],"dest":"Baumgartner Friedhof","start":[48.218692,16.332515,"Kalvarienberggasse – Taxistandplatz Kalvarienberggasse 29-33","taxi"],"goal":[48.201963,16.282598,"Baumgartner Friedhof","ort"]},
+  {"n":59,"orig":"2303 (neu)","chap":2,"from":"Maurer Hauptplatz – Taxistandplatz","to":"Allianz Stadion","steps":["Maurer Hauptplatz","Speisinger Str","Feldkellergasse","Hofwiesengasse","Preyergasse","Lainzer Str","Münichreiterstr","Stadlergasse","St.-Veit-Gasse","Baumgartenbrücke","Hadikgasse","Deutschordenstr","Keißlergasse"],"dest":"Allianz Stadion","start":[48.150969,16.267537,"Maurer Hauptplatz – Taxistandplatz Maurer Hauptplatz 9","taxi"],"goal":[48.19801,16.265156,"Allianz Stadion","ort"]},
+  {"n":60,"orig":"401","chap":2,"from":"Schönburgstraße – Taxistandplatz","to":"Westbahnhof","steps":["Klagbaumgasse","Anton-Burg-Gasse","Leibenfrostgasse","Phorusgasse","Straußengasse","Margaretenstr","Margaretenplatz","Pilgramgasse","Pilgrambrücke","Linke Wienzeile","Gumpendorfer Gürtel","Mariahilfer Gürtel","Neubaugürtel","Felberstr"],"dest":"Westbahnhof","start":[48.189778,16.366953,"Schönburgstraße – Taxistandplatz Schönburgstraße 1","taxi"],"goal":[48.195901,16.338353,"Westbahnhof","bahn"]},
+  {"n":61,"orig":"1007 (neu)","chap":2,"from":"ÖGK Gesundheitszentrum Favoriten","to":"Westbahnhof / Felberstraße","steps":["Wienerbergstr","Köglergasse (Sonderspur)","Kerschensteinergasse","Längenfeldgasse","Stiegerbrücke","Stiegergasse","Sechshauser Str","Mariahilfer Gürtel","Neubaugürtel","Felberstr"],"dest":"Westbahnhof / Felberstraße","start":[48.169423,16.345221,"ÖGK Gesundheitszentrum Favoriten","klinik"],"goal":[48.197172,16.336656,"Westbahnhof / Felberstraße","bahn"]},
+  {"n":62,"orig":"1501","chap":2,"from":"Lugner City","to":"Franz-Josefs-Bahnhof – Taxistandplatz","steps":["Gablenzgasse","Lerchenfelder Gürtel","Hernalser Gürtel","Währinger Gürtel","Fuchsthallergasse (Busspur)","Alserbachstr","Julius-Tandler-Platz","Nordbergstr"],"dest":"Franz-Josefs-Bahnhof – Taxistandplatz","start":[48.203593,16.334852,"Lugner City","ort"],"goal":[48.226848,16.361769,"Franz-Josefs-Bahnhof – Taxistandplatz Nordbergstraße 6","taxi"]},
+  {"n":63,"orig":"1502","chap":2,"from":"Westbahnhof – Haupteingang","to":"Hotel Marriott – Haupteingang","steps":["Europaplatz","Mariahilfer Gürtel","Gumpendorfer Str","Lehargasse","Getreidemarkt","Rechte Wienzeile","Karlsplatz","Lothringerstr","Johannesgasse","Hegelgasse","Weihburggasse","Coburgbastei","Liebenberggasse","Parkring Nebenfahrbahn"],"dest":"Hotel Marriott – Haupteingang","start":[48.195901,16.338353,"Westbahnhof – Haupteingang","bahn"],"goal":[48.20493,16.377547,"Hotel Marriott – Haupteingang","hotel"]},
+  {"n":64,"orig":"1601","chap":2,"from":"Ottakringer Straße – Taxistandplatz","to":"Westbahnhof / Felberstraße","steps":["Weinheimergasse","Huttengasse","Gutraterplatz","Spetterbrücke","Gablenzgasse","Camillo-Sitte-Gasse","Schweglerstr","Felberstr"],"dest":"Westbahnhof / Felberstraße","start":[48.21401,16.310562,"Ottakringer Straße – Taxistandplatz Weinheimergasse ggü. 5","taxi"],"goal":[48.197172,16.336656,"Westbahnhof / Felberstraße","bahn"]},
+  {"n":65,"orig":"115","chap":2,"from":"Schottengasse – Taxistandplatz","to":"Weinheimergasse – Taxistandplatz / Alt Ottakring","steps":["Währinger Str","Sensengasse","Lazarettgasse","Zimmermannplatz","Lazarettgasse","Hernalser Gürtel","Ottakringer Str","Johann-Nepomuk-Berger-Platz","Ottakringer Str"],"dest":"Weinheimergasse – Taxistandplatz / Alt Ottakring","start":[48.213542,16.362737,"Schottengasse – Taxistandplatz Schottengasse 11","taxi"],"goal":[48.21401,16.310562,"Weinheimergasse – Taxistandplatz Weinheimergasse ggü. 5","taxi"]},
+  {"n":66,"orig":"1702 (neu)","chap":2,"from":"Krankenhaus Göttlicher Heiland","to":"Alt Ottakring – Taxistandplatz","steps":["Dornbacher Str","Güpferlingstr","Sandleitengasse","Wilhelminenstr","Heigerleinstr","Arnethgasse","Weinheimergasse"],"dest":"Alt Ottakring – Taxistandplatz","start":[48.228214,16.30405,"Krankenhaus Göttlicher Heiland","klinik"],"goal":[48.21401,16.310562,"Alt Ottakring – Taxistandplatz Weinheimergasse ggü. 5","taxi"]},
+  {"n":67,"orig":"1002","chap":3,"from":"Therme Wien","to":"Schönbrunner Straße / U4 Meidling","steps":["Kurbadstr","Laaer-Berg-Str","Theodor-Sickel-Gasse","Endlichergasse","Ludwig-von-Höhnel-Gasse","Verteilerkreis Favoriten (Altes Landgut)","Grenzackerstr","Raxstr","Triester Str","Wienerbergstr","Wienerbergbrücke","Ruckergasse"],"dest":"Schönbrunner Straße / U4 Meidling","start":[48.143784,16.401188,"Therme Wien","ort"],"goal":[48.183781,16.332959,"Schönbrunner Straße / U4 Meidling","bahn"]},
+  {"n":68,"orig":"1006","chap":3,"from":"Hauptbahnhof – Taxistandplatz","to":"Am Europaplatz","steps":["Am Hauptbahnhof","Sonnwendgasse","Südtiroler Platz","Wiedner Gürtel","Margaretengürtel","Triester Str","Kundratstr","Untermeidlinger Str","Moosbruggergasse","Wienerbergstr"],"dest":"Am Europaplatz","start":[48.184441,16.376602,"Hauptbahnhof – Taxistandplatz Am Hauptbahnhof ggü. 3","taxi"],"goal":[48.170904,16.333116,"Am Europaplatz","ort"]},
+  {"n":69,"orig":"104 (neu)","chap":3,"from":"Justizpalast","to":"Parkhotel Schönbrunn","steps":["Schmerlingplatz","Volksgartenstr","Neustiftgasse","Lerchenfelder Gürtel","Neubaugürtel","Felberstr","Schloßallee","Hadikgasse","Kennedybrücke","Hietzinger Hauptstr"],"dest":"Parkhotel Schönbrunn","start":[48.206442,16.357216,"Justizpalast","ort"],"goal":[48.186659,16.302259,"Parkhotel Schönbrunn","hotel"]},
+  {"n":70,"orig":"105","chap":3,"from":"Schottenring / Börse – Taxistandplatz","to":"Park Hotel Schönbrunn","steps":["Schottenring","Wipplingerstr","Peregringasse","Kolingasse","Währinger Str","Straße des Achten Mai","Reichsratsstr","Rathausplatz","Felderstr","Friedrich-Schmidt-Platz","Landesgerichtsstr","Auerspergstr","Museumstr","Neustiftgasse (Bus-Spur)","Lerchenfelder Gürtel","Neubaugürtel","Felberstr","Schloßallee","Hadikgasse","Kennedybrücke","Hietzinger Hauptstr"],"dest":"Park Hotel Schönbrunn","start":[48.214918,16.365001,"Schottenring – Taxistandplatz Schottenring 14","taxi"],"goal":[48.186326,16.301905,"Park Hotel Schönbrunn","hotel"]},
+  {"n":71,"orig":"119","chap":3,"from":"Staatsoper – Seiteneingang","to":"Wolfrathplatz / Ober St. Veit","steps":["Operngasse","Friedrichstr","Linke Wienzeile","Hadikgasse","Kennedybrücke","Hietzinger Hauptstr"],"dest":"Wolfrathplatz / Ober St. Veit","start":[48.203286,16.369194,"Staatsoper – Seiteneingang","ort"],"goal":[48.188113,16.266457,"Wolfrathplatz / Ober St. Veit","ort"]},
+  {"n":72,"orig":"301 (neu)","chap":3,"from":"Neulinggasse – Taxistandplatz","to":"ORF (Haupteingang)","steps":["Neulinggasse","Ungargasse","Fasangasse","Landstraßer Gürtel","Wiedner Gürtel","Margaretengürtel","Eichenstr","Edelsinnstr","Am Fasangarten","Elisabethallee","Montecuccoliplatz","Elisabethallee","Wattmanngasse","Würzburggasse","Hugo-Portisch-Gasse"],"dest":"ORF (Haupteingang)","start":[48.199118,16.388049,"Neulinggasse – Taxistandplatz Neulinggasse 22-26","taxi"],"goal":[48.177563,16.290341,"ORF (Haupteingang)","ort"]},
+  {"n":73,"orig":"304 (neu)","chap":3,"from":"Justizzentrum Wien Mitte","to":"Wolfrathplatz / Ober St. Veit","steps":["Marxergasse","Kleine Marxerbrücke","Oskar-Kokoschka-Platz","Stubenring","Parkring","Schubertring","Kärntner Ring","Opernring","Operngasse","Friedrichstr","Linke Wienzeile","Hadikgasse","St. Veiter Brücke","Testarellogasse","Hietzinger Hauptstr"],"dest":"Wolfrathplatz / Ober St. Veit","start":[48.207902,16.38611,"Justizzentrum Wien Mitte","ort"],"goal":[48.188113,16.266457,"Wolfrathplatz / Ober St. Veit","ort"]},
+  {"n":74,"orig":"902","chap":3,"from":"Lazarettgasse / AKH","to":"Wolfrathplatz","steps":["Lazarettgasse","Zimmermannplatz","Lazarettgasse","Hernalser Gürtel","Lerchenfelder Gürtel","Neubaugürtel","Felberstr","Schloßallee","Hadikgasse","St. Veiter Brücke","Testarellogasse","Hietzinger Hauptstr"],"dest":"Wolfrathplatz","start":[48.217954,16.34746,"Lazarettgasse / AKH","klinik"],"goal":[48.188113,16.266457,"Wolfrathplatz","ort"]},
+  {"n":75,"orig":"1201","chap":3,"from":"Am Schöpfwerk – Taxistandplatz","to":"Klinik Hietzing","steps":["Hetzendorfer Str","Khleslplatz","Hetzendorfer Str","Feldkellergasse","Speisinger Str"],"dest":"Klinik Hietzing","start":[48.161383,16.325894,"Am Schöpfwerk – Taxistandplatz Am Schöpfwerk 64","taxi"],"goal":[48.168832,16.279598,"Klinik Hietzing","klinik"]},
+  {"n":76,"orig":"1203","chap":3,"from":"Eichenstraße / Bahnhof Wien Meidling","to":"Geriatriezentrum Am Wienerwald / Einfahrt Jagdschloßgasse","steps":["Edelsinnstr","Graf-Seilern-Gasse","Fasangartengasse","Lainzer Str","Jagdschloßgasse"],"dest":"Geriatriezentrum Am Wienerwald / Einfahrt Jagdschloßgasse","start":[48.17453,16.333965,"Eichenstraße / Bahnhof Wien Meidling","bahn"],"goal":[48.176368,16.2724,"Geriatriezentrum Am Wienerwald / Einfahrt Jagdschloßgasse","klinik"]},
+  {"n":77,"orig":"1301","chap":3,"from":"Hietzing / Am Platz","to":"Belvedere","steps":["Am Platz","Hietzinger Hauptstr","Schönbrunner Schloßstr","Schönbrunner Str","Pilgramgasse","Margaretenplatz","Margaretenstr","Ziegelofengasse","Leibenfrostgasse","Lambrechtgasse","Johann-Strauß-Gasse","Rainergasse","Belvederegasse","Prinz-Eugen-Str"],"dest":"Belvedere","start":[48.18564,16.30218,"Hietzing / Am Platz","ort"],"goal":[48.193917,16.380402,"Belvedere","ort"]},
+  {"n":78,"orig":"1302","chap":3,"from":"Hietzing / Am Platz","to":"Klinik Ottakring","steps":["Am Platz","Hietzinger Hauptstr","Schönbrunner Schloßstr","Kennedybrücke","Hadikgasse","Einwanggasse","Karlingergasse","Ameisbrücke","Ameisgasse","Leyserstr","Maroltingergasse","Joachimsthalerplatz","Montleartstr"],"dest":"Klinik Ottakring","start":[48.18564,16.30218,"Hietzing / Am Platz","ort"],"goal":[48.210805,16.301841,"Klinik Ottakring","klinik"]},
+  {"n":79,"orig":"1304","chap":3,"from":"Ober St. Veit / U4-Station – Taxistandplatz","to":"Troststraße – Taxistandplatz","steps":["Franz-Boos-Gasse","Hietzinger Kai","Schönbrunner Schloßstr","Schönbrunner Str","Längenfeldgasse","Kerschensteinergasse","Kundratstr","Davidgasse","Gußriegelstr"],"dest":"Troststraße – Taxistandplatz","start":[48.191959,16.274991,"Ober St. Veit – Taxistandplatz Franz-Boos-Gasse 5","taxi"],"goal":[48.173353,16.377168,"Troststraße – Taxistandplatz Reumannplatz 10","taxi"]},
+  {"n":80,"orig":"1306","chap":3,"from":"ORF-Zentrum Küniglberg","to":"Friedhof St. Marx","steps":["Würzburggasse","Fasangartengasse","Graf-Seilern-Gasse","Edelsinnstr","Eichenstr","Margaretengürtel","Wiedner Gürtel","Landstraßer Gürtel","Landstraßer Hauptstr","Leberstr"],"dest":"Friedhof St. Marx","start":[48.177563,16.290341,"ORF-Zentrum Küniglberg","ort"],"goal":[48.182898,16.402064,"Friedhof St. Marx","ort"]},
+  {"n":81,"orig":"1308","chap":3,"from":"Schloss Schönbrunn – Haupteingang / Taxistandplatz","to":"Gersthofer Straße / S-Bahn Gersthof","steps":["Schönbrunner Schloßbrücke","Schönbrunner Schloßstr","Schönbrunner Schloßbrücke","Schloßallee","Johnstr","Auf der Schmelz","Possingergasse","Schuhmeierplatz","Wattgasse","Familienplatz","Wattgasse","Lidlgasse"],"dest":"Gersthofer Straße / S-Bahn Gersthof","start":[48.187263,16.312944,"Schloss Schönbrunn – Taxistandplatz Schönbrunner Schloßbrücke","taxi"],"goal":[48.226743,16.324379,"Gersthofer Straße / S-Bahn Gersthof","bahn"]},
+  {"n":82,"orig":"2305","chap":3,"from":"Rodaun / Willergasse","to":"Am Platz / Tiergarten Schönbrunn","steps":["Willergasse","Breitenfurter Str","Rodauner Str","Maurer Lange Gasse","Valentingasse","Endresstr","Maurer Hauptplatz","Speisinger Str","Feldkellergasse","Hofwiesengasse","Preyergasse","Lainzer Str","Hietzinger Hauptstr"],"dest":"Am Platz / Tiergarten Schönbrunn","start":[48.133541,16.257093,"Rodaun / Willergasse","ort"],"goal":[48.1856,16.301638,"Am Platz / Tiergarten Schönbrunn","ort"]},
+  {"n":83,"orig":"207","chap":3,"from":"Hotel Danube Hilton Vienna","to":"Wohnpark Alt-Erlaa","steps":["Handelskai","A23 (Südosttangente)","Ausfahrt Altmannsdorf","Altmannsdorfer Str","Anton-Baumgartner-Str"],"dest":"Wohnpark Alt-Erlaa","start":[48.213972,16.421477,"Hotel Danube Hilton Vienna","hotel"],"goal":[48.151349,16.312143,"Wohnpark Alt-Erlaa","ort"]},
+  {"n":84,"orig":"603","chap":3,"from":"APA – Austria Presseagentur / IPZ","to":"Druckzentrum „Media Print\"","steps":["Laimgrubengasse","Gumpendorfer Str","Köstlergasse","Linke Wienzeile","Reinprechtsdorfer Brücke","Reinprechtsdorfer Str","Matzleinsdorfer Platz","Triester Str","Sterngasse","Richard-Strauss-Str"],"dest":"Druckzentrum „Media Print\"","start":[48.198553,16.360664,"APA – Austria Presseagentur / IPZ","ort"],"goal":[48.143283,16.33923,"Druckzentrum „Media Print\"","ort"]},
+  {"n":85,"orig":"1202","chap":3,"from":"Süd-West-Friedhof","to":"Pensionistenheim Wienerberg","steps":["Wundtgasse","Kirchfeldgasse","Breitenfurter Str","Sagedergasse","An den Eisteichen","Am Schöpfwerk","Gutheil-Schoder-Gasse","Computerstr","Otto-Probst-Str","Neilreichgasse"],"dest":"Pensionistenheim Wienerberg","start":[48.162801,16.303039,"Süd-West-Friedhof","ort"],"goal":[48.157756,16.359106,"Pensionistenheim Wienerberg","ort"]},
+  {"n":86,"orig":"1204","chap":3,"from":"Eichenstraße / Bahnhof Wien Meidling","to":"Hochstraße / Rodaun","steps":["Edelsinnstr","Philadelphiabrücke","Breitenfurter Str","Liesinger Platz","Perchtoldsdorfer Str","Ketzergasse"],"dest":"Hochstraße / Rodaun","start":[48.17453,16.333965,"Eichenstraße / Bahnhof Wien Meidling","bahn"],"goal":[48.13211,16.258615,"Hochstraße / Rodaun","ort"]},
+  {"n":87,"orig":"1505","chap":3,"from":"Felberstraße / Westbahnhof","to":"Bahnhof Liesing","steps":["Schmelzbrücke","Schmelzbrückenrampe","Avedikstr","Winckelmannstr","Schönbrunner Brücke","Grünbergstr","Altmannsdorfer Str","Breitenfurter Str","Liesinger Platz"],"dest":"Bahnhof Liesing","start":[48.197225,16.336848,"Felberstraße / Westbahnhof","bahn"],"goal":[48.13486,16.284256,"Bahnhof Liesing","bahn"]},
+  {"n":88,"orig":"2301","chap":3,"from":"Wohnpark Alt-Erlaa","to":"Klinik Favoriten","steps":["Anton-Baumgartner-Str","Gutheil-Schoder-Gasse","Eibesbrunnergasse","Untermeidlinger Str","Kundratstr"],"dest":"Klinik Favoriten","start":[48.151349,16.312143,"Wohnpark Alt-Erlaa","ort"],"goal":[48.173501,16.350548,"Klinik Favoriten","klinik"]},
+  {"n":89,"orig":"2302","chap":3,"from":"Richard-Strauss-Straße – Taxistandplatz","to":"Klinik Ottakring","steps":["Richard-Strauss-Str","A23","Abfahrt Altmannsdorf","Altmannsdorfer Str","Grünbergstr","Schönbrunner Brücke","Linke Wienzeile","Hadikgasse","Einwanggasse","Karlingergasse","Ameisbrücke","Ameisgasse","Leyserstr","Maroltingergasse","Joachimsthalerplatz","Montleartstr"],"dest":"Klinik Ottakring","start":[48.143868,16.340645,"Richard-Strauss-Straße – Taxistandplatz Richard-Strauss-Straße 23","taxi"],"goal":[48.210805,16.301841,"Klinik Ottakring","klinik"]},
+  {"n":90,"orig":"2305 (neu)","chap":3,"from":"Großmarkt Inzersdorf – Taxistandplatz","to":"Franz-Koci-Straße – Taxistandplatz","steps":["Laxenburger Str","Heizwerkstr (Sonderspur)","Großmarktstr","Oberlaaer Str","Himberger Str","Favoritenstr","Franz-Koci-Str","Ada-Christen-Gasse"],"dest":"Franz-Koci-Straße – Taxistandplatz","start":[48.175895,16.373782,"Großmarkt Inzersdorf – Taxistandplatz Laxenburger Straße 2","taxi"],"goal":[48.149322,16.383622,"Franz-Koci-Straße – Taxistandplatz Ada-Christen-Gasse 9","taxi"]},
+  {"n":91,"orig":"2306","chap":3,"from":"Friedhof Inzersdorf","to":"Friedhof Liesing","steps":["Kolbegasse","Vösendorfer Str","Draschestr","Pfarrgasse","Sterngasse","Triester Str","Erlaaer Str","Perfektastr","Brunner Str","Siebenhirtenstr"],"dest":"Friedhof Liesing","start":[48.147807,16.353771,"Friedhof Inzersdorf","ort"],"goal":[48.131262,16.29373,"Friedhof Liesing","ort"]},
+  {"n":92,"orig":"2307","chap":3,"from":"Richard-Strauss-Straße / „Kurier\"-Druckzentrum","to":"Flughafen Wien-Schwechat","steps":["Richard-Strauss-Str","Vorarlberger Allee","Kreisverkehr","S1 (Wiener Außenring Schnellstraße)","A4 Ostautobahn","Abfahrt"],"dest":"Flughafen Wien-Schwechat","start":[48.143283,16.33923,"Richard-Strauss-Straße / „Kurier\"-Druckzentrum","ort"],"goal":[48.119238,16.562818,"Flughafen Wien-Schwechat","flug"]},
+  {"n":93,"orig":"402","chap":4,"from":"Schönburgstraße – Taxistandplatz","to":"Stubenring / Regierungsgebäude","steps":["Wiedner Hauptstr","Mayerhofgasse","Favoritenstr","Gußhausstr","Schwarzenbergplatz","Am Heumarkt","Am Stadtpark","Vordere Zollamtsstr","Kleine Marxerbrücke","Oskar-Kokoschka-Platz"],"dest":"Stubenring / Regierungsgebäude","start":[48.189778,16.366953,"Schönburgstraße – Taxistandplatz Schönburgstraße 1","taxi"],"goal":[48.209794,16.382984,"Stubenring / Regierungsgebäude","ort"]},
+  {"n":94,"orig":"501","chap":4,"from":"Fundservice Wien","to":"Stubenring / Regierungsgebäude","steps":["Siebenbrunnenfeldgasse","Jahngasse","Zentagasse","Wiedner Hauptstr","Mayerhofgasse","Favoritenstr","Gußhausstr","Schwarzenbergplatz","Am Heumarkt","Am Stadtpark","Vordere Zollamtsstr","Kleine Marxerbrücke","Oskar-Kokoschka-Platz","Stubenring Nebenfahrbahn"],"dest":"Stubenring / Regierungsgebäude","start":[48.181061,16.354191,"Fundservice Wien","ort"],"goal":[48.209794,16.382984,"Stubenring / Regierungsgebäude","ort"]},
+  {"n":95,"orig":"116 (neu)","chap":4,"from":"Burgring – Taxistandplatz","to":"Raimundtheater","steps":["Burgring (Nebenfahrbahn)","Babenbergerstr","Nibelungengasse","Eschenbachgasse","Gumpendorfer Str (Sonderspur)","Wallgasse"],"dest":"Raimundtheater","start":[48.204161,16.362998,"Burgring – Taxistandplatz Burgring 5","taxi"],"goal":[48.192197,16.339917,"Raimundtheater","ort"]},
+  {"n":96,"orig":"101","chap":4,"from":"Bellariastraße – Taxistandplatz","to":"Hauptbahnhof","steps":["Bellariastr","Hansenstr","Volksgartenstr","Museumstr","Museumsplatz","Getreidemarkt","Rechte Wienzeile","Operngasse","Margaretenstr","Paulanergasse","Favoritenstr","Südtiroler Platz","Sonnwendgasse","Am Hauptbahnhof"],"dest":"Hauptbahnhof","start":[48.20624,16.359773,"Bellariastraße – Taxistandplatz Bellariastraße ggü. 2-4","taxi"],"goal":[48.185131,16.374158,"Hauptbahnhof","bahn"]},
+  {"n":97,"orig":"114","chap":4,"from":"Lichtenfelsgasse / Rathaus","to":"Therme Wien","steps":["Lichtenfelsgasse","Rathausplatz","Reichsratsstr","Schmerlingplatz","Volksgartenstr","Museumstr","Museumsplatz","Getreidemarkt","Rechte Wienzeile","Operngasse","Margaretenstr","Paulanergasse","Favoritenstr","Südtiroler Platz","Sonnwendgasse","Herndlgasse","Reumannplatz","Laaer-Berg-Str","Kurbadstr"],"dest":"Therme Wien","start":[48.210839,16.357298,"Lichtenfelsgasse / Rathaus","ort"],"goal":[48.143784,16.401188,"Therme Wien","ort"]},
+  {"n":98,"orig":"118","chap":4,"from":"Staatsoper – Seiteneingang","to":"Per-Albin-Hansson-Siedlung / Favoritenstraße","steps":["Operngasse","Margaretenstr","Paulanergasse","Favoritenstr","Südtiroler Platz","Laxenburger Str","Grenzackerstr","Altes Landgut","Favoritenstr"],"dest":"Per-Albin-Hansson-Siedlung / Favoritenstraße","start":[48.203286,16.369194,"Staatsoper – Seiteneingang","ort"],"goal":[48.15306,16.38234,"Per-Albin-Hansson-Siedlung / Favoritenstraße","ort"]},
+  {"n":99,"orig":"118 (neu)","chap":4,"from":"Regierungsgebäude Stubenring – Haupteingang","to":"AUVA-Traumazentrum Wien Meidling","steps":["Stubenring (Nebenfahrbahn)","Stubenring","Parkring","Schubertring","Kärntner Ring","Opernring","Operngasse","Margaretenstr","Paulanergasse","Wiedner Hauptstr","Matzleinsdorfer Platz","Triester Str","Kundratstr"],"dest":"AUVA-Traumazentrum Wien Meidling","start":[48.209794,16.382984,"Regierungsgebäude Stubenring – Haupteingang","ort"],"goal":[48.173499,16.343906,"AUVA-Traumazentrum Wien Meidling","klinik"]},
+  {"n":100,"orig":"123","chap":4,"from":"Rathaus Felderstraße – Taxistandplatz","to":"Seiteneingang / Hauptbahnhof","steps":["Felderstr","Friedrich-Schmidt-Platz","Landesgerichtsstr","Auerspergstr","Museumstr","Museumsplatz","Getreidemarkt","Rechte Wienzeile","Operngasse","Margaretenstr","Paulanergasse","Favoritenstr","Südtiroler Platz","Wiedner Gürtel","Gertrude-Fröhlich-Sandner-Str"],"dest":"Seiteneingang / Hauptbahnhof","start":[48.211527,16.357871,"Rathaus Felderstraße – Taxistandplatz Felderstraße 1A","taxi"],"goal":[48.186703,16.378043,"Seiteneingang / Hauptbahnhof","bahn"]},
+  {"n":101,"orig":"202","chap":4,"from":"Handelskai – DDSG-Schifffahrtszentrum","to":"Haupteingang / Hauptbahnhof","steps":["Lassallestr","Praterstern","Praterstr","Aspernbrückengasse","Aspernbrücke","Julius-Raab-Platz","Stubenring","Parkring","Schubertring","Schwarzenbergplatz","Prinz-Eugen-Str","Wiedner Gürtel","Gertrude-Fröhlich-Sandner-Str","Am Hauptbahnhof"],"dest":"Haupteingang / Hauptbahnhof","start":[48.226855,16.403577,"Handelskai – DDSG-Schifffahrtszentrum","ort"],"goal":[48.184741,16.376352,"Haupteingang / Hauptbahnhof","bahn"]},
+  {"n":102,"orig":"601","chap":4,"from":"Brückengasse – Taxistandplatz","to":"Großmarkt Inzersdorf","steps":["Gumpendorfer Str","Grabnergasse","Anilingasse","Reinprechtsdorfer Brücke","Reinprechtsdorfer Str","Matzleinsdorfer Platz","Gudrunstr","Neilreichgasse","Raxstr","Laxenburger Str"],"dest":"Großmarkt Inzersdorf","start":[48.191,16.348155,"Brückengasse – Taxistandplatz Brückengasse 10 14","taxi"],"goal":[48.135554,16.357869,"Großmarkt Inzersdorf","ort"]},
+  {"n":103,"orig":"602 (neu)","chap":4,"from":"Amerlingstraße – Taxistandplatz","to":"Böhmischer Prater","steps":["Amerlingstr","Schadekgasse","Fritz-Grünbaum-Platz","Kaunitzgasse","Proschkogasse","Linke Wienzeile","Pilgrambrücke","Pilgramgasse","Margaretenplatz","Margaretenstr","Zentagasse","Kliebergasse","Landgutgasse","Laxenburger Str","Gudrunstr","Absberggasse","Puchsbaumgasse","Laaer Wald"],"dest":"Böhmischer Prater","start":[48.197701,16.350657,"Amerlingstraße – Taxistandplatz Amerlingstraße Chwallagasse 8 10","taxi"],"goal":[48.166554,16.399945,"Böhmischer Prater","ort"]},
+  {"n":104,"orig":"1001 (neu)","chap":4,"from":"Therme Wien","to":"Neuer Markt","steps":["Kurbadstr","Laaer-Berg-Str","Steudelgasse","Gudrunstr","Sonnwendgasse","Südtiroler Platz","Favoritenstr","Wiedner Hauptstr","Rilkeplatz","Wiedner Hauptstr","Karlsplatz","Kärntner Str","Philharmonikerstr","Albertinaplatz","Tegetthoffstr"],"dest":"Neuer Markt","start":[48.143784,16.401188,"Therme Wien","ort"],"goal":[48.206125,16.370838,"Neuer Markt","ort"]},
+  {"n":105,"orig":"1003","chap":4,"from":"Klinik Favoriten","to":"Therme Wien","steps":["Kundratstr","Davidgasse","Gußriegelstr","Inzersdorfer Str","Antonsplatz","Inzersdorfer Str","Kennergasse","Laaer-Berg-Str","Kurbadstr"],"dest":"Therme Wien","start":[48.173501,16.350548,"Klinik Favoriten","klinik"],"goal":[48.143784,16.401188,"Therme Wien","ort"]},
+  {"n":106,"orig":"1005","chap":4,"from":"Hauptbahnhof – Taxistandplatz","to":"Hotel Hilton","steps":["Am Hauptbahnhof","Gertrude-Fröhlich-Sandner-Str","Wiedner Gürtel","Landstraßer Gürtel","Jacquingasse","Mohsgasse","Fasangasse","Ungargasse","Große Ungarbrücke","Am Stadtpark"],"dest":"Hotel Hilton","start":[48.185784,16.378123,"Hauptbahnhof – Taxistandplatz Gertrude-Fröhlich-Sandner-Straße 4","taxi"],"goal":[48.205987,16.383315,"Hotel Hilton","hotel"]},
+  {"n":107,"orig":"111 (neu)","chap":5,"from":"Almanac Palais Vienna","to":"Praterstern","steps":["Parkring (Nebenfahrbahn)","Himmelpfortgasse","Parkring","Johannesgasse","Am Heumarkt","Am Stadtpark","Vordere Zollamtsstr","Obere Weißgerberstr","Dampfschiffstr","Franzensbrücke","Franzensbrückenstr"],"dest":"Praterstern","start":[48.204174,16.376892,"Almanac Palais Vienna","hotel"],"goal":[48.219768,16.393079,"Praterstern","ort"]},
+  {"n":108,"orig":"209 (neu)","chap":5,"from":"Österreichischer Gewerkschaftsbund","to":"Wirtschaftsuniversität Wien","steps":["Johann-Böhm-Platz","Wehlistr","Marathonweg (Sonderspur)","Stephanie-Endres-Str","Engerthstr","Elderschplatz","Ausstellungsstr","Max-Koppe-Gasse","Nordportalstr","Messestr","Welthandelsplatz"],"dest":"Wirtschaftsuniversität Wien","start":[48.205498,16.43201,"Österreichischer Gewerkschaftsbund","ort"],"goal":[48.213593,16.408237,"Wirtschaftsuniversität Wien","ort"]},
+  {"n":109,"orig":"304","chap":5,"from":"Neulinggasse – Taxistandplatz","to":"Praterstern","steps":["Ungargasse","Invalidenstr","Markthallenbrücke","Hintere Zollamtsstr","Dampfschiffstr","Franzensbrücke","Franzensbrückenstr"],"dest":"Praterstern","start":[48.199118,16.388049,"Neulinggasse – Taxistandplatz Neulinggasse 22-26","taxi"],"goal":[48.219768,16.393079,"Praterstern","ort"]},
+  {"n":110,"orig":"122","chap":5,"from":"Rotenturmstraße – Taxistandplatz","to":"Flughafen Wien-Schwechat","steps":["Franz-Josefs-Kai","Schwedenplatz","Franz-Josefs-Kai","Julius-Raab-Platz","Uraniastr","Radetzkybrücke","Obere Weißgerberstr","Dampfschiffstr","Weißgerberlände","Erdberger Lände","A4 Flughafenautobahn"],"dest":"Flughafen Wien-Schwechat","start":[48.211808,16.376257,"Rotenturmstraße – Taxistandplatz Rotenturmstraße 24","taxi"],"goal":[48.119238,16.562818,"Flughafen Wien-Schwechat","flug"]},
+  {"n":111,"orig":"206 (neu)","chap":5,"from":"Stadion Center","to":"Heeresgeschichtliches Museum","steps":["Olympiaplatz","Meiereistr","Handelskai","Johann-Böhm-Platz","A23 Südosttangente","Ausfahrt Erdberg","Stadionbrücke","Ludwig-Koeßler-Platz","Schlachthausgasse","Landstraßer Hauptstr","Landstraßer Gürtel","Ghegastr"],"dest":"Heeresgeschichtliches Museum","start":[48.209519,16.422985,"Stadion Center","ort"],"goal":[48.18426,16.388979,"Heeresgeschichtliches Museum","ort"]},
+  {"n":112,"orig":"208 (neu)","chap":5,"from":"Hotel Hilton Vienna Waterfront","to":"Vienna International Busterminal (VIB)","steps":["Handelskai","Johann-Böhm-Platz","A23 Südosttangente","Ausfahrt Erdberg","Stadionbrücke","Ludwig-Koeßler-Platz","Schlachthausgasse","Schnirchgasse","Würtzlerstr","Erdbergstr"],"dest":"Vienna International Busterminal (VIB)","start":[48.214072,16.4217,"Hotel Hilton Vienna Waterfront","hotel"],"goal":[48.190365,16.412403,"Vienna International Busterminal (VIB)","bahn"]},
+  {"n":113,"orig":"303","chap":5,"from":"Neulinggasse – Taxistandplatz","to":"Theater an der Wien","steps":["Zaunergasse","Lisztstr","Lothringerstr","Schwarzenbergplatz","Lothringerstr","Karlsplatz","Friedrichstr","Linke Wienzeile"],"dest":"Theater an der Wien","start":[48.199528,16.377964,"Neulinggasse – Taxistandplatz Lisztstraße 3","taxi"],"goal":[48.199775,16.363859,"Theater an der Wien","ort"]},
+  {"n":114,"orig":"308","chap":5,"from":"Marxergasse / Rasumofskygasse – Taxistandplatz","to":"Stephansplatz","steps":["Marxergasse","Kleine Marxerbrücke","Oskar-Kokoschka-Platz","Stubenring","Parkring","Zedlitzgasse","Schulerstr"],"dest":"Stephansplatz","start":[48.20517,16.395396,"Marxergasse – Taxistandplatz Marxergasse 35-37","taxi"],"goal":[48.208464,16.372044,"Stephansplatz","ort"]},
+  {"n":115,"orig":"501 (neu)","chap":5,"from":"Franziskus Spital Margareten","to":"Hotel Hilton Vienna Park","steps":["Nikolsdorfer Gasse","Siebenbrunnengasse","Mittersteig","Ziegelofengasse","Leibenfrostgasse","Lambrechtgasse","Wiedner Hauptstr","Mayerhofgasse","Favoritenstr","Gußhausstr","Schwarzenbergplatz","Am Heumarkt","Am Stadtpark"],"dest":"Hotel Hilton Vienna Park","start":[48.18834,16.361968,"Franziskus Spital Margareten","klinik"],"goal":[48.205987,16.383315,"Hotel Hilton Vienna Park","hotel"]},
+  {"n":116,"orig":"901 (neu)","chap":5,"from":"Wiener Privatklinik","to":"Klinik Landstraße (Haupteingang)","steps":["Pelikangasse","Lazarettgasse","Spitalgasse","Lange Gasse","Lerchenfelder Str","Museumstr","Museumsplatz","Getreidemarkt","Rechte Wienzeile","Karlsplatz","Lothringerstr","Schwarzenbergplatz","Rennweg","Ungargasse","Juchgasse"],"dest":"Klinik Landstraße (Haupteingang)","start":[48.217044,16.346847,"Wiener Privatklinik","klinik"],"goal":[48.195885,16.391265,"Klinik Landstraße (Haupteingang)","klinik"]},
+  {"n":117,"orig":"904","chap":5,"from":"Josef-Holaubek-Platz","to":"Kunsthaus Wien","steps":["Nordbergbrücke","Spittelauer Lände","Roßauer Lände","Franz-Josefs-Kai","Schwedenplatz","Franz-Josefs-Kai","Julius-Raab-Platz","Uraniastr","Radetzkybrücke","Obere Weißgerberstr","Dampfschiffstr","Weißgerberlände","Krieglergasse","Untere Weißgerberstr"],"dest":"Kunsthaus Wien","start":[48.233062,16.357893,"Josef-Holaubek-Platz","ort"],"goal":[48.211134,16.393276,"Kunsthaus Wien","ort"]},
+  {"n":118,"orig":"110","chap":5,"from":"Heldenplatz / Hofburg","to":"Münnichplatz","steps":["In der Burg","Michaelerplatz","Reitschulgasse","Josefsplatz","Augustinerstr","Albertinaplatz","Philharmonikerstr","Walfischgasse","Schwarzenbergstr","Schwarzenbergplatz","Rennweg","Simmeringer Hauptstr","Simmeringer Platz","Kaiserebersdorfer Str"],"dest":"Münnichplatz","start":[48.206693,16.363004,"Heldenplatz / Hofburg","ort"],"goal":[48.158499,16.474785,"Münnichplatz","ort"]},
+  {"n":119,"orig":"203","chap":5,"from":"Praterstern – Taxistandplatz","to":"Münnichplatz","steps":["Praterstr","Praterstern","Franzensbrückenstr","Franzensbrücke","Dampfschiffstr","Weißgerberlände","Erdberger Lände","A4 Ostautobahn Ausfahrt Simmeringer Haide","Jedletzbergerstr","Margetinstr","Artillerieplatz","Zinnergasse","Kaiserebersdorfer Str"],"dest":"Münnichplatz","start":[48.218242,16.393346,"Praterstern – Taxistandplatz Praterstern Kiss & Ride Bereich","taxi"],"goal":[48.158499,16.474785,"Münnichplatz","ort"]},
+  {"n":120,"orig":"1004 (neu)","chap":5,"from":"Generali Arena","to":"Simmeringer Zentralfriedhof","steps":["Fischhofgasse","Ludwig-von-Höhnel-Gasse","Endlichergasse","Theodor-Sickel-Gasse","Bitterlichstr","Bitterlichbrücke","Gadnergasse","Swatoschgasse","Schemmerlstr","Weichseltalweg","Simmeringer Hauptstr"],"dest":"Simmeringer Zentralfriedhof","start":[48.162408,16.388339,"Generali Arena","ort"],"goal":[48.154036,16.441685,"Simmeringer Zentralfriedhof","ort"]},
+  {"n":121,"orig":"1101","chap":5,"from":"Münnichplatz – Taxistandplatz","to":"Heldenplatz / Hofburg","steps":["Kaiserebersdorfer Str","Simmeringer Platz","Simmeringer Hauptstr","Rennweg","Schwarzenbergplatz","Kärntner Ring","Opernring","Burgring"],"dest":"Heldenplatz / Hofburg","start":[48.169808,16.420507,"Münnichplatz – Taxistandplatz Simmeringer Platz ggü. 1","taxi"],"goal":[48.206693,16.363004,"Heldenplatz / Hofburg","ort"]},
+  {"n":122,"orig":"1102","chap":5,"from":"Münnichplatz – Taxistandplatz","to":"Ausstellungsstraße / Riesenrad","steps":["Kaiserebersdorfer Str","Zinnergasse","Artillerieplatz","Margetinstr","Jedletzbergerstr","A4 Flughafenautobahn","Schüttelstr","Franzensbrückenstr","Praterstern"],"dest":"Ausstellungsstraße / Riesenrad","start":[48.159047,16.474219,"Münnichplatz – Taxistandplatz Kaiser-Ebersdorfer Straße 299","taxi"],"goal":[48.216819,16.395937,"Ausstellungsstraße / Riesenrad","ort"]},
+  {"n":123,"orig":"1103","chap":5,"from":"Rautenstrauchgasse – Taxistandplatz","to":"Huma Eleven – Einkaufszentrum","steps":["Simmeringer Hauptstr","Kopalgasse","Haidestr","7. Haidequerstr","Wildpretstr","Johann-Petrak-Gasse","Margetinstr","Alberner Hafenzufahrtsstr","Landwehrstr"],"dest":"Huma Eleven – Einkaufszentrum","start":[48.17873,16.411315,"Rautenstrauchgasse – Taxistandplatz Rautenstrauchgasse 1-3","taxi"],"goal":[48.168957,16.472787,"Huma Eleven – Einkaufszentrum","ort"]},
+  {"n":124,"orig":"2303","chap":5,"from":"Großmarkt Inzersdorf","to":"Gasometer City","steps":["Laxenburger Str","Grenzackerstr","Verteilerkreis (Altes Landgut)","A23","Ausfahrt St. Marx","Döblerhofstr","Modecenterstr","Guglgasse"],"dest":"Gasometer City","start":[48.135554,16.357869,"Großmarkt Inzersdorf","ort"],"goal":[48.185423,16.418618,"Gasometer City","ort"]},
+  {"n":125,"orig":"205","chap":6,"from":"Praterstern – Taxistandplatz im Rondeau","to":"Wallensteinplatz","steps":["Nordbahnstr","Am Tabor","Nordwestbahnstr","Wallensteinstr","Sachsenplatz","Wallensteinstr"],"dest":"Wallensteinplatz","start":[48.218242,16.393346,"Praterstern – Taxistandplatz Praterstern Kiss & Ride Bereich","taxi"],"goal":[48.22971,16.371502,"Wallensteinplatz","ort"]},
+  {"n":126,"orig":"207 (neu)","chap":6,"from":"Wirtschaftskammer Wien / Fachgruppe Taxi","to":"Wallensteinplatz – Taxistandplatz","steps":["Straße der Wiener Wirtschaft","Walcherstr","Bruno-Marek-Allee (Sonderspur)","Rothschildplatz","Bruno-Marek-Allee","Am Tabor","Nordwestbahnstr","Wasnergasse","Gaußplatz","Jägerstr"],"dest":"Wallensteinplatz – Taxistandplatz","start":[48.220591,16.39281,"Wirtschaftskammer Wien / Fachgruppe Taxi","ort"],"goal":[48.229237,16.371215,"Wallensteinplatz – Taxistandplatz Jägerstraße 26-30","taxi"]},
+  {"n":127,"orig":"301","chap":6,"from":"Landstraßer Hauptstraße / Hotel Hilton – Taxistandplatz","to":"Wallensteinplatz","steps":["Vordere Zollamtsstr","Radetzkybrücke","Uraniastr","Julius-Raab-Platz","Aspernbrücke","Untere Donaustr","Obere Donaustr","Gaußplatz","Jägerstr"],"dest":"Wallensteinplatz","start":[48.206868,16.383203,"Landstraßer Hauptstraße – Taxistandplatz Vordere Zollamtsstraße 15","taxi"],"goal":[48.22971,16.371502,"Wallensteinplatz","ort"]},
+  {"n":128,"orig":"1802 (neu)","chap":6,"from":"Aumannplatz – Taxistandplatz","to":"Wallensteinplatz","steps":["Währinger Str","Aumannplatz","Gentzgasse","Währinger Gürtel","Fuchsthallergasse","Alserbachstr","Julius-Tandler-Platz","Alserbachstr","Friedensbrücke","Wallensteinstr"],"dest":"Wallensteinplatz","start":[48.223655,16.351215,"Aumannplatz – Taxistandplatz Währinger Straße 68 70","taxi"],"goal":[48.22971,16.371502,"Wallensteinplatz","ort"]},
+  {"n":129,"orig":"2004","chap":6,"from":"Wallensteinplatz – Taxistandplatz","to":"Hotel Hilton","steps":["Jägerstr","Gaußplatz","Obere Augartenstr","Taborstr","Schwedenbrücke","Franz-Josefs-Kai","Julius-Raab-Platz","Stubenring","Weiskirchnerstr","Landstraßer Hauptstr"],"dest":"Hotel Hilton","start":[48.229237,16.371215,"Wallensteinplatz – Taxistandplatz Jägerstraße 26-30","taxi"],"goal":[48.205987,16.383315,"Hotel Hilton","hotel"]},
+  {"n":130,"orig":"103 (neu)","chap":6,"from":"Schottengasse – Taxistandplatz","to":"Bellgasse – Taxistandplatz","steps":["Schottengasse","Maria-Theresien-Str","Augartenbrücke","Obere Donaustr","Gaußplatz","Jägerstr","Wallensteinplatz","Jägerstr","Brigittaplatz","Jägerstr","Adalbert-Stifter-Str","Friedrich-Engels-Platz","Floridsdorfer Brücke","Floridsdorfer Hauptstr","Jedleseer Str"],"dest":"Bellgasse – Taxistandplatz","start":[48.213293,16.363052,"Schottengasse – Taxistandplatz Schottengasse ggü. 6-8","taxi"],"goal":[48.262017,16.387165,"Bellgasse – Taxistandplatz Bellgasse 36-38","taxi"]},
+  {"n":131,"orig":"104","chap":6,"from":"Bellariastraße – Taxistandplatz","to":"Rußbergstraße","steps":["Hansenstr","Schmerlingplatz","Dr.-Karl-Renner-Ring","Universitätsring","Schottengasse","Maria-Theresien-Str","Augartenbrücke","Obere Donaustr","Gaußplatz","Jägerstr","Wallensteinplatz","Jägerstr","Brigittaplatz","Jägerstr","Adalbert-Stifter-Str","Friedrich-Engels-Platz","Floridsdorfer Brücke","Floridsdorfer Hauptstr","Am Spitz","Prager Str"],"dest":"Rußbergstraße","start":[48.20624,16.359773,"Bellariastraße – Taxistandplatz Bellariastraße ggü. 2-4","taxi"],"goal":[48.291063,16.386133,"Rußbergstraße","ort"]},
+  {"n":132,"orig":"106 (neu)","chap":6,"from":"Bundespolizeidirektion Wien","to":"Stammersdorfer Zentralfriedhof (Haupteingang)","steps":["Schottenring (Nebenfahrbahn)","Heßgasse","Schottenring","Wipplingerstr","Maria-Theresien-Str","Augartenbrücke","Obere Donaustr","Brigittenauer Lände","A22","Nordbrücke","Lundenburger Gasse","Brünner Str","Johann-Weber-Str","Stammersdorfer Str"],"dest":"Stammersdorfer Zentralfriedhof (Haupteingang)","start":[48.215269,16.363967,"Bundespolizeidirektion Wien","ort"],"goal":[48.293949,16.436782,"Stammersdorfer Zentralfriedhof (Haupteingang)","ort"]},
+  {"n":133,"orig":"117","chap":6,"from":"Schottengasse – Taxistandplatz","to":"Rußbergstraße","steps":["Maria-Theresien-Str","Augartenbrücke","Obere Donaustr","Brigittenauer Lände","Nordbrücke","A22","Prager Str"],"dest":"Rußbergstraße","start":[48.213542,16.362737,"Schottengasse – Taxistandplatz Schottengasse 11","taxi"],"goal":[48.291063,16.386133,"Rußbergstraße","ort"]},
+  {"n":134,"orig":"201","chap":6,"from":"Molkereistraße / Ausstellungsstraße – Taxistandplatz","to":"Bahnhof Floridsdorf","steps":["Ausstellungsstr","Molkereistr","Max-Winter-Platz","Harkortstr","Lassallestr","Reichsbrücke","A22 Donauuferautobahn","Floridsdorfer Brücke Ausfahrt","Floridsdorfer Hauptstr","Am Spitz","Schloßhofer Str","Franz-Jonas-Platz"],"dest":"Bahnhof Floridsdorf","start":[48.217855,16.396549,"Molkereistraße – Taxistandplatz Ausstellungsstraße ggü. Johann-Fürst-Platz","taxi"],"goal":[48.263622,16.398013,"Bahnhof Floridsdorf","bahn"]},
+  {"n":135,"orig":"209","chap":6,"from":"Wirtschaftskammer Wien / Fachgruppe Taxi","to":"Bundesprüfanstalt für KFZ","steps":["Straße der Wiener Wirtschaft","Walcherstr","Joseph-Roth-Gasse","Lassallestr","Reichsbrücke","Wagramer Str","Abfahrt A22 Richtung Norden","Ausfahrt Strebersdorf","Vohburggasse","Scheydgasse","Hofherr-Schrantz-Gasse","Trauzlgasse"],"dest":"Bundesprüfanstalt für KFZ","start":[48.220591,16.39281,"Wirtschaftskammer Wien / Fachgruppe Taxi","ort"],"goal":[48.285755,16.370079,"Bundesprüfanstalt für KFZ","ort"]},
+  {"n":136,"orig":"1102 (neu)","chap":6,"from":"Simmeringer Zentralfriedhof","to":"Am Spitz","steps":["Simmeringer Hauptstr","Simmeringer Platz","Simmeringer Hauptstr","Litfaßstr","Baumgasse","Franzosengraben","A23 Südosttangente","A22 Donauuferautobahn","Ausfahrt Floridsdorfer Brücke","Floridsdorfer Hauptstr"],"dest":"Am Spitz","start":[48.154036,16.441685,"Simmeringer Zentralfriedhof","ort"],"goal":[48.257862,16.396824,"Am Spitz","ort"]},
+  {"n":137,"orig":"2101","chap":6,"from":"Veterinärmedizinische Universität","to":"Per-Albin-Hansson-Siedlung","steps":["Veterinärplatz","Josef-Baumann-Gasse","Donaufelder Str","Dückegasse","Siebeckstr","Donaustadtstr","A23","Ausfahrt Favoriten","Altes Landgut (Verteilerkreis)","Favoritenstr"],"dest":"Per-Albin-Hansson-Siedlung","start":[48.254815,16.430424,"Veterinärmedizinische Universität","ort"],"goal":[48.150643,16.382431,"Per-Albin-Hansson-Siedlung","ort"]},
+  {"n":138,"orig":"2102","chap":6,"from":"Am Spitz","to":"Allgemeines Krankenhaus / Haupteingang","steps":["Floridsdorfer Hauptstr","Floridsdorfer Brücke","Friedrich-Engels-Platz","Adalbert-Stifter-Str","Gürtelbrücke","Döblinger Gürtel","Währinger Gürtel","Borschkegasse","Währinger Gürtel"],"dest":"Allgemeines Krankenhaus / Haupteingang","start":[48.257862,16.396824,"Am Spitz","ort"],"goal":[48.221982,16.346476,"Allgemeines Krankenhaus / Haupteingang","klinik"]},
+  {"n":139,"orig":"2103","chap":6,"from":"Dopschstraße – Taxistandplatz","to":"Hütteldorfer Straße / Stadthalle","steps":["Dopschstr","Großfeldstr","Leopoldauer Platz","Leopoldauer Str","Katsushikastr","A22","Nordbrücke","Nußdorfer Lände","Heiligenstädter Lände","Gürtelbrücke","Döblinger Gürtel","Währinger Gürtel","Hernalser Gürtel","Lerchenfelder Gürtel","Neubaugürtel"],"dest":"Hütteldorfer Straße / Stadthalle","start":[48.269118,16.438084,"Dopschstraße – Taxistandplatz Dopschstraße 8","taxi"],"goal":[48.201537,16.337022,"Hütteldorfer Straße / Stadthalle","ort"]},
+  {"n":140,"orig":"2106","chap":6,"from":"Klinik Floridsdorf","to":"Allgemeines Krankenhaus / Haupteingang","steps":["Brünner Str","Am Spitz","Floridsdorfer Hauptstr","Floridsdorfer Brücke","Friedrich-Engels-Platz","Adalbert-Stifter-Str","Gürtelbrücke","Döblinger Gürtel","Währinger Gürtel","Borschkegasse","Währinger Gürtel"],"dest":"Allgemeines Krankenhaus / Haupteingang","start":[48.267063,16.406493,"Klinik Floridsdorf","klinik"],"goal":[48.221982,16.346476,"Allgemeines Krankenhaus / Haupteingang","klinik"]},
+  {"n":141,"orig":"2201","chap":6,"from":"Siegesplatz – Taxistandplatz","to":"Shopping Center Nord","steps":["Siegesplatz","Aspernstr","Erzherzog-Karl-Str","Donaustadtstr","Siebeckstr","Dückegasse","Angyalföldstr","Katsushikastr","Ignaz-Köck-Str"],"dest":"Shopping Center Nord","start":[48.217391,16.487582,"Siegesplatz – Taxistandplatz Siegesplatz 12","taxi"],"goal":[48.267387,16.398249,"Shopping Center Nord","ort"]},
+  {"n":142,"orig":"2201 (neu)","chap":6,"from":"Seestadt Aspern – Taxistandplatz","to":"Klinik Floridsdorf","steps":["Maria-Tusch-Str","Sonnenallee","Seestadtstr","Groß-Enzersdorfer Str","Siegesplatz","Asperner Heldenplatz","Aspernstr","Erzherzog-Karl-Str","Donaustadtstr","Siebeckstr","Dückegasse","Angyalföldstr","Katsushikastr","Brünner Str"],"dest":"Klinik Floridsdorf","start":[48.224903,16.501982,"Seestadt Aspern – Taxistandplatz Maria-Tusch-Straße 18","taxi"],"goal":[48.267063,16.406493,"Klinik Floridsdorf","klinik"]},
+  {"n":143,"orig":"2206","chap":6,"from":"Zanggasse – Taxistandplatz","to":"Polizeikommissariat Floridsdorf","steps":["Quadenstr","Hirschstettner Str","Kagraner Platz","Donaufelder Str","Patrizigasse","Angerer Str","Hermann-Bahr-Str"],"dest":"Polizeikommissariat Floridsdorf","start":[48.238702,16.4839,"Zanggasse – Taxistandplatz Quadenstraße 65-67","taxi"],"goal":[48.260265,16.397702,"Polizeikommissariat Floridsdorf","ort"]},
+  {"n":144,"orig":"107 (neu)","chap":7,"from":"Hotel Anantara Palais Hansen Vienna","to":"Kagraner Platz","steps":["Schottenring (Nebenfahrbahn)","Gonzagagasse","Schottenring","Franz-Josefs-Kai","Schwedenplatz","Franz-Josefs-Kai","Julius-Raab-Platz","Aspernbrücke","Aspernbrückengasse","Praterstr","Praterstern","Lassallestr","Reichsbrücke","Wagramer Str"],"dest":"Kagraner Platz","start":[48.216336,16.368464,"Hotel Anantara Palais Hansen Vienna","hotel"],"goal":[48.250248,16.443272,"Kagraner Platz","ort"]},
+  {"n":145,"orig":"113","chap":7,"from":"Hotel Marriott","to":"Austria Center Vienna","steps":["Parkring (Nebenfahrbahn)","Weihburggasse","Parkring","Johannesgasse","Am Heumarkt","Am Stadtpark","Vordere Zollamtsstr","Obere Weißgerberstr","Dampfschiffstr","Franzensbrücke","Franzensbrückenstr","Praterstern","Lassallestr","Reichsbrücke","Platz der Vereinten Nationen","Donau-City-Str","Bruno-Kreisky-Platz"],"dest":"Austria Center Vienna","start":[48.20493,16.377547,"Hotel Marriott","hotel"],"goal":[48.23508,16.414633,"Austria Center Vienna","ort"]},
+  {"n":146,"orig":"117 (neu)","chap":7,"from":"Stephansplatz","to":"Donauturm","steps":["Rotenturmstr","Marienbrücke","Lilienbrunngasse","Gredlerstr","Taborstr","Nordbahnstr","Dresdner Str","Innstr","Handelskai","Brigittenauer Brücke","Donauturmstr","Mispelweg","Donauturmplatz"],"dest":"Donauturm","start":[48.208464,16.372044,"Stephansplatz","ort"],"goal":[48.240244,16.410052,"Donauturm","ort"]},
+  {"n":147,"orig":"210 (neu)","chap":7,"from":"Praterstern – Taxistandplatz im Rondeau","to":"Austria Center Vienna","steps":["Praterstern","Lassallestr","Reichsbrücke","Wagramer Str","Platz der Vereinten Nationen","Donau-City-Str","Leonard-Bernstein-Str","Bruno-Kreisky-Platz"],"dest":"Austria Center Vienna","start":[48.218242,16.393346,"Praterstern – Taxistandplatz Praterstern Kiss & Ride Bereich","taxi"],"goal":[48.23508,16.414633,"Austria Center Vienna","ort"]},
+  {"n":148,"orig":"305 (neu)","chap":7,"from":"Polizeikommissariat Landstraße","to":"Klinik Donaustadt","steps":["Juchgasse","Landstraßer Hauptstr","Schlachthausgasse","Ludwig-Koeßler-Platz","A4 Ostautobahn","A23 Südosttangente","Ausfahrt Stadlau","Erzherzog-Karl-Str","Zschokkegasse","Langobardenstr"],"dest":"Klinik Donaustadt","start":[48.19653,16.393594,"Polizeikommissariat Landstraße","ort"],"goal":[48.21799,16.46396,"Klinik Donaustadt","klinik"]},
+  {"n":149,"orig":"403 (neu)","chap":7,"from":"Favoritenstraße / Weyringergasse – Taxistandplatz","to":"Genochplatz – Taxistandplatz","steps":["Favoritenstr","Theresianumgasse","Mommsengasse","Wiedner Gürtel","Landstraßer Gürtel","A23 Südosttangente","Ausfahrt Stadlau","Erzherzog-Karl-Str","Genochplatz","Hausgrundweg"],"dest":"Genochplatz – Taxistandplatz","start":[48.188109,16.373254,"Favoritenstraße – Taxistandplatz Weyringergasse 41","taxi"],"goal":[48.227912,16.455732,"Genochplatz – Taxistandplatz Hausgrundweg 1","taxi"]},
+  {"n":150,"orig":"2003","chap":7,"from":"Millennium Tower – Taxistandplatz","to":"Dr.-Adolf-Schärf-Platz / U1 Kagran","steps":["Hellwagstr","Wehlistr","Donaueschingenstr","Handelskai","Brigittenauer Brücke","Donauturmstr","Arbeiterstrandbadstr","Wagramer Str","Siebeckstr"],"dest":"Dr.-Adolf-Schärf-Platz / U1 Kagran","start":[48.239937,16.385644,"Millennium Tower – Taxistandplatz Hellwagstraße 27","taxi"],"goal":[48.24376,16.434593,"Dr.-Adolf-Schärf-Platz / U1 Kagran","bahn"]},
+  {"n":151,"orig":"2104","chap":7,"from":"Leopoldauer Platz","to":"Busbahnhof Erdberg","steps":["Eipeldauer Str","Wagramer Str","Donaustadtstr","A23 Südosttangente","Abfahrt Zentrum","Stadionbrücke","Ludwig-Koeßler-Platz","Schlachthausgasse","Schnirchgasse","Würtzlerstr","Erdbergstr"],"dest":"Busbahnhof Erdberg","start":[48.263689,16.44273,"Leopoldauer Platz","ort"],"goal":[48.190587,16.412949,"Busbahnhof Erdberg","bahn"]},
+  {"n":152,"orig":"2105","chap":7,"from":"Stammersdorfer Friedhof","to":"Gewerbepark Stadlau","steps":["Stammersdorfer Str","Grenzweg","Illgasse","Seyringer Str","Julius-Ficker-Str","Rautenweg","S2 Wiener Nordrand Schnellstraße","Abfahrt Gewerbepark Stadlau","Gewerbeparkstr"],"dest":"Gewerbepark Stadlau","start":[48.293949,16.436782,"Stammersdorfer Friedhof","ort"],"goal":[48.246274,16.463347,"Gewerbepark Stadlau","ort"]},
+  {"n":153,"orig":"2202","chap":7,"from":"Austria Center Vienna","to":"Raimundtheater","steps":["Bruno-Kreisky-Platz","Leonard-Bernstein-Str","Donau-City-Str","Platz der Vereinten Nationen","Wagramer Str","Reichsbrücke","Lassallestr","Praterstern","Praterstr","Aspernbrückengasse","Aspernbrücke","Julius-Raab-Platz","Stubenring","Parkring","Schubertring","Kärntner Ring","Opernring","Eschenbachgasse","Gumpendorfer Str","Wallgasse"],"dest":"Raimundtheater","start":[48.23508,16.414633,"Austria Center Vienna","ort"],"goal":[48.192197,16.339917,"Raimundtheater","ort"]},
+  {"n":154,"orig":"2203","chap":7,"from":"U1 Kagran – Siebeckstraße / Taxistandplatz","to":"Seestadt Aspern","steps":["Donaustadtstr","Erzherzog-Karl-Str","Aspernstr","Asperner Heldenplatz","Siegesplatz","Groß-Enzersdorfer Str","Seestadtstr"],"dest":"Seestadt Aspern","start":[48.242632,16.433941,"U1 Kagran – Taxistandplatz Siebeckstraße 7","taxi"],"goal":[48.227168,16.505826,"Seestadt Aspern","ort"]},
+  {"n":155,"orig":"2204","chap":7,"from":"Donauturm","to":"Sigmund-Freud-Haus / Museum","steps":["Mispelweg","Donauturmstr","Brigittenauer Brücke","Handelskai","Innstr","Dresdner Str","Nordbahnstr","Taborstr","Obere Augartenstr","Rembrandtstr","Roßauer Brücke","Türkenstr","Schlickplatz","Hörlgasse","Liechtensteinstr","Berggasse"],"dest":"Sigmund-Freud-Haus / Museum","start":[48.240244,16.410052,"Donauturm","ort"],"goal":[48.218599,16.363021,"Sigmund-Freud-Haus / Museum","ort"]},
+  {"n":156,"orig":"2204 (neu)","chap":7,"from":"Zanggasse – Taxistandplatz","to":"Kagraner Platz","steps":["Quadenstr","Pirquetgasse","Kolletschkagasse","Ziegelhofstr","Oberfeldgasse","Süßenbrunner Str","Franz-Fellner-Gasse","Hirschstettner Str","Zillingergasse"],"dest":"Kagraner Platz","start":[48.238702,16.4839,"Zanggasse – Taxistandplatz Quadenstraße 65-67","taxi"],"goal":[48.249127,16.447255,"Kagraner Platz","ort"]},
+  {"n":157,"orig":"2205","chap":7,"from":"Genochplatz – Taxistandplatz","to":"Rudolfstiftung – Haupteingang","steps":["Genochplatz","Stadlauer Str","Am Bahnhof","Stadlauer Str","Kaisermühlenstr","Neuhaufenstr","Donaustadtstr","A23","Stadionbrücke","Ludwig-Koeßler-Platz","Schlachthausgasse","Landstraßer Hauptstr","Barichgasse","Ottogasse","Juchgasse"],"dest":"Rudolfstiftung – Haupteingang","start":[48.227912,16.455732,"Genochplatz – Taxistandplatz Hausgrundweg 1","taxi"],"goal":[48.195885,16.391265,"Rudolfstiftung – Haupteingang","klinik"]},
+  {"n":158,"orig":"2207","chap":7,"from":"Kagraner Platz","to":"Hundertwasserhaus","steps":["Wagramer Str","Reichsbrücke","Lassallestr","Praterstern","Franzensbrückenstr","Franzensbrücke","Radetzkystr","Radetzkyplatz","Löwengasse"],"dest":"Hundertwasserhaus","start":[48.250248,16.443272,"Kagraner Platz","ort"],"goal":[48.207384,16.393941,"Hundertwasserhaus","ort"]},
+  {"n":159,"orig":"2207 (neu)","chap":7,"from":"Schüttauplatz – Taxistandplatz","to":"Klinik Donaustadt","steps":["Schüttauplatz","Moissigasse","Am Kaisermühlendamm (Sonderspur)","Kaisermühlenstr","Stadlauer Str","Am Bahnhof","Stadlauer Str","Langobardenstr"],"dest":"Klinik Donaustadt","start":[48.226784,16.423826,"Schüttauplatz – Taxistandplatz Schüttauplatz 5","taxi"],"goal":[48.21799,16.46396,"Klinik Donaustadt","klinik"]},
+  {"n":160,"orig":"2208","chap":7,"from":"Seestadt Aspern","to":"Rennbahnweg","steps":["Janis-Joplin-Promenade","Sonnenallee","Maria-Tusch-Str","Hannah-Arendt-Platz","Maria-Tusch-Str","Johann-Kutschera-Gasse","Ostbahnbegleitstr","Hausfeldstr","Mittelfeldweg","Ziegelhofstr","Breitenleer Str","Ludwig-Reindl-Gasse"],"dest":"Rennbahnweg","start":[48.227168,16.505826,"Seestadt Aspern","ort"],"goal":[48.25372,16.462713,"Rennbahnweg","ort"]},
+];
+// Autobahnen + Auffahrten (OpenStreetMap-Mitwirkende, ODbL), vereinfacht
+const HWY_DATA = "a23:4824071,1646021,-18,-11,-100,-62,-19,-12,-130,-80,-153,-95,-195,-219,-177,-148,-239,-106,-34,-14,-261,-119,-92,-67,-142,-155,-132,-77,-298,-137,-170,-16,-119,-2,-88,-1,-6,0,-185,4,-102,-41,-74,-64,-76,-101,-100,-145,-56,-82,-32,-46,-52,-77,-7,-10,-63,-92,-8,-16,-67,-97,-46,-68,-15,-21,-154,-225,-153,-224,-48,-69,-30,-45,-199,-292,-91,-138,-47,-70,-126,-183,-252,-368,-79,-115,-35,-50,-16,-23,-45,-64,-8,-11,-186,-270,-91,-133,-49,-71,-24,-35,-28,-42,-67,-100,-8,-12,-115,-168,-61,-89,-130,-190,-57,-84,-132,-182,-100,-91,-18,-12,-22,-14,-147,-73,-76,-27,-13,-5,-72,-51,-121,-170,-99,-88,-128,-54,-50,-11,-89,-19,-150,-33,-126,-27,-18,-4,-159,-64,-81,-113,-65,-299,-20,-92,-9,-29,-80,-157,-131,-168,-155,-199,-40,-51,-139,-133,-202,-75,-89,-62,-92,-133,-55,-154,-58,-250,-81,-180,-118,-150,-123,-87,-118,-36,-30,-3,-134,4,-158,-34,-110,-127,-35,-93,-17,-110,20,-234,135,-742,44,-381,16,-332,-6,-288,-10,-119,-7,-52,-32,-153,-19,-62,-23,-62,-35,-81,-13,-40,-55,-182,-3,-97,27,-108,106,-151,110,-250,239,-639,112,-353,90,-472,41,-314,8,-53,6,-53;a23:4815800,1631895,-9,20,-27,100,-21,278,-74,418,-73,260,-60,126,-132,183,-47,95,-34,125,-32,266,-36,133,-57,112,-64,78,-85,96,-28,62,-19,118,16,97,15,41,117,187,13,27,10,23,11,17,5,14,48,202,10,86,6,82,-5,555,-76,599,-108,584,-21,217,26,163,78,147,120,82,85,12,23,0,163,-2,100,27,138,92,116,148,78,175,57,248,57,159,94,138,92,64,182,62,91,69,87,103,16,20,157,201,37,46,112,149,48,92,105,453,72,108,100,57,76,19,92,19,203,44,36,8,85,19,77,31,86,64,69,82,118,163,127,51,29,8,18,6,127,57,76,49,14,11,66,65,131,182,57,84,71,103,60,86,61,91,93,135,2,4,28,37,95,143,73,108,19,26,72,106,47,68,46,67,88,125,20,28,37,54,36,51,17,24,384,561,59,85,13,20,137,205,40,59,161,235,58,86,42,61,207,302,157,230,33,48,18,26,19,28,55,80,43,63,12,18,88,131,54,80,36,52,10,10,78,100,75,66,104,42,109,0,77,-3,94,1,272,12,267,125,46,19,100,53,85,80,103,114,76,52,466,202,113,66,113,98,110,133,122,115,100,62,156,96,19,12,107,66,18,12;a4:4819732,1640942,-177,196,-27,30,-13,16,-66,100,-11,19,-17,29,-23,38,-54,90,-29,53,-48,80,-132,222,-37,62,-21,35,-35,60,-204,380,-37,90,-73,215,-29,91,-170,581,-1,6,-260,899,-50,175,-41,142,-82,283,-67,200,-51,102,-90,111,-76,57,-14,9,-47,27,-42,23,-23,12,-294,107,-233,62,-67,32,-66,46,-149,148,-47,65,-79,145,-74,206,-226,1012,-39,123,-83,164,-69,88,-107,89,-96,46,-385,114,-35,11,-84,36,-60,40,-30,24,-86,92,-72,114,-91,258,-9,37,-6,22,-62,248,-57,202,-21,73,-99,298,-9,25,-6,14,-53,170,-48,150,-95,305,-299,1134,-153,532,-171,408,-160,295,-356,538,-101,192,-110,259,-211,650,-30,110,-55,228,-27,117,-10,50,-53,271,-16,98,-48,331,-52,536,-14,327,-3,72,-6,150,-2,38,-49,1201,-52,700,-87,690,-146,829,-97,506;a4:4812403,1660459,250,-1327,109,-760,63,-747,57,-1341,2,-40,14,-346,34,-495,22,-199,7,-56,32,-224,49,-284,7,-35,55,-266,13,-58,15,-65,64,-244,9,-33,95,-318,164,-448,120,-248,471,-741,215,-465,126,-380,299,-1167,48,-160,26,-88,48,-160,81,-253,34,-104,26,-80,110,-341,21,-73,49,-171,23,-82,50,-203,5,-23,98,-288,37,-62,102,-124,102,-74,82,-34,36,-12,386,-115,123,-65,154,-163,58,-105,67,-188,207,-935,62,-208,116,-226,42,-58,78,-85,49,-44,70,-48,66,-34,103,-33,322,-89,129,-59,41,-22,24,-13,50,-30,155,-113,187,-162,97,-96,65,-98,50,-129,26,-146,3,-31,21,-360,59,-304,131,-450,42,-143,20,-70,176,-602,105,-270,22,-50,113,-210,41,-69,14,-24,9,-16,7,-11,165,-284,118,-199,56,-92,67,-115,90,-144,67,-69,87,-29;a22:4824925,1637234,69,47,31,14,46,13,23,6,89,42,70,76,19,33;a22:4827234,1640288,39,-160,26,-149,-43,-60,-46,-19,-91,-38,-16,-6,-85,-34,-174,-71,-589,-265,-124,-73,-30,-27,-103,-153,-49,-117,-7,-17,-43,-106,-9,-24,-17,-42,-61,-152,-20,-50,-65,-160,-14,-36;a22:4825279,1637458,-42,-76,-23,-35,-35,-42,-127,-141,-31,-23,-91,-47;a22:4825706,1638535,76,189,20,50,26,65,55,136,9,24,108,260,96,138,31,28,92,55,34,18,21,10,567,256,171,69,59,25,45,19,139,56,35,50,-26,141,-14,59,-23,100;a22:4821133,1644048,172,-253,62,-98,327,-475,96,-135,58,-88,237,-362,126,-175,402,-553,157,-204,594,-741,107,-124,55,-63,135,-146,151,-163,314,-359,318,-359,248,-260,95,-99,483,-481,49,-45,306,-277,103,-92,241,-209,229,-189,258,-208,77,-63,252,-202,103,-83,702,-566,127,-102,29,-24,118,-96,345,-288,14,-12,178,-157,60,-53,351,-314,776,-623,610,-561,210,-133,181,-68,133,-24,767,36,329,-80,44,-18,359,-183,323,-222,108,-90,49,-42,77,-68,275,-282,310,-380;a22:4833053,1633548,-252,262,-148,133,-48,38,-388,274,-367,186,-45,18,-199,60,-196,20,-496,-45,-194,4,-312,91,-222,141,-603,557,-672,535,-324,283,-137,124,-35,31,-40,36,-121,107,-150,126,-247,209,-129,104,-71,57,-689,556,-86,70,-103,83,-252,203,-77,62,-176,142,-105,84,-406,343,-344,309,-138,128,-514,510,-64,66,-22,23,-244,256,-35,36,-444,511,-188,209,-14,16,-23,24,-94,100,-33,36,-107,119,-104,120,-279,336,-151,190,-273,353,-488,664,-149,209,-208,319,-62,94,-438,633,-188,261;s1:4811903,1632411,-6,26,-5,30,5,165,28,91,43,74,154,129,30,17,226,78,49,14,243,94,119,68,154,120,107,130,29,45,90,200,46,163,26,189,-2,245,-10,87,-58,268,-22,89,-24,98,-16,68,-47,193,-89,369,-19,78,-74,401,-33,278,-25,235,-38,359,-9,89,-8,76,-14,133,-30,339,4,487,10,213,1,54,1,136,-3,131,-10,203,-5,61,-23,204,-14,95,-14,97,-152,660,-101,307,-143,357,-34,80,-81,186,-34,76,-68,191,-60,315,-8,275,17,257,12,93,198,854,17,91,43,239,8,49,31,193,41,293,33,263,10,96,38,405,12,158,5,69,5,62,11,211,11,280,1,61,4,152,1,123,-11,312,-32,243,-53,245,-110,390,-34,200,-13,218,14,251,26,164,17,74,22,82,14,44,101,253,7,18,3,6,10,25,52,122,33,73,31,64,22,44,122,199,177,213,55,50,81,59,63,37,130,51,141,23,185,-22,130,-48,65,-31,92,-40,166,-60,209,-52,73,-11,56,-8,30,-2,41,-4,126,2,163,33,119,48,102,58,22,13,113,75,25,16;s1:4833900,1650535,-356,573,-143,184,-210,175,-224,100,-23,4,-186,19,-127,-13,-182,-32,-187,-15,-542,25,-189,-37,-179,-70,-133,-65,-419,-207,-176,-87,-59,-28,-177,-88,-72,-28,-246,-41,-213,32,-195,90,-350,243,-261,136,-204,35,-259,-42;s1:4828586,1651416,219,41,249,-34,263,-139,350,-242,192,-89,211,-32,243,42,72,28,177,87,55,27,85,40,122,60,170,83,188,93,213,105,192,66,185,24,286,-22,141,-7,191,9,197,30,171,23,188,-20,23,-4,226,-100,213,-176,144,-185,358,-576;s1:4815076,1648939,-163,-107,-31,-19,-70,-37,-100,-43,-207,-41,-110,0,-36,3,-36,3,-44,6,-73,12,-215,53,-167,59,-63,29,-56,26,-123,52,-214,34,-44,-2,-153,-34,-61,-25,-165,-107,-54,-49,-129,-147,-82,-117,-36,-58,-49,-86,-22,-44,-17,-32,-98,-224,-9,-22,-11,-27,-70,-167,-32,-89,-12,-40,-42,-162,-29,-197,-2,-363,39,-255,164,-637,32,-245,11,-231,-1,-167,-1,-91,-2,-100,0,-36,-13,-328,-15,-250,-5,-70,-12,-159,-5,-49,-17,-198,-17,-168,-9,-86,-18,-145,-45,-344,-16,-99,-15,-95,-62,-357,-18,-91,-183,-763,-43,-414,1,-186,5,-73,31,-230,46,-171,136,-328,30,-69,35,-78,26,-63,31,-73,138,-376,141,-510,40,-192,13,-70,8,-46,51,-398,1,-15,17,-388,0,-130,-2,-55,-14,-299,-2,-368,30,-345,27,-264,6,-57,38,-360,28,-268,29,-245,77,-406,18,-76,97,-404,48,-197,29,-121,22,-89,11,-45,21,-89,33,-183,9,-254,-39,-275,-72,-209,-34,-69,-86,-138,-131,-134,-220,-140,-148,-64,-110,-34,-51,-16,-104,-31,-165,-81,-43,-57,-26,-71,-8,-47,-3,-186,9,-62;nordbr\u00fccke:4825713,1638529,-40,-100,-23,-56,-38,-94,-54,-135,-62,-155,-28,-70,-103,-254,-10,-24,-38,-98,-9,-21,-10,-25,-19,-39;nordbr\u00fccke:4825272,1637465,30,63,37,92,153,381,79,197,6,15,13,32,44,110,20,50,9,22,31,80,12,28;s2:4828588,1651398,-107,-45,-130,-78,-65,-41,-224,-142,-107,-66,-193,-122,-313,-149,-363,-140,-98,-89,-106,-157,-104,-251,-63,-267,-25,-304,15,-254,27,-164,31,-126,67,-296,20,-293,-6,-147,-5,-60,-25,-164,-2,-13,-31,-113,-52,-111,-72,-91,-68,-52,-267,-135,-116,-12,-76,23,-102,20,-89,-12,-35,-7,-146,-41,-27,-9,-188,-86,-40,-22,-188,-119,-122,-100,-37,-31,-169,-144,-77,-75,-71,-74,-169,-201,-211,-260,-122,-140,-209,-178,-18,-13,-39,-26;s2:4824065,1646030,51,34,18,13,208,183,108,121,47,59,60,74,19,23,85,106,68,83,175,199,58,57,190,163,36,31,163,128,189,113,73,38,109,46,176,52,40,9,106,12,79,-18,113,-26,93,19,118,60,117,60,136,118,61,111,42,150,25,163,8,121,-17,371,-66,293,-34,130,-26,163,-16,259,25,309,65,268,105,255,109,163,125,106,341,124,269,124,101,61,136,85,106,68,223,140,65,41,178,100,61,24;rampe:4819051,1641290,33,71,17,39,14,130,1,51,4,172,-12,81,-31,78;rampe:4825634,1638355,9,33,9,61,-17,56,-89,98;rampe:4825694,1638507,8,32,21,66,43,127,24,19,21,-1,23,-19,15,-33,18,-150,3,-62;rampe:4826114,1638131,-210,143,-176,148,-34,-2,-31,-31,-13,-16;rampe:4826000,1639259,5,28,30,56,54,71,18,20,34,33,20,35,13,20;rampe:4824402,1639770,-113,101,-136,146,-33,17,-35,-1,-42,-28,-31,-59,-15,-42,-5,-22,-52,-170,-36,-72;rampe:4816080,1638193,-30,-25,-14,-51,-26,-121,-47,-140,-54,-110,-59,-87,-82,-86,-63,-42,-47,-15;rampe:4817254,1645533,13,4,49,-1,44,28,19,53,-15,59,-64,59,-56,24,-77,-1,-44,-30,-14,-18,-9,-15;rampe:4826274,1639508,76,58,68,31,114,50,31,15,19,17,18,45;rampe:4823639,1640630,-45,28,-68,65,-53,62;rampe:4820222,1642998,15,47,19,47,9,63,2,134,24,70,45,69;rampe:4823812,1640468,109,-87,108,-38,27,-38,9,-49,-34,-162,-4,-21,-21,-121,-9,-48;rampe:4823954,1639802,24,175,-7,177,-17,76,-18,42,-13,19,-102,118,-51,81;rampe:4817685,1645375,-87,24,-59,-3,-189,-104,-95,-27,-52,-3,-17,17,37,2;rampe:4827018,1639822,-67,-44,-146,-61;rampe:4825728,1638496,26,-11,30,-8,22,6,23,27,7,32,-3,34,-15,29,-20,15,-29,-3,-19,-15,-23,-37;rampe:4819569,1641276,24,-23,40,-50,23,-24,44,-42;rampe:4818699,1642748,-42,116,-24,67,-15,53,-17,9;rampe:4823765,1645844,79,67,44,31,118,5,66,41,8,6,25,27,29,75,20,24,96,68,42,32,50,40;rampe:4824661,1646643,17,45,5,58,11,20,-5,-21,5,-20,13,-7,22,8;rampe:4824839,1646839,-37,-71,-1,-24,9,-28,20,-44,21,-38,18,-4;rampe:4825056,1637357,18,19,15,10,86,4,14,2,64,40;rampe:4825355,1637641,-10,-91,9,-67,25,-60,49,-80,19,-62,-4,-98;rampe:4823082,1641638,-48,-67,-25,-43,-14,-31,-3,-29,8,-28,22,-32,67,-84,35,-11,27,33,39,74,22,62,-5,38,-26,22,-52,-37;rampe:4822562,1645002,97,138,70,63,140,81,28,46,7,52,-2,17,-30,145;rampe:4818496,1640529,27,38,107,131,46,88,8,85,-20,97,-31,103,-52,210;rampe:4825298,1637497,-13,-45,-15,-65,4,-23,25,-29,39,-1,38,-2,30,-18,25,-44;rampe:4825037,1637258,-6,75,9,38,27,57,59,67,46,18,35,-3;rampe:4825372,1637405,44,-80,15,-55,-1,-85,-29,-58,-44,-22,-162,57;rampe:4812890,1635942,8,-13,68,-226,23,-100,12,-61,7,-44,4,-31;rampe:4813246,1634332,8,-25,26,-99,33,-61,65,-63,64,-22,40,-8,8,-2,36,-4,7,2;rampe:4823461,1640796,-25,28,-140,163;rampe:4826232,1639494,6,-23,-3,-14,-22,-26;rampe:4815745,1631902,18,3,6,12,-23,122,-3,254;rampe:4820341,1643421,-52,-86,-6,-44,10,-37,23,-22,27,-3,32,17,48,46;rampe:4824337,1646238,-112,-125,-77,-68,-61,-59,-8,-6,-97,-59,-62,-12,-116,-53;rampe:4825625,1638588,38,-14,21,1,24,24,47,131,55,82,18,27;rampe:4815134,1634089,-125,70,-37,49,-32,72,-32,29,-46,-11;rampe:4814860,1634313,48,21,64,73,26,78,22,9,28,-12,26,-34,13,-45,-4,-140,12,-79;rampe:4813169,1633692,10,45,7,56,-5,53,-43,109,-1,42,26,47,59,20,53,7,167,-9;rampe:4826812,1648030,0,-84,31,-140,-1,-38,-16,-43;rampe:4828027,1636674,56,36,31,45,18,70,11,107,-1,23,-5,56,-24,200,-4,153,4,75,15,132;rampe:4827953,1651043,9,15,44,43,43,42,42,80,20,82,7,31;rampe:4828351,1651275,-4,-12,-78,-71,-63,-47,-33,1;rampe:4826564,1647669,43,65,7,42,0,84,20,41,21,13,23,-2,53,-56,21,-27,27,-53,8,-37,12,-10;rampe:4823190,1641420,39,79;rampe:4818099,1640041,-24,33,-21,50,-12,99,8,56,19,51,52,61,62,26,58,4,34,-4;rampe:4813062,1635092,-11,18,-66,193,-45,171,-6,29,-14,48;rampe:4823502,1640986,-17,-63,5,-37,37,-78,134,-177;rampe:4817180,1645348,17,-46,26,-21,66,6,60,20,79,54,13,31,-1,43,-15,26,-34,21;rampe:4821848,1642999,114,-140,86,-127,38,-57,14,-3,7,10;rampe:4822076,1642612,-16,-1,-39,57,-74,111,-100,197;rampe:4821975,1642801,19,-4,35,-54,63,-93,99,-146,20,-42;rampe:4822204,1642448,-84,94,-73,103,-42,62,-4,5,-32,48,-5,17,5,14;rampe:4825873,1638927,-35,-144,-2,-19,-1,-47,35,-231,14,-69,18,-42,32,-46,35,-42;rampe:4821969,1642760,-14,-1,-14,-3;rampe:4826130,1647539,-89,1,-61,-8,-7,-2,-40,-11;rampe:4825918,1647575,43,9,55,8,39,1,65,-27,3,-10;rampe:4825807,1647488,-49,11;rampe:4825722,1647501,69,50;rampe:4824959,1639163,-135,146,-57,80;rampe:4825281,1638879,-96,65,-114,107,-12,12,-13,11,-17,12,-16,-7;rampe:4828160,1651191,26,39,63,33,98,29;rampe:4828144,1651125,-24,-34,-39,-26,-126,-39;rampe:4817064,1645730,27,-7,29,22,40,27,41,7,45,-7,63,-31,60,-54,115,-176,92,-67;rampe:4824776,1646552,31,60,0,52;rampe:4824815,1646652,-5,27,16,-50;rampe:4824962,1646982,91,97,26,23,61,51,29,24;rampe:4824905,1637055,-27,1,-92,-60;rampe:4813001,1635542,12,-28,28,-6;rampe:4813040,1635494,-21,-12,-7,-15,70,-390,0,-21;rampe:4817950,1640169,52,20,47,-11,40,-36,34,-59,35,-60,46,-54,31,-33;rampe:4825009,1639100,9,12,9,10,6,6,7,3,12,2,17,-7;rampe:4822952,1641395,-3,29;rampe:4815205,1633778,-96,-79,-53,-25,-51,-7,-29,1,-45,3,-92,-7;rampe:4820863,1644399,-126,204,-77,120;rampe:4821189,1644680,19,10,63,21,59,-23,47,-66,13,-41,7,-62,-6,-63,-30,-86,-77,-114,-20,-25,-58,-44,-81,-4;rampe:4821305,1644756,27,-1,11,0,78,-27,185,-145,77,-60,42,-30,53,-40,59,-39;rampe:4821670,1644516,-4,1,-67,41,-62,5,-43,-23,-58,-68,-75,-102;rampe:4821704,1644700,-6,-4,-26,-3,-84,-24,-95,-82,-65,-106,-67,-111;rampe:4821159,1643964,-108,163;rampe:4815793,1632005,29,-72,45,-50,57,-33;rampe:4814908,1634334,56,42,47,91,22,36;rampe:4812908,1635525,12,26,-18,121,-24,238,2,30;rampe:4820430,1643281,-37,-108,-1,-43,8,-36,21,-33,28,-17,31,2,29,23,42,62;rampe:4821189,1644680,18,21,28,23,70,32,26,10,12,2,59,4,67,-11,152,-46;rampe:4823971,1640154,-14,114,14,50,31,16,25,-15,43,-122,56,-88;rampe:4822086,1642675,11,-28;rampe:4824830,1646672,5,-44;rampe:4825140,1647153,28,-10,8,-12;rampe:4825925,1647517,-1,17,2,12,-8,7,-10,21;rampe:4825973,1647530,-47,16,22,34;rampe:4818744,1639357,-47,110,-83,114,-56,60,-66,50,-97,111,-56,48,-83,54,-92,65,-65,72,-31,84,-1,95,15,53,24,42,45,43,65,34,30,17;rampe:4818341,1639863,45,-35,110,-124,124,-112,68,-91,62,-117,9,-16;rampe:4815638,1637525,116,92,71,73,62,91,52,107,27,76,32,134,18,95,-1,61;rampe:4817095,1645706,25,39;rampe:4824925,1637234,11,17,82,82,91,130,48,33,50,14,44,-10,33,-16,74,-63;rampe:4827910,1636730,114,-71,37,0,24,13,32,41,17,49,12,96,-3,74;rampe:4825836,1638764,-7,-43,4,-97,29,-146,-5,-59,-24,-33,-34,-2,-253,219,-127,148;rampe:4826314,1639442,-101,-11,-11,-4,-72,-37,-72,-71,-60,-86;rampe:4826107,1639434,11,20,11,33,-8,35;rampe:4828049,1651143,19,14,36,17,25,-2;rampe:4828156,1636907,-1,-172,-22,-154;rampe:4823395,1640905,-99,82,-115,141,-65,113;rampe:4822770,1641705,48,-46,46,-52,53,-58,36,-22,30,10,39,50,22,27;rampe:4822959,1641415,-36,43,-130,171,-101,155;rampe:4819356,1641381,-26,33,-53,140,-53,88,-34,30,-27,-3,-15,-15,-12,-29,-1,-37,9,-28,18,-21,23,-5,23,12,39,32;rampe:4826611,1639680,-36,-58,-118,-56,-115,-58,-87,-22;rampe:4819404,1641398,-31,-7,-21,11,-66,144,-154,265,-55,101;rampe:4824009,1646138,17,-25,33,-28,24,-3,71,38;rampe:4825059,1639063,-10,16,-13,24,-3,17,0,8,0,9,3,14,9,16;rampe:4825065,1639172,-4,-24,8,-22,3,-3,42,-39,156,-174;rampe:4819190,1641854,45,34,17,9,52,14,117,2,48,16,30,23,20,18;rampe:4825337,1637447,67,-39,43,-83,42,-90;rampe:4819051,1641290,41,70,23,67,6,44,3,110,3,116,12,65,24,57,27,35,39,11,35,-16,19,-32,26,-86,135,-232,2,-16;rampe:4821997,1642830,-3,-11,0,-22;rampe:4813412,1634052,-77,-27,-45,-44,-39,-65,-23,-75,-12,-38;rampe:4822864,1641607,158,-199;rampe:4819532,1641967,-15,-35,-31,-103,-11,-267,-11,-58,-27,-63,-33,-43,-71,-38,-115,5,-19,4;rampe:4819532,1641967,-12,-38,-26,-95,-7,-153,-9,-184,13,-73,11,-33;rampe:4819421,1641332,-27,22,-38,27,-137,-9,-20,-3,-66,-17,-46,-36;rampe:4826886,1639799,77,29,49,5;rampe:4819231,1641885,37,-7,132,19,69,32;rampe:4823181,1641128,-79,96,-40,53,-6,25,4,26,38,45,94,73,20,36;rampe:4825111,1647078,-16,-13,-36,-30,-72,-47;rampe:4824819,1646623,-2,19,-2,10,-8,12,-29,38,-16,5,-24,-10,-68,-59;rampe:4823089,1641324,78,-91;rampe:4819584,1641081,-34,48,-22,39;rampe:4824694,1646766,38,31,23,-12,26,-49,29,-57;rampe:4821284,1644256,-47,-70,-31,-59,-20,-79,9,-47,110,-206;rampe:4819156,1641977,11,-4,64,-88,49,-43,46,-133,53,-86,39,-27,30,11,21,39,-5,62,-16,25,-30,11,-21,-6,-51,-41;rampe:4815807,1631899,-1,-17,-7,-9;rampe:4821834,1644401,-47,27,-117,88,-3,6,-65,49,-90,63,-45,12,-59,-12,-63,-49,-84,-87;rampe:4826791,1647712,-13,30,-10,48,-20,31,-22,26,-51,54,-24,0,-23,-23,-9,-45,13,-43,31,-19,37,16;rampe:4826793,1647685,-21,3,-96,-4,-87,-21;rampe:4823289,1641085,63,-74,80,-96,14,-6,10,7;rampe:4816101,1638487,68,17,88,53,157,52,129,71;rampe:4816615,1638740,-22,-38,-53,-62,-61,-47,-134,-51,-92,-37,-54,-40,-9,-18,-1,-33;rampe:4818964,1641136,-18,-46,-128,-238,-34,-55,-33,-13,-27,22,-20,73,-33,96,-38,96;rampe:4824093,1645980,26,-21,38,-34,39,21,12,31,0,35,-10,32,-19,20,-19,4,-32,-8;rampe:4824787,1639391,42,-27,72,-69,36,-34;rampe:4823888,1645942,81,55,29,67,1,16,-8,77;rampe:4818164,1639969,-34,16,-84,49,-68,7,-144,-34;rampe:4818208,1640369,-5,-14,-50,-37,-31,-40,-23,-56,-8,-65,10,-76,27,-59,40,-42,67,-44,106,-73,75,-49,59,-58,78,-124,7,-11,9,-20,-28,17,-27,21,-78,95,-97,116;rampe:4818569,1639601,5,-8;rampe:4815139,1634611,-9,-44,-25,-92,0,-89,6,-79,-7,-61,-9,-30,-21,-28,-24,-10,-31,7,-34,27,-45,68;rampe:4814653,1633614,82,45,82,60,60,44,34,38;rampe:4816063,1631793,-27,-3,-129,9,-60,35,-47,61;rampe:4820667,1644732,110,-169,203,-294;rampe:4820777,1644563,143,-146;rampe:4814903,1633700,17,13,117,51,119,51,68,34;rampe:4824584,1637019,25,23,36,-25,18,2,34,20;rampe:4824570,1636922,37,45,18,25,1,19,-17,20,-18,-18;rampe:4823239,1641485,-28,-46,-65,-127,2,-45,19,-34,122,-148,75,-121;rampe:4825101,1637613,12,-52,5,-80,10,-49,16,-26,31,-16;rampe:4825296,1637105,-99,41,-107,3,-114,-22,-106,-49,-140,-109,-51,-49,-85,-94;rampe:4823053,1645139,24,-19,32,20,7,31,-4,23,-30,57,-42,22,-4,0,-30,1;rampe:4818593,1641285,20,-106,44,-147,25,-45,38,-38,43,-10,54,32,99,141,40,39;rampe:4813527,1634017,-31,21,-84,14,-139,7,-51,-7,-65,-28,-13,-29,7,-51,33,-24,23,12,16,36,13,62,5,14;rampe:4818657,1641032,20,-52,80,-172,-9,-48,-36,-50,-118,-137,-79,-67,-31,-6;rampe:4821237,1644186,-37,-50,-53,-66,-42,-3;rampe:4824712,1636929,-120,-131;rampe:4821778,1644453,33,-3,11,38;rampe:4820556,1643124,-42,-65,-49,-28,-118,29,-59,-25,-57,-46;rampe:4828136,1637566,-7,-53,-10,-146,1,-123,27,-238,6,-56,3,-43,-10,-121,-29,-164,15,-64,32,-42;rampe:4828167,1637547,-25,-6,-13,-28";
+// Eigene, vereinfachte Umriss-Icons bekannter Gebäude (viewBox 0 0 24 24, Füllung currentColor)
+const LANDMARKS = {
+  // Staatsoper: Arkaden-Loggia mit Kupferdach
+  oper: 'M2 10.5 6 7h12l4 3.5zM3 11.5h18V20H3zM5 20v-4.2a1.3 1.3 0 0 1 2.6 0V20zM8.9 20v-4.2a1.3 1.3 0 0 1 2.6 0V20zM12.5 20v-4.2a1.3 1.3 0 0 1 2.6 0V20zM16.4 20v-4.2a1.3 1.3 0 0 1 2.6 0V20zM9 6.2 12 4l3 2.2z',
+  // Albertina: Bastei-Palais mit dem schwebenden Flugdach
+  albertina: 'M1 8.2h15.5v1.4H1zM14.6 9.6h1.2v2.4h-1.2zM9 12h13v7.5H9zM11 14h1.6v2.2H11zM14.2 14h1.6v2.2h-1.6zM17.4 14H19v2.2h-1.6zM2 19.5h20V21H2zM2 19.5l5-5.5h2v1.4H7.6L3.8 19.5z',
+  // Burgtheater: geschwungene Front, Mittelbau mit Kuppeldach
+  burgtheater: 'M8.5 9a3.5 3 0 0 1 7 0zM8 9.5h8V13H8zM2 13.5Q12 10.5 22 13.5V20H2zM4.5 20v-3.5h1.6V20zM8 20v-3.8h1.6V20zM11.2 20v-4h1.6v4zM14.4 20v-3.8H16V20zM17.9 20v-3.5h1.6V20z',
+  // Börse: Ziegelblock mit zwei Ecktürmen
+  boerse: 'M2.5 8 4.75 5.5 7 8zM2.5 8.6H7V20H2.5zM17 8l2.25-2.5L21.5 8zM17 8.6h4.5V20H17zM7.4 11h9.2v9H7.4zM9 13h1.6v2.2H9zM11.2 13h1.6v2.2h-1.6zM13.4 13H15v2.2h-1.6zM10.6 20v-2.8h2.8V20z',
+  // Ankeruhr: Brücke zwischen zwei Häusern mit großem Zifferblatt
+  ankeruhr: 'M2 7h5v13H2zM17 7h5v13h-5zM7 7.5h10v8H7zM12 8.6a3 3 0 1 0 .01 0zM11.6 10.2h.8v1.9l1.3 1-.5.6-1.6-1.2z',
+  // Bundeskanzleramt (Ballhausplatz): Barockpalais mit Giebel
+  kanzleramt: 'M8 9.2 12 6.5l4 2.7zM2 9.8h20V20H2zM3.8 12h1.6v2.2H3.8zM6.6 12h1.6v2.2H6.6zM9.4 12h1.6v2.2H9.4zM13 12h1.6v2.2H13zM15.8 12h1.6v2.2h-1.6zM18.6 12h1.6v2.2h-1.6zM10.8 20v-3.6a1.2 1.2 0 0 1 2.4 0V20z',
+  // Regierungsgebäude (Stubenring): breiter Bau mit Mittelkuppel
+  regierung: 'M8.8 9.4a3.2 3.2 0 0 1 6.4 0zM11.6 4.6h.8v2.2h-.8zM9.4 9.8h5.2v1.8H9.4zM1.5 12h21v8h-21zM3.5 14h1.5v2h-1.5zM6.3 14h1.5v2H6.3zM9.1 14h1.5v2H9.1zM13.4 14h1.5v2h-1.5zM16.2 14h1.5v2h-1.5zM19 14h1.5v2H19zM11 20v-3h2v3z',
+  // Museumsquartier: lange Hofstallungen mit Mittelturm und Zwiebelhaube
+  mq: 'M10.2 9.5a1.8 2.2 0 0 1 3.6 0zM11.6 4.5h.8v3h-.8zM10.3 9.8h3.4V13h-3.4zM1.5 13.3h21V20h-21zM3.2 15.2h1.5v2H3.2zM6 15.2h1.5v2H6zM16.5 15.2H18v2h-1.5zM19.3 15.2h1.5v2h-1.5zM10.6 20v-3.4a1.4 1.4 0 0 1 2.8 0V20z',
+  // Postsparkasse (Otto Wagner): strenge Fassade mit Dachfiguren
+  postsparkasse: 'M3.5 4.5h1.6v1.2l.8.8v2.3H3.1V6.5l.4-.8zM18.9 4.5h1.6v1.2l.4.8v2.3h-2.8V6.5l.8-.8zM2.5 9h19v11h-19zM5 11.5h14v.9H5zM5 14h2v3.5H5zM8.4 14h2v3.5h-2zM13.6 14h2v3.5h-2zM17 14h2v3.5h-2zM10.9 20v-5.2h2.2V20z',
+  // Lugeck: Gutenberg-Denkmal auf Sockel
+  lugeck: 'M12 3.6a1.7 1.7 0 1 0 .01 0zM9.8 6.4h4.4l.8 6.2h-6zM10.4 12.6h3.2v1.4h-3.2zM8.6 14h6.8v3H8.6zM7.4 17h9.2v1.4H7.4zM6.4 18.4h11.2V20H6.4z',
+};
+
+// ---------- Reine Logik (ohne DOM) ----------
+// Autobahnen, Rampen und Namen, die im Wiener Straßengraphen anders heißen
+const KEY_ALIAS = { gürtelbrücke: 'gürtelbrückeüberdendonaukanal', bitterlichbrücke: 'bitterlichstrnbrücke', verteilerkreisfavoriten: 'alteslandgut', verteilerkreis: 'alteslandgut', johannstraussgasse: 'johannstraussgasse' };
+const HWY_KEYS = new Set(['a22', 'a23', 'a4', 's1', 's2', 'nordbrücke', 'rampe']);
+function streetKey(label) {
+  const m = String(label).match(/^\s*([AS])\s*-?\s*(\d+)/i);
+  if (m) return m[1].toLowerCase() + m[2];
+  if (/^\s*(ausfahrt|abfahrt|kreisverkehr)|ausfahrt\s*$/i.test(label)) return 'rampe';
+  let s = label.split('/')[0];
+  s = s.replace(/\(.*?\)/g, ' ').replace(/nebenfahrbahn/ig, ' ');
+  s = s.toLowerCase().replace(/ß/g, 'ss').replace(/strasse/g, 'str');
+  s = s.replace(/[^a-zäöü]/g, '');
+  return KEY_ALIAS[s] || s;
+}
+// Schlüssel für die Wegsuche (nur vorhandene Straßen); own[j] = Index des Routenschritts.
+// Zwei Rampen hintereinander („Abfahrt A22 Richtung Norden“, „Ausfahrt Strebersdorf“): dazwischen liegt die genannte
+// Autobahn – sie kommt als verstecktes Zwischenstück dazu, sonst fielen beide Rampen auf denselben Punkt.
+function searchKeys(steps, has) {
+  const keys = [], own = [];
+  steps.forEach((s, i) => {
+    const k = streetKey(s); if (!has(k)) return;
+    keys.push(k); own.push(i);
+    const m = String(s).match(/\b([AS])\s*-?\s*(\d+)/i), via = m && m[1].toLowerCase() + m[2];
+    if (k === 'rampe' && i + 1 < steps.length && streetKey(steps[i + 1]) === 'rampe' && via && has(via)) { keys.push(via); own.push(i); }
+  });
+  return { keys, own };
+}
+function stepNote(label) {
+  const m = label.match(/\((.*?)\)/); const notes = [];
+  if (m) notes.push(m[1]);
+  if (/nebenfahrbahn/i.test(label)) notes.push('Nebenfahrbahn');
+  return notes.join(', ');
+}
+function stepName(label) {
+  return label.replace(/\(.*?\)/g, '').replace(/\s*Nebenfahrbahn/i, '').trim();
+}
+function shuffle(a, rnd = Math.random) {
+  a = a.slice();
+  for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(rnd() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; }
+  return a;
+}
+// Alle Straßen aus allen Routen (eindeutig nach Schlüssel)
+function streetPool(routes) {
+  const m = new Map();
+  routes.forEach(r => r.steps.forEach(s => { const k = streetKey(s); if (!m.has(k)) m.set(k, stepName(s)); }));
+  return m; // key -> Anzeigename
+}
+// Falsche Varianten einer Route für die Auswahl-Aufgabe
+function mutateRoute(steps, pool, rnd = Math.random) {
+  const s = steps.slice(); const n = s.length;
+  const kinds = shuffle(['swap', 'replace', 'drop', 'insert'], rnd);
+  for (const kind of kinds) {
+    if (kind === 'swap' && n >= 4) {
+      const i = 1 + Math.floor(rnd() * (n - 3));
+      if (streetKey(s[i]) === streetKey(s[i + 1])) continue;
+      [s[i], s[i + 1]] = [s[i + 1], s[i]]; return { steps: s, kind, at: i };
+    }
+    if (kind === 'replace' && n >= 3) {
+      const i = 1 + Math.floor(rnd() * (n - 2));
+      const used = new Set(steps.map(streetKey));
+      const cand = [...pool.entries()].filter(([k]) => !used.has(k));
+      if (!cand.length) continue;
+      s[i] = cand[Math.floor(rnd() * cand.length)][1]; return { steps: s, kind, at: i };
+    }
+    if (kind === 'drop' && n >= 5) {
+      const i = 1 + Math.floor(rnd() * (n - 2));
+      if (i > 0 && i < n - 1 && streetKey(s[i - 1]) === streetKey(s[i + 1])) continue;
+      s.splice(i, 1); return { steps: s, kind, at: i };
+    }
+    if (kind === 'insert') {
+      const i = 1 + Math.floor(rnd() * (n - 1));
+      const used = new Set(steps.map(streetKey));
+      const cand = [...pool.entries()].filter(([k]) => !used.has(k));
+      if (!cand.length) continue;
+      s.splice(i, 0, cand[Math.floor(rnd() * cand.length)][1]); return { steps: s, kind, at: i };
+    }
+  }
+  return null;
+}
+function sameRoute(a, b) { return a.length === b.length && a.every((x, i) => streetKey(x) === streetKey(b[i])); }
+function makeChoices(route, pool, count = 3, rnd = Math.random) {
+  const opts = [{ steps: route.steps, correct: true }];
+  let guard = 0;
+  while (opts.length < count && guard++ < 60) {
+    const m = mutateRoute(route.steps, pool, rnd);
+    if (m && !opts.some(o => sameRoute(o.steps, m.steps))) opts.push({ steps: m.steps, correct: false, kind: m.kind, at: m.at });
+  }
+  return shuffle(opts, rnd);
+}
+// Geometrie: Meter-Distanz (equirektangulär, reicht für die Innenstadt)
+function dist(a, b) {
+  const kx = 111320 * Math.cos(48.21 * Math.PI / 180), ky = 110540;
+  const dx = (a[1] - b[1]) * kx, dy = (a[0] - b[0]) * ky; return Math.hypot(dx, dy);
+}
+function nearestPair(waysA, waysB) {
+  let best = Infinity, pa = null, pb = null;
+  for (const wa of waysA) for (const a of wa) for (const wb of waysB) for (const b of wb) {
+    const d = dist(a, b); if (d < best) { best = d; pa = a; pb = b; }
+  }
+  return { a: pa, b: pb, d: best };
+}
+// Ausschnitt einer Straße zwischen Vorgänger- und Nachfolger-Kreuzung
+function clipStreet(ways, A, B) {
+  const runs = [];
+  const keep = p => {
+    if (A && B) {
+      const L = dist(A, B);
+      if (L < 25) return dist(p, A) < 45;
+      const kx = 111320 * Math.cos(48.21 * Math.PI / 180), ky = 110540;
+      const ax = A[1] * kx, ay = A[0] * ky, bx = B[1] * kx, by = B[0] * ky, px = p[1] * kx, py = p[0] * ky;
+      const vx = bx - ax, vy = by - ay, t = ((px - ax) * vx + (py - ay) * vy) / (L * L);
+      const perp = Math.abs((px - ax) * vy - (py - ay) * vx) / L;
+      return t > -0.03 && t < 1.03 && perp < L * 0.45 + 25;
+    }
+    const C = A || B; return C ? dist(p, C) < 170 : true;
+  };
+  for (const w of ways) {
+    let cur = [];
+    for (const p of w) { if (keep(p)) cur.push(p); else { if (cur.length > 1) runs.push(cur); cur = []; } }
+    if (cur.length > 1) runs.push(cur);
+  }
+  return runs;
+}
+
+// ---------- Wegsuche entlang einer Straße ----------
+function streetGraph(ways) {
+  const idx = new Map(), co = [], adj = [];
+  const node = p => { const k = p[0].toFixed(6) + ',' + p[1].toFixed(6); if (!idx.has(k)) { idx.set(k, co.length); co.push(p); adj.push([]); } return idx.get(k); };
+  const link = (a, b, w) => { if (a === b) return; adj[a].push([b, w]); adj[b].push([a, w]); };
+  for (const w of ways) { let prev = null; for (const p of w) { const n = node(p); if (prev != null) link(prev, n, dist(co[prev], co[n])); prev = n; } }
+  // nahe, aber unverbundene Teile (Richtungsfahrbahnen, Platzflächen) koppeln
+  for (let i = 0; i < co.length; i++) for (let j = i + 1; j < co.length; j++) {
+    const d = dist(co[i], co[j]); if (d < 18 && !adj[i].some(e => e[0] === j)) link(i, j, d * 1.5 + 3);
+  }
+  return { co, adj };
+}
+function nearestNode(g, p) { let b = -1, bd = Infinity; g.co.forEach((c, i) => { const d = dist(c, p); if (d < bd) { bd = d; b = i; } }); return b; }
+function dijkstra(g, s) {
+  const n = g.co.length, D = new Array(n).fill(Infinity), P = new Array(n).fill(-1), done = new Array(n).fill(false);
+  D[s] = 0;
+  for (;;) {
+    let u = -1, best = Infinity;
+    for (let i = 0; i < n; i++) if (!done[i] && D[i] < best) { best = D[i]; u = i; }
+    if (u < 0) break; done[u] = true;
+    for (const [v, w] of g.adj[u]) if (D[u] + w < D[v]) { D[v] = D[u] + w; P[v] = u; }
+  }
+  return { D, P };
+}
+function trace(P, t) { const out = []; for (let v = t; v >= 0; v = P[v]) out.push(v); return out.reverse(); }
+// Weg auf einer Straße von Einfahrt A nach Ausfahrt B (A/B dürfen fehlen)
+function buildPath(g, A, B, uturn, fallback) {
+  if (!g.co.length) return null;
+  const pts = ids => ids.map(i => g.co[i]);
+  const s = A ? nearestNode(g, A) : -1, t = B ? nearestNode(g, B) : -1;
+  const reachOut = (from, limit) => {
+    const { D, P } = dijkstra(g, from); let far = from, fd = 0;
+    D.forEach((d, i) => { if (d <= limit && d > fd) { fd = d; far = i; } });
+    return trace(P, far);
+  };
+  if (s >= 0 && t >= 0) {
+    if (s === t || dist(g.co[s], g.co[t]) < 25) {
+      if (uturn) { const out = reachOut(s, 90); return pts(out.concat(out.slice(0, -1).reverse())); }
+      return pts([s, t]);
+    }
+    const { D, P } = dijkstra(g, s);
+    if (D[t] < Infinity) return pts(trace(P, t));
+    const alt = fallback ? fallback(g.co[s], g.co[t]) : null;
+    return alt && alt.length > 1 ? alt : pts([s, t]);
+  }
+  if (s >= 0) return pts(reachOut(s, 140));
+  if (t >= 0) return pts(reachOut(t, 140).reverse());
+  return null;
+}
+
+// ---------- Ausweich-Wegsuche über das ganze Netz ----------
+function globalGraph(streets) {
+  const idx = new Map(), co = [], adj = [], keys = Object.keys(streets);
+  const node = p => { const k = p[0].toFixed(6) + ',' + p[1].toFixed(6); if (!idx.has(k)) { idx.set(k, co.length); co.push(p); adj.push([]); } return idx.get(k); };
+  keys.forEach((key, ki) => {
+    for (const w of streets[key]) { let prev = null; for (const p of w) { const n = node(p); if (prev != null && prev !== n) { const d = dist(co[prev], co[n]); adj[prev].push([n, d, ki]); adj[n].push([prev, d, ki]); } prev = n; } }
+  });
+  return { idx, co, adj, keys };
+}
+function heapPush(h, item) { h.push(item); let i = h.length - 1; while (i > 0) { const p = (i - 1) >> 1; if (h[p][0] <= h[i][0]) break; [h[p], h[i]] = [h[i], h[p]]; i = p; } }
+function heapPop(h) { const top = h[0], last = h.pop(); if (h.length) { h[0] = last; let i = 0; for (;;) { const l = 2 * i + 1, r = l + 1; let m = i; if (l < h.length && h[l][0] < h[m][0]) m = l; if (r < h.length && h[r][0] < h[m][0]) m = r; if (m === i) break; [h[m], h[i]] = [h[i], h[m]]; i = m; } } return top; }
+// kürzester Weg von a nach b; Meter auf fremden Straßen zählen "penalty"-fach
+function globalPath(G, a, b, key, penalty = 6) {
+  const ka = G.idx.get(a[0].toFixed(6) + ',' + a[1].toFixed(6)), kb = G.idx.get(b[0].toFixed(6) + ',' + b[1].toFixed(6));
+  if (ka == null || kb == null) return null;
+  const own = G.keys.indexOf(key), D = new Map([[ka, 0]]), P = new Map(), h = [[0, ka]];
+  while (h.length) {
+    const [d, u] = heapPop(h);
+    if (u === kb) break;
+    if (d > (D.get(u) ?? Infinity)) continue;
+    if (d > 6000) break;
+    for (const [v, w, ki] of G.adj[u]) {
+      const nd = d + w * (ki === own ? 1 : penalty);
+      if (nd < (D.get(v) ?? Infinity)) { D.set(v, nd); P.set(v, u); heapPush(h, [nd, v]); }
+    }
+  }
+  if (!D.has(kb)) return null;
+  const out = []; for (let v = kb; v != null; v = P.get(v)) out.push(G.co[v]);
+  return out.reverse();
+}
+
+// ---------- Ganze Route als ein Weg ----------
+// Netz mit Straßen-Zugehörigkeit je Knoten + kurzen Brücken über Datenlücken
+function routeNet(streets, needKeys) {
+  const G = globalGraph(streets);
+  const keyIdx = new Map(G.keys.map((k, i) => [k, i]));
+  const nk = G.co.map(() => []);
+  G.keys.forEach((key, ki) => { for (const w of streets[key]) for (const p of w) { const n = G.idx.get(p[0].toFixed(6) + ',' + p[1].toFixed(6)); if (!nk[n].includes(ki)) nk[n].push(ki); } });
+  // Raster für Nachbarsuche
+  const cell = p => Math.floor(p[0] / 0.00015) + ':' + Math.floor(p[1] / 0.0002);
+  const grid = new Map(); G.co.forEach((p, i) => { const c = cell(p); (grid.get(c) || grid.set(c, []).get(c)).push(i); });
+  const near = (i, r) => { const p = G.co[i], a = Math.floor(p[0] / 0.00015), b = Math.floor(p[1] / 0.0002), out = [], n = Math.ceil(r / 15);
+    for (let x = a - n; x <= a + n; x++) for (let y = b - n; y <= b + n; y++) for (const j of grid.get(x + ':' + y) || []) if (j !== i && dist(p, G.co[j]) < r) out.push(j); return out; };
+  const need = new Set([...needKeys].map(k => keyIdx.get(k)).filter(x => x != null));
+  const hwy = new Set([...HWY_KEYS].map(k => keyIdx.get(k)).filter(x => x != null));
+  G.co.forEach((p, i) => {
+    if (!nk[i].some(k => need.has(k))) return;
+    // Autobahn-Daten (OpenStreetMap) und Stadtstraßen (Stadt Wien) treffen sich nicht exakt: großzügiger verbinden
+    if (nk[i].some(k => hwy.has(k))) {
+      for (const j of near(i, 40)) {
+        if (nk[j].some(k => hwy.has(k)) || G.adj[i].some(e => e[0] === j)) continue;
+        const d = dist(p, G.co[j]); G.adj[i].push([j, d * 2 + 4, -1]); G.adj[j].push([i, d * 2 + 4, -1]);
+      }
+    }
+    for (const j of near(i, 20)) {
+      if (G.adj[i].some(e => e[0] === j)) continue;
+      const shared = nk[i].find(k => nk[j].includes(k));
+      const d = dist(p, G.co[j]);
+      if (shared != null && d < 20) { G.adj[i].push([j, d * 1.5 + 2, shared]); G.adj[j].push([i, d * 1.5 + 2, shared]); }
+      else if (d < 12) { G.adj[i].push([j, d + 2, -1]); G.adj[j].push([i, d + 2, -1]); }
+    }
+  });
+  G.nk = nk; G.keyIdx = keyIdx; return G;
+}
+// keys: Straßenschlüssel der Route (fehlende vorher entfernt); startNodes: optionale Startknoten
+function routeSearch(G, keys, startNodes, penalty = 8, goalNode = null) {
+  const S = keys.length, N = G.co.length, K = keys.map(k => G.keyIdx.get(k));
+  if (K.some(k => k == null)) return null;
+  const D = new Float64Array(N * S).fill(Infinity), P = new Int32Array(N * S).fill(-1), h = [];
+  const starts = startNodes && startNodes.length ? startNodes : G.co.map((_, i) => i).filter(i => G.nk[i].includes(K[0]));
+  for (const s of starts) { D[s * S] = 0; heapPush(h, [0, s * S]); }
+  let goal = -1;
+  while (h.length) {
+    const [d, id] = heapPop(h); if (d > D[id]) continue;
+    const u = Math.floor(id / S), st = id % S;
+    if (st === S - 1 && (goalNode == null || u === goalNode)) { goal = id; break; }
+    if (d > 400000) break;
+    if (G.nk[u].includes(K[st + 1])) { const v = u * S + st + 1; if (d < D[v]) { D[v] = d; P[v] = id; heapPush(h, [d, v]); } }
+    for (const [x, w, ki] of G.adj[u]) {
+      const v = x * S + st, nd = d + w * (ki === K[st] ? 1 : penalty);
+      if (nd < D[v]) { D[v] = nd; P[v] = id; heapPush(h, [nd, v]); }
+    }
+  }
+  if (goal < 0) return null;
+  const chain = []; for (let id = goal; id >= 0; id = P[id]) chain.push(id); chain.reverse();
+  const segs = keys.map(() => []);
+  chain.forEach(id => { const u = Math.floor(id / S), st = id % S, seg = segs[st]; const p = G.co[u]; if (!seg.length || seg[seg.length - 1] !== p) seg.push(p); });
+  for (let i = 1; i < S; i++) if (segs[i - 1].length && segs[i][0] !== segs[i - 1][segs[i - 1].length - 1]) segs[i].unshift(segs[i - 1][segs[i - 1].length - 1]);
+  return segs;
+}
+// vom Punkt aus entlang der eigenen Straße weg von "away" (max. limit Meter)
+function extendAway(g, from, away, limit) {
+  if (!g || !g.co.length) return [from];
+  const s = nearestNode(g, from), { D, P } = dijkstra(g, s); let best = s, bd = dist(g.co[s], away);
+  D.forEach((d, i) => { if (d <= limit) { const x = dist(g.co[i], away); if (x > bd + 1) { bd = x; best = i; } } });
+  return trace(P, best).map(i => g.co[i]);
+}
+// wie extendAway, aber übers ganze Netz (überbrückt Datenlücken der eigenen Straße)
+function extendNet(G, from, away, key, limit, penalty = 8) {
+  const own = G.keyIdx.get(key); if (own == null) return null;
+  let s = G.idx.get(from[0].toFixed(6) + ',' + from[1].toFixed(6));
+  if (s == null) { let bd = Infinity; G.co.forEach((p, i) => { if (G.nk[i].includes(own)) { const d = dist(p, from); if (d < bd) { bd = d; s = i; } } }); }
+  if (s == null) return null;
+  const D = new Map([[s, 0]]), P = new Map(), h = [[0, s]];
+  let best = s, bd = dist(G.co[s], away);
+  while (h.length) {
+    const [d, u] = heapPop(h); if (d > (D.get(u) ?? Infinity)) continue;
+    if (G.nk[u].includes(own)) { const x = dist(G.co[u], away); if (x > bd + 1) { bd = x; best = u; } }
+    for (const [v, w, ki] of G.adj[u]) {
+      const nd = d + w * (ki === own ? 1 : penalty);
+      if (nd <= limit && nd < (D.get(v) ?? Infinity)) { D.set(v, nd); P.set(v, u); heapPush(h, [nd, v]); }
+    }
+  }
+  const out = []; for (let v = best; v != null; v = P.get(v)) out.push(G.co[v]);
+  return out.reverse();
+}
+function densify(streets, step = 20) {
+  const out = {};
+  for (const k in streets) out[k] = streets[k].map(w => {
+    const r = [w[0]];
+    for (let i = 1; i < w.length; i++) {
+      const a = w[i - 1], b = w[i], n = Math.floor(dist(a, b) / step);
+      for (let j = 1; j <= n; j++) { const t = j / (n + 1); r.push([+(a[0] + (b[0] - a[0]) * t).toFixed(6), +(a[1] + (b[1] - a[1]) * t).toFixed(6)]); }
+      r.push(b);
+    }
+    return r;
+  });
+  return out;
+}
+function pathLength(p) { let L = 0; for (let i = 1; i < p.length; i++) L += dist(p[i - 1], p[i]); return L; }
+// Teilstück der ersten f (0..1) Länge eines Weges
+function partialPath(p, f) {
+  const total = pathLength(p); if (f >= 1 || total === 0) return p.slice();
+  const goal = total * Math.max(0, f); const out = [p[0]]; let acc = 0;
+  for (let i = 1; i < p.length; i++) {
+    const d = dist(p[i - 1], p[i]);
+    if (acc + d >= goal) { const r = d ? (goal - acc) / d : 0; out.push([p[i - 1][0] + (p[i][0] - p[i - 1][0]) * r, p[i - 1][1] + (p[i][1] - p[i - 1][1]) * r]); return out; }
+    acc += d; out.push(p[i]);
+  }
+  return out;
+}
+
+// ---------- App ----------
+const POOL = streetPool(ROUTES);
+const STORE_KEY = 'taxi-routen-wien-v2', GEO_KEY = 'taxi-routen-1bez-geo-v1', CHAP_KEY = 'taxi-kapitel-v1';
+let STREETS = null; // key -> [[ [lat,lng], ... ], ...]
+let STREET_BB = {}; // key -> [minLat, minLng, maxLat, maxLng]
+let state = { mode: 'lernen', route: ROUTES[0], step: 0, errors: 0, done: false, open: false, chap: -1 };
+try { const v = localStorage.getItem(CHAP_KEY); const c = v == null ? -1 : +v; if (c >= 0 && c < CHAPTERS.length) state.chap = c; } catch (e) {}
+// Routen des gewählten Kapitels (oder alle)
+function visible() { return state.chap < 0 ? ROUTES : ROUTES.filter(r => r.chap === state.chap); }
+function setChap(c) {
+  state.chap = c; try { localStorage.setItem(CHAP_KEY, String(c)); } catch (e) {}
+  const v = visible(); if (!v.includes(state.route)) { state.open = false; state.route = v[0]; reset(); }
+  renderList(); render();
+}
+if (!visible().includes(state.route)) state.route = visible()[0];
+let stats = {};
+// v1 zählte noch 169 Routen; diese 9 (ohne Start-/Zielpunkt) sind entfernt, die übrigen rücken auf
+const REMOVED_V1 = [53, 62, 67, 83, 89, 99, 135, 144, 145];
+try {
+  const v2 = localStorage.getItem(STORE_KEY);
+  if (v2) stats = JSON.parse(v2);
+  else {
+    const v1 = JSON.parse(localStorage.getItem('taxi-routen-wien-v1') || '{}');
+    for (const n in v1) if (!REMOVED_V1.includes(+n)) stats[n - REMOVED_V1.filter(x => x < n).length] = v1[n];
+    localStorage.setItem(STORE_KEY, JSON.stringify(stats));
+  }
+} catch (e) { stats = {}; }
+const $ = s => document.querySelector(s);
+let camSeq = 0;
+const el = (tag, cls, txt) => { const e = document.createElement(tag); if (cls) e.className = cls; if (txt != null) e.textContent = txt; return e; };
+
+// --- Karte ---
+const map = L.map('map', { zoomControl: true, preferCanvas: true, zoomSnap: 1, zoomDelta: 1, scrollWheelZoom: false }).setView([48.2085, 16.3725], 12);
+const ATTR = 'Karte: <a href="https://basemap.at" target="_blank">basemap.at</a> · Daten: Stadt Wien – data.wien.gv.at · Autobahnen: © <a href="https://www.openstreetmap.org/copyright" target="_blank">OpenStreetMap-Mitwirkende</a> (ODbL)';
+const BASE = {
+  normal: L.tileLayer('https://mapsneu.wien.gv.at/basemap/bmaphidpi/normal/google3857/{z}/{y}/{x}.jpeg', { maxNativeZoom: 19, maxZoom: 20, keepBuffer: 6, attribution: ATTR }),
+};
+// Übersichts-Kacheln der Innenstadt im Hintergrund vorladen, damit beim Rauszoomen nichts leer bleibt
+const prefetched = new Set();
+function prefetchTiles(layer) {
+  const tpl = layer._url; if (!tpl || prefetched.has(tpl)) return; prefetched.add(tpl);
+  const t2 = (lat, lng, z) => { const n = 2 ** z, x = Math.floor((lng + 180) / 360 * n), r = lat * Math.PI / 180, y = Math.floor((1 - Math.log(Math.tan(r) + 1 / Math.cos(r)) / Math.PI) / 2 * n); return [x, y]; };
+  const urls = [];
+  for (let z = 11; z <= 16; z++) {
+    const [x0, y0] = t2(48.2235, 16.3450, z), [x1, y1] = t2(48.1960, 16.3950, z);
+    for (let x = x0; x <= x1; x++) for (let y = y0; y <= y1; y++) urls.push(tpl.replace('{z}', z).replace('{x}', x).replace('{y}', y));
+  }
+  let i = 0; const next = () => { if (i >= urls.length) return; const img = new Image(); img.onload = img.onerror = next; img.src = urls[i++]; };
+  for (let k = 0; k < 4; k++) next();
+}
+// --- Filter: Lernhilfen aus den offenen Daten der Stadt Wien ---
+const FKEY = 'taxi-filter-v1';
+let FILTER = { einbahn: false, fussgeher: false, taxi: false, bezirke: false };
+try { const saved = JSON.parse(localStorage.getItem(FKEY) || '{}'); Object.keys(FILTER).forEach(k => { if (k in saved) FILTER[k] = !!saved[k]; }); } catch (e) {}
+map.createPane('hilfen'); map.getPane('hilfen').style.zIndex = 350;
+const hilfenRenderer = L.canvas({ pane: 'hilfen' });
+const OGD = 'https://data.wien.gv.at/daten/geo?service=WFS&request=GetFeature&version=1.1.0&srsName=EPSG:4326&outputFormat=json&typeName=';
+async function ogd(type, extra) {
+  const key = 'ogd-' + type + '-wien-v1';
+  const c = await idbGet(key); if (c) return c;
+  const res = await fetch(OGD + type + (extra || ''));
+  if (!res.ok) throw new Error('Server antwortet mit ' + res.status);
+  const j = await res.json(); await idbSet(key, j); return j;
+}
+const KX = 111320 * Math.cos(48.21 * Math.PI / 180), KY = 110540;
+function chevrons(coords, out, spacing = 35, s = 4.5) {
+  // coords: [[lat,lng],...] in Fahrtrichtung; alle 'spacing' Meter ein Pfeil der Größe s
+  let acc = 0, nextAt = spacing * 0.4;
+  for (let i = 1; i < coords.length; i++) {
+    const a = coords[i - 1], b = coords[i], dx = (b[1] - a[1]) * KX, dy = (b[0] - a[0]) * KY, L = Math.hypot(dx, dy);
+    if (!L) continue;
+    while (acc + L >= nextAt) {
+      const t = (nextAt - acc) / L, px = a[1] * KX + dx * t, py = a[0] * KY + dy * t, ux = dx / L, uy = dy / L;
+      const arm = ang => { const c = Math.cos(ang), sn = Math.sin(ang), rx = -(ux * c - uy * sn) * s, ry = -(ux * sn + uy * c) * s; return [(py + ry) / KY, (px + rx) / KX]; };
+      out.push([arm(0.6), [py / KY, px / KX], arm(-0.6)]);
+      nextAt += spacing;
+    }
+    acc += L;
+  }
+}
+const HILFEN = {
+  einbahn: { minZoom: 15, async build() {
+    const j = await ogd('ogdwien:EINBAHNOGD', '&propertyName=DIRECTION_NAME,SHAPE');
+    const lines = [];
+    j.features.forEach(f => { if (!f.geometry || f.geometry.type !== 'LineString') return; let c = f.geometry.coordinates.map(p => [p[1], p[0]]); if (/gegen/i.test(f.properties.DIRECTION_NAME || '')) c = c.reverse(); lines.push({ c, b: L.latLngBounds(c) }); });
+    const g = L.layerGroup();
+    // Pfeile in fester Bildschirmgröße: bei jedem Zoom neu berechnet
+    const draw = () => {
+      g.clearLayers();
+      const z = map.getZoom(), mpp = 156543.03 * Math.cos(48.21 * Math.PI / 180) / 2 ** z;
+      // nur, was gerade (mit etwas Rand) im Bild ist – ganz Wien wären zu viele Pfeile
+      const view = map.getBounds().pad(0.6), parts = []; lines.forEach(l => { if (view.intersects(l.b)) chevrons(l.c, parts, 46 * mpp, 5.5 * mpp); });
+      L.polyline(parts, { renderer: hilfenRenderer, color: '#1f3fae', weight: z >= 17 ? 2.2 : z >= 16 ? 1.8 : 1.4, opacity: 0.95, lineCap: 'round', lineJoin: 'round', interactive: false }).addTo(g);
+    };
+    draw(); map.on('moveend', () => { if (map.hasLayer(g)) draw(); });
+    g.on('add', draw);
+    return g;
+  } },
+  fussgeher: { async build() {
+    const j = await ogd('ogdwien:FUSSGEHERZONEOGD', '&propertyName=ADRESSE,ZEITRAUM,AUSN_TEXT,SHAPE');
+    return L.geoJSON(j, { renderer: hilfenRenderer, style: { color: '#b0306a', weight: 1, fillColor: '#e46a9e', fillOpacity: 0.22 },
+      onEachFeature: (f, l) => { const p = f.properties; l.bindTooltip(`<b>Fußgängerzone</b> ${p.ADRESSE || ''}${p.ZEITRAUM ? '<br>' + p.ZEITRAUM : ''}${p.AUSN_TEXT ? '<br>' + p.AUSN_TEXT : ''}`, { sticky: true }); } });
+  } },
+  taxi: { async build() {
+    const j = await ogd('ogdwien:TAXIOGD', '&propertyName=ADRESSE,STELLPLATZANZAHL,ZEITRAUM,SHAPE');
+    // ein Standplatz besteht oft aus mehreren Abschnitten -> nach Adresse zusammenfassen
+    const by = new Map();
+    j.features.forEach(f => { const c = f.geometry && f.geometry.coordinates; if (!c || !c.length) return; const p = f.properties, key = (p.ADRESSE || '').replace(/\s+/g, ' ').trim();
+      const m = c[Math.floor(c.length / 2)];
+      const g = by.get(key) || { lat: 0, lng: 0, n: 0, plaetze: 0, zeiten: new Set() };
+      g.lat += m[1]; g.lng += m[0]; g.n++; g.plaetze += +p.STELLPLATZANZAHL || 0; if (p.ZEITRAUM) g.zeiten.add(p.ZEITRAUM); by.set(key, g); });
+    const g = L.layerGroup();
+    by.forEach((v, adr) => L.circleMarker([v.lat / v.n, v.lng / v.n], { renderer: hilfenRenderer, radius: 5.5, color: '#1b1a17', weight: 1.5, fillColor: '#ffd21f', fillOpacity: 1 })
+      .bindTooltip(`<b>Taxistandplatz</b> ${adr}${v.plaetze ? '<br>' + v.plaetze + ' Plätze' : ''}${v.zeiten.size ? '<br>' + [...v.zeiten].join('<br>') : ''}`).addTo(g));
+    HILFEN.taxi.count = by.size;
+    return g;
+  } },
+  bezirke: { async build() {
+    const j = await ogd('ogdwien:BEZIRKSGRENZEOGD', '&propertyName=BEZNR,LABEL,NAMEK,SHAPE');
+    const g = L.layerGroup();
+    L.geoJSON(j, { renderer: hilfenRenderer, style: { color: '#5b4b8a', weight: 2.5, opacity: 0.8, dashArray: '8 6', fill: false }, interactive: false }).addTo(g);
+    j.features.forEach(f => { const b = L.geoJSON(f).getBounds(); L.marker(b.getCenter(), { interactive: false, keyboard: false, icon: L.divIcon({ className: 'arrow', html: `<span class="bez">${f.properties.BEZNR ? f.properties.BEZNR + '.' : ''} ${f.properties.NAMEK || ''}</span>`, iconSize: [120, 20], iconAnchor: [60, 10] }) }).addTo(g); });
+    return g;
+  } },
+};
+const hilfeLayer = {}, hilfeState = {};
+function zoomOk(k) { const h = HILFEN[k]; return !h.minZoom || map.getZoom() >= h.minZoom; }
+async function applyHilfe(k) {
+  const on = FILTER[k];
+  if (on && !hilfeLayer[k] && hilfeState[k] !== 'laden') {
+    hilfeState[k] = 'laden'; updateFilterUI();
+    try { hilfeLayer[k] = await HILFEN[k].build(); hilfeState[k] = 'ok'; }
+    catch (e) { hilfeState[k] = 'fehler'; }
+    updateFilterUI();
+  }
+  const l = hilfeLayer[k]; if (!l) return;
+  const show = FILTER[k] && zoomOk(k);
+  if (show && !map.hasLayer(l)) l.addTo(map); else if (!show && map.hasLayer(l)) map.removeLayer(l);
+}
+map.on('zoomend', () => Object.keys(HILFEN).forEach(k => { if (HILFEN[k].minZoom && hilfeLayer[k]) applyHilfe(k); }));
+const FILTER_ITEMS = [
+  ['einbahn', 'Einbahnen', 'Pfeile in erlaubter Fahrtrichtung, ab näherem Zoom'],
+  ['fussgeher', 'Fußgängerzonen', 'mit Zufahrtszeiten beim Drüberfahren'],
+  ['taxi', 'Taxistandplätze', 'Standplätze laut Stadt Wien'],
+  ['bezirke', 'Bezirksgrenzen', 'mit Bezirksnamen'],
+];
+let filterUI = null;
+function updateFilterUI() {
+  if (!filterUI) return;
+  FILTER_ITEMS.forEach(([k]) => {
+    const row = filterUI.querySelector(`[data-k="${k}"]`); if (!row) return;
+    row.querySelector('input').checked = !!FILTER[k];
+    const st = row.querySelector('.fst'), s = hilfeState[k];
+    st.textContent = s === 'laden' ? 'lädt …' : s === 'fehler' ? 'nicht erreichbar' : (k === 'einbahn' && FILTER[k] && !zoomOk(k)) ? 'näher zoomen' : '';
+  });
+  const n = Object.values(FILTER).filter(Boolean).length;
+  filterUI.querySelector('.fbtn b').textContent = n ? String(n) : '';
+}
+const FilterControl = L.Control.extend({
+  options: { position: 'topright' },
+  onAdd() {
+    const box = L.DomUtil.create('div', 'filterctl');
+    box.innerHTML = `<button class="fbtn" type="button" aria-expanded="false"><svg viewBox="0 0 20 20" width="16" height="16"><path d="M2.5 4h15l-6 7v5l-3-1.5V11z" fill="currentColor"/></svg>Filter<b></b></button><div class="fpanel" hidden></div>`;
+    const panel = box.querySelector('.fpanel'), btn = box.querySelector('.fbtn');
+    FILTER_ITEMS.forEach(([k, label, sub]) => {
+      const row = document.createElement('label'); row.className = 'frow'; row.dataset.k = k;
+      row.innerHTML = `<input type="checkbox" id="f-${k}"><span><span class="fl">${label}</span><span class="fs">${sub}</span></span><span class="fst"></span>`;
+      row.querySelector('input').addEventListener('change', e => {
+        FILTER[k] = e.target.checked; try { localStorage.setItem(FKEY, JSON.stringify(FILTER)); } catch (x) {}
+        applyHilfe(k);
+        updateFilterUI();
+      });
+      panel.append(row);
+    });
+    btn.addEventListener('click', () => { panel.hidden = !panel.hidden; btn.setAttribute('aria-expanded', String(!panel.hidden)); });
+    L.DomEvent.disableClickPropagation(box); L.DomEvent.disableScrollPropagation(box);
+    filterUI = box; setTimeout(updateFilterUI, 0);
+    return box;
+  },
+});
+new FilterControl().addTo(map);
+BASE.normal.addTo(map);
+setTimeout(() => prefetchTiles(BASE.normal), 1200);
+setTimeout(() => Object.keys(HILFEN).forEach(k => { if (FILTER[k]) applyHilfe(k); }), 300);
+map.on('zoomend', updateFilterUI);
+
+// Stufenloses Zoomen mit Mausrad/Trackpad: Zielzoom sammeln und weich hinterherziehen.
+// Bewegt die Karte wie eine Flug-Animation, damit alte Kacheln stehen bleiben, bis neue geladen sind.
+let wheelZ = null, wheelPt = null, wheelLL = null, wheelRaf = null;
+map.getContainer().addEventListener('wheel', e => {
+  if (e.target.closest && e.target.closest('.filterctl')) return;
+  e.preventDefault();
+  camSeq++;
+  if (wheelZ == null) { map._stop(); map._moveStart(true, false); wheelZ = map.getZoom(); }
+  const px = e.deltaMode === 1 ? e.deltaY * 33 : e.deltaMode === 2 ? e.deltaY * 400 : e.deltaY;
+  wheelZ = Math.max(map.getMinZoom(), Math.min(map.getMaxZoom(), wheelZ - px / (e.ctrlKey ? 100 : 260)));
+  wheelPt = map.mouseEventToContainerPoint(e);
+  wheelLL = map.containerPointToLatLng(wheelPt);
+  if (!wheelRaf) wheelRaf = requestAnimationFrame(wheelStep);
+  clearTimeout(wheelIdle);
+  wheelIdle = setTimeout(() => {
+    // weich auf die nächste ganze Zoomstufe einrasten -> gestochen scharfe Schrift
+    if (wheelZ != null) { wheelZ = Math.round(wheelZ); return; }
+    const z = map.getZoom(); if (Math.abs(z - Math.round(z)) < 0.01) return;
+    map._moveStart(true, false); wheelZ = Math.round(z); wheelLL = map.containerPointToLatLng(wheelPt);
+    if (!wheelRaf) wheelRaf = requestAnimationFrame(wheelStep);
+  }, 160);
+}, { passive: false });
+let wheelIdle = null;
+function wheelMoveTo(z) {
+  const half = map.getSize().divideBy(2);
+  const c = map.unproject(map.project(wheelLL, z).subtract(wheelPt.subtract(half)), z);
+  moveMap(c, z);
+}
+function wheelStep() {
+  const z = map.getZoom(), nz = z + (wheelZ - z) * 0.22;
+  if (Math.abs(wheelZ - nz) < 0.004) { wheelMoveTo(wheelZ); wheelZ = null; wheelRaf = null; map._moveEnd(true); return; }
+  wheelMoveTo(nz);
+  wheelRaf = requestAnimationFrame(wheelStep);
+}
+// Karte direkt auf Mittelpunkt/Zoom setzen. Leaflet richtet Pfeile, Schilder und Kartenbilder nur bei einem
+// 'zoom'-Ereignis neu aus – beim reinen Verschieben schicken wir es deshalb selbst mit.
+function moveMap(c, z) { const same = Math.abs(map.getZoom() - z) < 1e-9; map._move(c, z); if (same) map.fire('zoom'); }
+let mapMoving = false, ownCam = false;
+map.on('movestart zoomstart', () => { if (!ownCam) mapMoving = true; });
+map.on('moveend zoomend', () => { mapMoving = false; });
+// Linien, die sich während einer Kartenbewegung ändern, auf den aktuellen Kartenstand bringen
+const routeLayer = L.layerGroup().addTo(map);
+const flashLayer = L.layerGroup().addTo(map);
+const css = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+
+const GRAPH = {}, PATHS = new Map();
+// Ausschnitt des Wiener Netzes rund um eine Route (sonst wäre die Wegsuche über ganz Wien zu langsam):
+// die Straßen der Route ganz, dazu alle Straßenstücke entlang der Route und rund um Übergänge, Start und Ziel
+let WAYGRID = null;
+const GC = 0.003; // Rastergröße (~300 m)
+function wayGrid() {
+  if (WAYGRID) return WAYGRID;
+  WAYGRID = new Map();
+  for (const k in STREETS) STREETS[k].forEach((w, wi) => {
+    const seen = new Set();
+    for (const p of w) { const c = Math.floor(p[0] / GC) + ':' + Math.floor(p[1] / (GC * 1.5)); if (seen.has(c)) continue; seen.add(c); (WAYGRID.get(c) || WAYGRID.set(c, []).get(c)).push([k, wi]); }
+  });
+  return WAYGRID;
+}
+function corridor(route) {
+  if (route._sub) return route._sub;
+  const seq = routeKeys(route).keys;
+  const keys = [...new Set(seq)];
+  const pts = [];
+  if (route.start) pts.push([route.start[0], route.start[1]]);
+  if (route.goal) pts.push([route.goal[0], route.goal[1]]);
+  const thin = k => STREETS[k].map(w => w.filter((_, i) => i % 3 === 0 || i === w.length - 1));
+  for (let i = 1; i < seq.length; i++) if (seq[i] !== seq[i - 1]) { const q = nearestPair(thin(seq[i - 1]), thin(seq[i])); if (q.a) pts.push(q.a, q.b); }
+  const sub = {}; keys.forEach(k => { sub[k] = STREETS[k].slice(); });
+  // Rasterzellen: rund um Übergänge/Start/Ziel großzügig, entlang der Routenstraßen selbst (für Datenlücken)
+  const cells = new Set(), cellOf = p => Math.floor(p[0] / GC) + ':' + Math.floor(p[1] / (GC * 1.5));
+  for (const p of pts) { const a = Math.floor(p[0] / GC), b = Math.floor(p[1] / (GC * 1.5)); for (let x = a - 1; x <= a + 1; x++) for (let y = b - 1; y <= b + 1; y++) cells.add(x + ':' + y); }
+  keys.forEach(k => { if (!HWY_KEYS.has(k)) STREETS[k].forEach(w => w.forEach(p => cells.add(cellOf(p)))); });
+  const G = wayGrid(), have = new Set();
+  cells.forEach(c => { for (const [k, wi] of G.get(c) || []) {
+    if (keys.includes(k)) continue; const id = k + '#' + wi; if (have.has(id)) continue; have.add(id);
+    (sub[k] = sub[k] || []).push(STREETS[k][wi]);
+  } });
+  return (route._sub = sub);
+}
+function globalFor(route) { return route._global || (route._global = globalGraph(corridor(route))); }
+const SPEEDS = { langsam: 2300, normal: 1600, schnell: 900 };
+state.speed = 'normal';
+let anim = null, labelHead = null;
+function graphFor(k) { if (!STREETS || !STREETS[k]) return null; return GRAPH[k] || (GRAPH[k] = streetGraph(STREETS[k])); }
+function placeKey(text) { const k = streetKey(String(text).split(/[–\/]/)[0]); return STREETS && STREETS[k] ? k : null; }
+function routeKeys(route) { return searchKeys(route.steps, k => !!STREETS[k]); }
+function netFor(route) { return route._net || (route._net = routeNet(corridor(route), route.steps.map(streetKey).concat(routeKeys(route).keys))); }
+// Punkt etwa m Meter vor dem Ende von pts (rückwärts gemessen)
+function pointBack(pts, m) { let acc = 0; for (let i = pts.length - 1; i > 0; i--) { acc += dist(pts[i], pts[i - 1]); if (acc >= m) return pts[i - 1]; } return pts[0]; }
+function pointAhead(pts, m) { let acc = 0; for (let i = 1; i < pts.length; i++) { acc += dist(pts[i - 1], pts[i]); if (acc >= m) return pts[i]; } return pts[pts.length - 1]; }
+function startNodesFor(G, startK, k0) {
+  const ks = G.keyIdx.get(startK), k = G.keyIdx.get(k0); if (ks == null || k == null) return null;
+  let nodes = G.co.map((_, i) => i).filter(i => G.nk[i].includes(k) && G.nk[i].includes(ks));
+  if (!nodes.length) { const other = G.co.filter((_, i) => G.nk[i].includes(ks)); nodes = G.co.map((_, i) => i).filter(i => G.nk[i].includes(k) && other.some(p => dist(p, G.co[i]) < 25)); }
+  return nodes.length ? nodes : null;
+}
+function extendBest(G, key, from, away, limit) {
+  const a = extendAway(graphFor(key), from, away, limit), b = extendNet(G, from, away, key, limit * 1.4);
+  const gain = p => (p && p.length > 1 ? dist(p[p.length - 1], away) - dist(p[0], away) : 0);
+  return gain(b) > gain(a) + 5 ? b : a;
+}
+function searchPaths(route) {
+  const keys = route.steps.map(streetKey), sk = routeKeys(route);
+  const present = [...new Set(sk.own)];
+  if (present.length < 2) return null;
+  const G = netFor(route), startK = placeKey(route.from);
+  const nearestOn = (key, pt) => { const k = G.keyIdx.get(key); let b = null, bd = Infinity; G.co.forEach((p, i) => { if (G.nk[i].includes(k)) { const d = dist(p, pt); if (d < bd) { bd = d; b = i; } } }); return b; };
+  const nearestAny = pt => { let b = null, bd = Infinity; G.co.forEach((p, i) => { if (!G.nk[i].length) return; const d = dist(p, pt); if (d < bd) { bd = d; b = i; } }); return b; };
+  const startIsStand = route.start && route.start[3] === 'taxi';
+  const fixedStart = !route.start ? null : startIsStand ? nearestAny(route.start) : nearestOn(keys[present[0]], route.start);
+  // angezeigter Startpunkt: bei Orten (kein Standplatz) direkt an der Straße
+  route._startShown = route.start && !startIsStand && fixedStart != null ? [G.co[fixedStart][0], G.co[fixedStart][1]] : null;
+  const fixedGoal = route.goal ? nearestOn(keys[present[present.length - 1]], route.goal) : null;
+  const startNodes = fixedStart != null ? [fixedStart] : (startK && startK !== keys[present[0]] ? startNodesFor(G, startK, keys[present[0]]) : null);
+  let segs = routeSearch(G, sk.keys, startNodes, 8, fixedGoal);
+  if (!segs && fixedGoal != null) segs = routeSearch(G, sk.keys, startNodes);
+  if (!segs) return null;
+  // versteckte Zwischenstücke (Autobahn zwischen zwei Rampen) hängen am Schritt davor
+  const out = keys.map(() => null); sk.own.forEach((i, j) => (out[i] = out[i] ? out[i].concat(segs[j].slice(1)) : segs[j]));
+  const before = j => present.slice(0, j).flatMap(i => out[i]);
+  // umkehren: kurz hineinfahren und zurück
+  present.forEach((i, j) => {
+    if (!/umkehren/i.test(route.steps[i])) return;
+    const seg = out[i], at = seg[seg.length - 1], prev = before(j);
+    const go = extendBest(G, keys[i], at, prev.length ? pointBack(prev, 40) : at, 70);
+    if (go.length > 1) out[i] = seg.concat(go.slice(1), go.slice(0, -1).reverse(), [at]);
+  });
+  // Anfang: ohne bekannten Standplatz ein Stück zurück verlängern
+  const f = present[0], l = present[present.length - 1];
+  if (!startNodes) {
+    const rest = present.flatMap(i => out[i]);
+    const back = extendBest(G, keys[f], out[f][0], pointAhead(rest, 40), 110);
+    out[f] = back.reverse().concat(out[f].slice(1));
+  }
+  // Ende: ohne bekanntes Ziel auf der letzten Straße geradeaus weiter
+  if (fixedGoal != null) return out;
+  const prev = before(present.length - 1).concat(out[l]);
+  const fwd = extendBest(G, keys[l], out[l][out[l].length - 1], pointBack(prev, 40), 130);
+  out[l] = out[l].concat(fwd.slice(1));
+  // nachfolgende Segmente beginnen am neuen Ende
+  return out;
+}
+function streetwisePaths(route) {
+  const keys = route.steps.map(streetKey), startK = placeKey(route.from), endK = placeKey(route.dest);
+  const out = keys.map((k, i) => {
+    const g = graphFor(k); if (!g) return null;
+    const prevK = i > 0 ? keys[i - 1] : (startK !== k ? startK : null);
+    const nextK = i < keys.length - 1 ? keys[i + 1] : (endK !== k ? endK : null);
+    const A = prevK && STREETS[prevK] ? nearestPair(STREETS[k], STREETS[prevK]).a : null;
+    const B = nextK && STREETS[nextK] ? nearestPair(STREETS[k], STREETS[nextK]).a : null;
+    return buildPath(g, A, B, /umkehren/i.test(route.steps[i]), (a, b) => globalPath(globalFor(route), a, b, k));
+  });
+  for (let i = 1; i < out.length; i++) if (out[i] && out[i - 1]) out[i] = [out[i - 1][out[i - 1].length - 1], ...out[i]];
+  return out;
+}
+function routePaths(route) {
+  if (!STREETS) return null;
+  if (PATHS.has(route.n)) return PATHS.get(route.n);
+  let out = null;
+  try { out = searchPaths(route); } catch (e) { console.error(e); }
+  if (!out) out = streetwisePaths(route);
+  // reine Durchfahrten (Kreuzung/Platz) als Punkt
+  out = out.map(p => (p && p.length > 1 && pathLength(p) < 6 ? [p[p.length - 1]] : p));
+  PATHS.set(route.n, out); return out;
+}
+function arrowIcon(color, big) {
+  const s = big ? 28 : 20;
+  return L.divIcon({ className: 'arrow', iconSize: [s, s], iconAnchor: [s / 2, s / 2],
+    html: `<svg viewBox="0 0 20 20" width="${s}" height="${s}"><path d="M2.5 3 L18 10 L2.5 17 L6.5 10 Z" fill="${color}" stroke="#fff" stroke-width="1.6" stroke-linejoin="round"/></svg>` });
+}
+function headAngle(p) {
+  const a = map.latLngToContainerPoint(p[p.length - 1]); let b = a;
+  for (let j = p.length - 2; j >= 0; j--) { b = map.latLngToContainerPoint(p[j]); if (Math.hypot(a.x - b.x, a.y - b.y) > 3) break; }
+  return Math.atan2(a.y - b.y, a.x - b.x) * 180 / Math.PI;
+}
+function rotate(marker, p) { const e = marker.getElement(); const svg = e && e.querySelector('svg'); if (svg && p.length > 1) svg.style.transform = `rotate(${headAngle(p)}deg)`; if (marker._labelText) placeLabel(marker, p); }
+// Schild auf die Seite, von der man kommt, damit der Blick nach vorne frei bleibt
+const LABEL_POS = { top: [0, -16], bottom: [0, 16], left: [-16, 0], right: [16, 0] };
+function placeLabel(marker, p) {
+  let dir = 'bottom';
+  if (p.length > 1) { const ang = headAngle(p); dir = ang > -45 && ang <= 45 ? 'left' : ang > 45 && ang <= 135 ? 'top' : ang > 135 || ang <= -135 ? 'right' : 'bottom'; }
+  if (marker._labelDir === dir) return;
+  marker._labelDir = dir;
+  marker.unbindTooltip().bindTooltip(marker._labelText, { permanent: true, direction: dir, offset: LABEL_POS[dir], className: 'headlabel' }).openTooltip();
+}
+// Namensschilder bleiben an ihren Straßen stehen; hier wird nur die 'aktuelle' Markierung gelöst
+function clearLabel() { labelHead = null; }
+// Kamera wartet aufs Ende ihrer Bewegung (mit Sicherheits-Timeout)
+function camMove(fn, dur) {
+  return new Promise(res => {
+    let done = false; const fin = () => { if (!done) { done = true; res(); } };
+    map.once('moveend', fin); setTimeout(fin, dur * 1000 + 600);
+    fn();
+  });
+}
+function drawSeg(i, opts = {}) {
+  const paths = routePaths(state.route), p = paths && paths[i];
+  if (!p) { if (opts.onDone) opts.onDone(); return null; }
+  const color = opts.color || css('--route'), layer = opts.layer || routeLayer;
+  // lange Straßen langsamer: Dauer wächst mit der Länge (Hauptroute), mind. die gewünschte Zeit
+  const ms = !opts.animate ? 0 : opts.layer ? opts.animate : Math.max(opts.animate, Math.min(7000, 600 + pathLength(p) * 9));
+  const motion = ms && !reduced();
+  const gen = drawGen;
+  const pass = p.length < 2;
+  let line = null, head = null;
+  const create = () => {
+    line = L.polyline([p[0], p[0]], { color, weight: opts.weight || 7, opacity: 0.55, lineCap: 'round', lineJoin: 'round', interactive: false }).addTo(layer);
+    head = L.marker(p[0], { icon: pass ? L.divIcon({ className: 'arrow', html: '<span class="pass"></span>', iconSize: [12, 12], iconAnchor: [6, 6] }) : arrowIcon(color, true), interactive: false, keyboard: false }).addTo(layer);
+    // jede Straße der Route bekommt ihr Namensschild, das stehen bleibt
+    const label = opts.label != null ? opts.label : (!opts.layer && opts.label !== false ? stepName(state.route.steps[i]) : null);
+    if (label) { head._labelText = label; head._labelDir = null; labelHead = head; placeLabel(head, p.length > 1 ? p.slice(0, 2) : p); }
+  };
+  // Kamera fährt in einer durchgehenden Bewegung mit dem Pfeil mit; am Ende steht das Ziel der Straße in der Mitte.
+  // Ist die Straße zu lang fürs Bild, zoomt sie unterwegs sanft raus und wieder rein (wie ein Bogen).
+  const followCam = motion && !opts.layer && opts.follow !== false;
+  let cam = null;
+  const planCam = () => {
+    if (!followCam) return null;
+    const end = L.latLng(p[p.length - 1][0], p[p.length - 1][1]);
+    const z0 = Math.round(map.getZoom()), c0 = map.getCenter();
+    const size = map.getSize(), endPx = map.latLngToContainerPoint(end), mid = size.divideBy(2);
+    const b = L.latLngBounds(p.map(q => L.latLng(q[0], q[1]))).extend(c0);
+    const zFit = Math.floor(map.getBoundsZoom(b, false, L.point(140, 140)));
+    const zMid = Math.min(z0, Math.max(12, zFit));
+    // schon fast mittig und alles im Bild? dann bleibt die Kamera ruhig
+    if (zMid >= z0 && endPx.distanceTo(mid) < Math.min(size.x, size.y) * 0.18) return null;
+    return { c0, end, z0, zMid, token: ++camSeq, started: false };
+  };
+  const camFrame = (f, headPt) => {
+    if (!cam || cam.token !== camSeq) { if (cam && cam.started) { cam.started = false; ownCam = false; map._moveEnd(true); endActiveCam = null; } cam = null; return; }
+    if (map._animatingZoom) return; // läuft gerade eine Zoom-Animation von Leaflet: diesen Schritt auslassen
+    if (!cam.started) {
+      endActiveCam = () => { if (cam && cam.started) { cam.started = false; ownCam = false; map._moveEnd(true); } cam = null; endActiveCam = null; };
+      cam.started = true; ownCam = true; map._stop(); map._moveStart(true, false);
+    }
+    const e = f < 0.5 ? 2 * f * f : 1 - Math.pow(-2 * f + 2, 2) / 2; // weich anfahren und abbremsen
+    const z = f >= 1 ? cam.z0 : cam.z0 - (cam.z0 - cam.zMid) * Math.sin(Math.PI * f);
+    // Mittelpunkt in Pixeln interpolieren (gleichmäßig auch über Zoomwechsel)
+    const zr = Math.max(cam.z0, cam.zMid);
+    // Kamera folgt dem Pfeil: Mittelpunkt wandert vom Start-Blick zum Pfeil, am Ende genau aufs Ziel
+    const a0 = map.project(cam.c0, zr), a1 = map.project(headPt ? L.latLng(headPt[0], headPt[1]) : cam.end, zr);
+    const c = f >= 1 ? cam.end : map.unproject(a0.add(a1.subtract(a0).multiplyBy(e)), zr);
+    moveMap(c, z);
+    // Routenlinien auf den aktuellen Kartenstand bringen (sonst verrutschen sie beim Zoomen)
+    const r = line && line._renderer; if (r) { r._onZoomEnd(); r._update(); }
+    if (f >= 1) { cam.started = false; ownCam = false; map._moveEnd(true); cam = null; endActiveCam = null; }
+  };
+  const finish = async () => {
+    if (gen !== drawGen) return;
+    if (mapMoving) { map.once('moveend', () => setTimeout(finish, 0)); return; }
+    line.setLatLngs(p); head.setLatLng(p[p.length - 1]);
+    if (!pass) head.setIcon(arrowIcon(color, false));
+    if (head._labelText) { head._labelDir = null; placeLabel(head, p); }
+    rotate(head, p);
+    if (gen !== drawGen) return;
+    if (opts.onDone) opts.onDone();
+  };
+  const run = () => {
+    if (gen !== drawGen) return;
+    create();
+    if (pass && ms) { setTimeout(finish, Math.min(ms, 700)); return; }
+    if (!motion) { finish(); return; }
+    let t0 = performance.now(), pausedAt = null;
+    const frame = now => {
+      // falls die Karte gerade bewegt wird (z. B. vom Nutzer): anhalten, damit nichts verrutscht
+      if (mapMoving) { if (pausedAt == null) pausedAt = now; anim = requestAnimationFrame(frame); return; }
+      if (pausedAt != null) { t0 += now - pausedAt; pausedAt = null; }
+      const f = Math.min(1, (now - t0) / ms), part = partialPath(p, f);
+      camFrame(f, part[part.length - 1]);
+      line.setLatLngs(part); head.setLatLng(part[part.length - 1]); rotate(head, part);
+      if (f < 1) anim = requestAnimationFrame(frame); else finish();
+    };
+    anim = requestAnimationFrame(frame);
+  };
+  cam = planCam();
+  if (pass && cam) {
+    // Durchfahrt (nur ein Punkt): kurz hinschwenken
+    const t0 = performance.now(), d = 600;
+    const step = now => { const f = Math.min(1, (now - t0) / d); camFrame(f); if (f < 1 && cam) requestAnimationFrame(step); };
+    requestAnimationFrame(step);
+  }
+  run();
+  return p;
+}
+const pointLayer = L.layerGroup().addTo(map);
+const ICONS = {
+  taxi: '<span class="ico taxi">TAXI</span>',
+  hotel: '<span class="ico hotel"><svg viewBox="0 0 20 20" width="14" height="14"><path d="M4 3v14M16 3v14M4 10h12" stroke="currentColor" stroke-width="2.6" fill="none" stroke-linecap="round"/></svg></span>',
+  klinik: '<span class="ico klinik"><svg viewBox="0 0 20 20" width="14" height="14"><path d="M8 3h4v5h5v4h-5v5H8v-5H3V8h5z" fill="currentColor"/></svg></span>',
+  bahn: '<span class="ico bahn"><svg viewBox="0 0 20 20" width="14" height="14"><path d="M6 2h8a3 3 0 0 1 3 3v8a3 3 0 0 1-2 2.8l1.6 2.2h-2.4l-1.4-2H7.2l-1.4 2H3.4L5 15.8A3 3 0 0 1 3 13V5a3 3 0 0 1 3-3zm-.5 3v4h9V5zM6.5 11.2a1.3 1.3 0 1 0 0 2.6 1.3 1.3 0 0 0 0-2.6zm7 0a1.3 1.3 0 1 0 0 2.6 1.3 1.3 0 0 0 0-2.6z" fill="currentColor"/></svg></span>',
+  flug: '<span class="ico flug"><svg viewBox="0 0 20 20" width="14" height="14"><path d="M9 2.5c0-.8.4-1.5 1-1.5s1 .7 1 1.5V7l7 4.2v1.8l-7-2.2v4.4l2 1.6V18l-3-1-3 1v-1.2l2-1.6v-4.4L2 13v-1.8L9 7z" fill="currentColor"/></svg></span>',
+  ort: '<span class="ico ort"><svg viewBox="0 0 20 20" width="14" height="14"><path d="M2 8 10 3l8 5H2zM4 9.5h2.2v6H4zM8.9 9.5h2.2v6H8.9zM13.8 9.5H16v6h-2.2zM2.5 16.5h15V18h-15z" fill="currentColor"/></svg></span>',
+};
+function pin(kind, pt, away) {
+  const type = pt[3] || 'ort';
+  const lm = pt[4] && LANDMARKS[pt[4]] ? `<span class="ico ort lm"><svg viewBox="0 0 24 24" width="20" height="20"><path d="${LANDMARKS[pt[4]]}" fill="currentColor" fill-rule="evenodd"/></svg></span>` : null;
+  // away: Richtung (Bildschirm-Winkel in Grad), in die das Schild rückt
+  const ang = away == null ? -90 : away, rad = ang * Math.PI / 180, dist = 40;
+  const ox = Math.round(Math.cos(rad) * dist), oy = Math.round(Math.sin(rad) * dist);
+  const html = `<span class="pinwrap"><span class="pinstem" style="width:${dist - 12}px;transform:rotate(${ang}deg)"></span><span class="pindot ${kind}"></span><span class="pin ${kind}" style="left:${ox}px;top:${oy}px">${lm || ICONS[type] || ICONS.ort}<b>${kind === 'start' ? 'START' : 'ZIEL'}</b></span></span>`;
+  return L.marker([pt[0], pt[1]], { icon: L.divIcon({ className: 'arrow pinmarker', html, iconSize: [0, 0], iconAnchor: [0, 0] }), interactive: true, keyboard: false })
+    .bindTooltip(pt[2], { direction: 'top', offset: [0, -14] })
+    .on('click', () => { camSeq++; map.flyTo([pt[0], pt[1]], 18, { duration: reduced() ? 0 : 0.9 }); });
+}
+function showPoints(withGoal) { try { showPointsInner(withGoal); } catch (e) { console.error(e); } }
+function showPointsInner(withGoal) {
+  pointLayer.clearLayers();
+  if (state.mode === 'lernen' && !state.open) return;
+  const r = state.route, paths = routePaths(r) || [];
+  const segs = paths.filter(Boolean);
+  // Bildschirm-Winkel zwischen zwei Punkten
+  const angle = (a, b) => { const pa = map.latLngToContainerPoint(a), pb = map.latLngToContainerPoint(b); return Math.atan2(pb.y - pa.y, pb.x - pa.x) * 180 / Math.PI; };
+  const along = (path, m) => { let acc = 0; for (let i = 1; i < path.length; i++) { acc += dist(path[i - 1], path[i]); if (acc >= m) return path[i]; } return path[path.length - 1]; };
+  if (r.start) {
+    const all = segs.flat();
+    // Schild weg von der Richtung, in die die Route losfährt
+    const sp = r._startShown ? [r._startShown[0], r._startShown[1], r.start[2], r.start[3], r.start[4]] : r.start;
+    const away = all.length > 1 ? angle([sp[0], sp[1]], along(all, 40)) + 180 : null;
+    pin('start', sp, away).addTo(pointLayer);
+  }
+  if (withGoal && r.goal) {
+    const all = segs.flat().reverse();
+    // Schild in Fahrtrichtung hinter das Ziel, damit der Weg dorthin frei bleibt
+    const away = all.length > 1 ? angle(along(all, 40), [r.goal[0], r.goal[1]]) : null;
+    pin('goal', r.goal, away).addTo(pointLayer);
+  }
+}
+let drawGen = 0, endActiveCam = null;
+function stopAnim() { if (endActiveCam) endActiveCam(); drawGen++; if (anim) cancelAnimationFrame(anim); anim = null; clearLabel(); }
+// Route genau bis Straße i zeigen (Rest ausblenden), Straße i hervorheben
+function showUpTo(i) {
+  stopAnim(); routeLayer.clearLayers(); errLayer.clearLayers();
+  for (let k = 0; k <= i; k++) drawSeg(k);
+  state.step = i + 1;
+  showPoints(state.step >= state.route.steps.length);
+  render(); flash(i);
+}
+function clearRoute() { state.paused = false; state.playing = false; stopAnim(); routeLayer.clearLayers(); flashLayer.clearLayers(); errLayer.clearLayers(); state.step = 0; showPoints(false); render(); }
+function drawAll() { stopAnim(); routeLayer.clearLayers(); state.route.steps.forEach((_, i) => drawSeg(i)); showPoints(true); }
+function routeBounds(route) {
+  const ps = (routePaths(route) || []).filter(Boolean).flat();
+  if (route.start) ps.push([route.start[0], route.start[1]]); if (route.goal) ps.push([route.goal[0], route.goal[1]]);
+  return ps.length ? L.latLngBounds(ps) : null;
+}
+function fitRoute() { const b = routeBounds(state.route); if (b) map.fitBounds(b, { padding: [24, 24], maxZoom: 18 }); }
+function flash(i) {
+  flashLayer.clearLayers();
+  const paths = routePaths(state.route), q = paths && paths[i];
+  if (q && q.length < 2) {
+    L.marker(q[0], { icon: L.divIcon({ className: 'arrow', html: '<span class="blink"></span>', iconSize: [30, 30], iconAnchor: [15, 15] }), interactive: false, keyboard: false }).addTo(flashLayer);
+    map.setView(q[0], Math.max(map.getZoom(), 17));
+    setTimeout(() => flashLayer.clearLayers(), 2600);
+    return;
+  }
+  const p = drawSeg(i, { color: css('--warn'), weight: 9, layer: flashLayer, animate: 700 });
+  if (p) { map.fitBounds(L.latLngBounds(p), { padding: [90, 90], maxZoom: 18 }); setTimeout(() => flashLayer.clearLayers(), 2400); }
+}
+
+// --- Straßennetz laden (ganz Wien von der Stadt Wien + Autobahnen) ---
+let geoState = 'idle', geoError = '';
+const WIEN_WFS = 'https://data.wien.gv.at/daten/geo?service=WFS&request=GetFeature&version=1.1.0&typeName=ogdwien:STRASSENGRAPHOGD&srsName=EPSG:4326&outputFormat=json&propertyName=FEATURENAME,SHAPE';
+const IDB_KEY = 'strassennetz-wien-v1';
+// größerer Browser-Speicher (IndexedDB) statt localStorage
+function idb() { return new Promise((ok, no) => { try { const r = indexedDB.open('routentrainer', 1); r.onupgradeneeded = () => r.result.createObjectStore('kv'); r.onsuccess = () => ok(r.result); r.onerror = () => no(r.error); } catch (e) { no(e); } }); }
+async function idbGet(k) { try { const db = await idb(); return await new Promise(ok => { const q = db.transaction('kv').objectStore('kv').get(k); q.onsuccess = () => ok(q.result); q.onerror = () => ok(null); }); } catch (e) { return null; } }
+async function idbSet(k, v) { try { const db = await idb(); await new Promise(ok => { const t = db.transaction('kv', 'readwrite'); t.objectStore('kv').put(v, k); t.oncomplete = ok; t.onerror = ok; }); } catch (e) {} }
+async function idbDel(k) { try { const db = await idb(); db.transaction('kv', 'readwrite').objectStore('kv').delete(k); } catch (e) {} }
+async function timedFetch(url, init, ms) {
+  const ctl = new AbortController(); const t = setTimeout(() => ctl.abort(), ms);
+  try { const res = await fetch(url, { ...init, signal: ctl.signal }); if (!res.ok) throw new Error('Server antwortet mit ' + res.status); return await res.json(); }
+  finally { clearTimeout(t); }
+}
+async function fromWien() {
+  const data = await timedFetch(WIEN_WFS, {}, 90000);
+  const s = {};
+  (data.features || []).forEach(f => {
+    const name = f.properties && f.properties.FEATURENAME, g = f.geometry; if (!name || !g) return;
+    const lines = g.type === 'LineString' ? [g.coordinates] : g.type === 'MultiLineString' ? g.coordinates : [];
+    const k = streetKey(name);
+    lines.forEach(l => (s[k] = s[k] || []).push(l.map(c => [+c[1].toFixed(6), +c[0].toFixed(6)])));
+  });
+  if (Object.keys(s).length < 1000) throw new Error('unvollständige Antwort');
+  return s;
+}
+// Autobahnen und Auffahrten (OpenStreetMap, fest eingebaut): "key:lat,lng,dlat,dlng,…;…" in 1e-5 Grad
+function motorways() {
+  const s = {};
+  HWY_DATA.split(';').forEach(part => {
+    const i = part.indexOf(':'), k = part.slice(0, i), n = part.slice(i + 1).split(',').map(Number);
+    let la = n[0], lo = n[1]; const line = [[la / 1e5, lo / 1e5]];
+    for (let j = 2; j < n.length; j += 2) { la += n[j]; lo += n[j + 1]; line.push([la / 1e5, lo / 1e5]); }
+    (s[k] = s[k] || []).push(line);
+  });
+  return s;
+}
+function useStreets(s, how) {
+  const hw = motorways(); for (const k in hw) s[k] = (s[k] || []).concat(hw[k]);
+  STREETS = densify(s); STREET_BB = {};
+  for (const k in STREETS) { let a = 90, b = 180, c = -90, d = -180; for (const w of STREETS[k]) for (const p of w) { if (p[0] < a) a = p[0]; if (p[1] < b) b = p[1]; if (p[0] > c) c = p[0]; if (p[1] > d) d = p[1]; } STREET_BB[k] = [a, b, c, d]; }
+  geoState = 'ok'; WAYGRID = null; PATHS.clear(); ROUTES.forEach(r => { r._sub = r._net = r._global = null; }); for (const k in GRAPH) delete GRAPH[k];
+  geoReady(how);
+}
+async function loadStreets() {
+  const status = $('#geo');
+  const cached = await idbGet(IDB_KEY);
+  if (cached && cached.s) return useStreets(cached.s, 'aus dem Speicher');
+  geoState = 'loading'; geoError = ''; status.classList.remove('bad');
+  status.textContent = 'Straßennetz von ganz Wien wird geladen … (einmalig, ca. 10 MB)'; render();
+  try {
+    const s = await fromWien();
+    await idbSet(IDB_KEY, { s, src: 'Stadt Wien', at: Date.now() });
+    return useStreets(s, 'geladen (Stadt Wien)');
+  } catch (e) {
+    geoState = 'failed'; geoError = e.name === 'AbortError' ? 'Zeitüberschreitung' : (e.message || String(e));
+    status.textContent = 'Straßennetz nicht geladen: ' + geoError;
+    status.classList.add('bad');
+    render();
+  }
+}
+function geoReady(how) {
+  const missing = [...POOL.keys()].filter(k => !STREETS[k]).map(k => POOL.get(k));
+  const st = $('#geo');
+  st.textContent = `Straßennetz ${how}` + (missing.length ? ` · ${missing.length} ohne Linie: ${missing.slice(0, 4).join(', ')}${missing.length > 4 ? ' …' : ''}` : '');
+  st.title = missing.join(', ');
+  st.classList.toggle('bad', false);
+  showPoints(false);
+  render();
+}
+
+// --- Fortschritt ---
+function saveStats() { try { localStorage.setItem(STORE_KEY, JSON.stringify(stats)); } catch (e) {} }
+function record(n, perfect) {
+  const s = stats[n] = stats[n] || { runs: 0, perfect: 0, streak: 0 };
+  s.runs++; if (perfect) { s.perfect++; s.streak++; } else s.streak = 0; saveStats(); renderList();
+}
+function level(n) { const s = stats[n]; if (!s) return 0; return Math.min(3, s.streak); }
+
+// --- Kapitel ---
+function chapHead(c) {
+  const h = el('div', 'chap-h'); const rs = ROUTES.filter(r => r.chap === c);
+  h.append(el('b', '', `${c + 1} · ${CHAPTERS[c].name}`), el('span', '', `${rs[0].n}–${rs[rs.length - 1].n}`));
+  h.title = CHAPTERS[c].sub; return h;
+}
+function chapSelect() {
+  const wrap = el('label', 'chapsel');
+  wrap.append(el('span', '', 'Kapitel'));
+  const s = el('select'); s.setAttribute('aria-label', 'Kapitel wählen');
+  const o0 = el('option', '', `Alle Routen (${ROUTES.length})`); o0.value = '-1'; s.append(o0);
+  CHAPTERS.forEach((c, i) => { const n = ROUTES.filter(r => r.chap === i); const o = el('option', '', `${i + 1}. ${c.name} · ${n[0].n}–${n[n.length - 1].n}`); o.value = String(i); s.append(o); });
+  s.value = String(state.chap);
+  s.onchange = () => setChap(+s.value);
+  wrap.append(s);
+  if (state.chap >= 0) wrap.append(el('small', '', CHAPTERS[state.chap].sub));
+  return wrap;
+}
+
+// --- Rendering ---
+function renderList() {
+  const list = $('#routes'); list.innerHTML = '';
+  let lastChap = null;
+  visible().forEach(r => {
+    if (state.chap < 0 && r.chap !== lastChap) { lastChap = r.chap; list.append(chapHead(r.chap)); }
+    const b = el('button', 'rt' + (r === state.route ? ' on' : ''));
+    b.type = 'button';
+    const num = el('span', 'rt-n', r.n);
+    const t = el('span', 'rt-t'); t.append(el('span', 'rt-from', r.from), el('span', 'rt-to', '→ ' + r.to));
+    const lv = el('span', 'rt-lv'); for (let i = 0; i < 3; i++) lv.append(el('i', i < level(r.n) ? 'f' : ''));
+    lv.title = 'fehlerfreie Durchgänge in Folge';
+    b.append(num, t, lv);
+    b.onclick = () => pick(r);
+    list.append(b);
+  });
+}
+async function cameraTo(r) {
+  const seq = ++camSeq;
+  const b = routeBounds(r);
+  const paths = routePaths(r), first = paths && paths.find(Boolean);
+  const target = r._startShown ? L.latLng(r._startShown[0], r._startShown[1]) : r.start ? L.latLng(r.start[0], r.start[1]) : first ? L.latLng(first[0]) : b ? b.getCenter() : null;
+  if (!target) return;
+  const close = 17;
+  if (reduced()) { map.setView(target, close); return; }
+  // eine Kamerabewegung; wartet aufs Ende (mit Sicherheits-Timeout)
+  const go = (center, zoom, dur) => new Promise(res => {
+    if (seq !== camSeq) return res();
+    const sameC = map.distance(map.getCenter(), center) < 5, sameZ = Math.abs(map.getZoom() - zoom) < 0.05;
+    if (sameC && sameZ) return res();
+    let done = false; const fin = () => { if (!done) { done = true; res(); } };
+    map.once('moveend', fin); setTimeout(fin, dur * 1000 + 500);
+    if (sameC) map.setZoom(zoom, { animate: true }); else map.flyTo(center, zoom, { duration: dur, easeLinearity: 0.25 });
+  });
+  const here = map.getCenter();
+  if (map.distance(here, target) < 150) { await go(target, close, 0.7); return; }
+  const both = L.latLngBounds([here, target]); if (b) both.extend(b);
+  const outZ = Math.min(Math.round(map.getZoom()), Math.max(11, Math.floor(Math.min(map.getBoundsZoom(both, false, L.point(80, 80)), map.getZoom() - 1, 15))));
+  await go(here, outZ, 0.8);                         // 1) rauszoomen
+  if (seq !== camSeq) return;
+  await go(b ? b.getCenter() : target, outZ, 1.0);   // 2) zum Gebiet schwenken
+  if (seq !== camSeq) return;
+  await go(target, close, 1.4);                      // 3) auf den Start reinzoomen
+}
+function pick(r) { state.route = r; reset(); renderList(); cameraTo(r); }
+function reset() { state.paused = false; state.playing = false; stopAnim(); state.opts = null; const sc = document.getElementById('score'); if (sc) sc.textContent = ''; state.step = 0; state.errors = 0; state.done = false; state.choices = null; state.answered = null; routeLayer.clearLayers(); flashLayer.clearLayers(); showPoints(false); render(); }
+function nextRoute(random) {
+  let r;
+  const V = visible();
+  if (random) { const weak = V.filter(x => level(x.n) < 3 && x !== state.route); const pool = weak.length ? weak : V; r = pool[Math.floor(Math.random() * pool.length)]; }
+  else r = V[(V.indexOf(state.route) + 1) % V.length];
+  pick(r);
+}
+
+function header() {
+  const r = state.route, h = $('#head'); h.innerHTML = '';
+  const top = el('div', 'h-top'); top.append(el('span', 'badge', 'Route ' + r.n), el('span', 'orig', 'Skript ' + r.orig)); if (r.note) top.append(el('span', 'badge warn', r.note));
+  h.append(top, el('h2', 'h-from', r.from), el('div', 'h-to', '→ ' + r.to));
+}
+function chip(label, cls = '') {
+  const c = el('span', 'chip ' + cls, stepName(label)); const n = stepNote(label); if (n) c.append(el('small', '', n)); return c;
+}
+function render() {
+  header();
+  const lern = state.mode === 'lernen';
+  $('#head').hidden = lern; $('#routes').hidden = lern; document.querySelector('.sec').hidden = lern;
+  document.querySelectorAll('.tab').forEach(t => t.classList.toggle('on', t.dataset.mode === state.mode));
+  const p = $('#play'); p.innerHTML = '';
+  const cs = $('#chapbox'); if (cs) { cs.innerHTML = ''; if (!lern) cs.append(chapSelect()); }
+  ({ lernen: renderLernen, reihe: renderReihe, auswahl: renderAuswahl, fahren: renderFahren })[state.mode](p);
+}
+
+// Lernen
+function geoNotice(p) {
+  if (STREETS) return;
+  const box = el('div', 'notice');
+  if (geoState === 'failed') {
+    box.append(el('strong', '', 'Ohne Linien auf der Karte'));
+    box.append(el('span', '', 'Das Straßennetz konnte nicht geladen werden (' + geoError + '). Lernen, Reihe und Auswahl gehen trotzdem. Für Linien und „Nachfahren": Internet prüfen und die Datei am besten in Google Chrome öffnen – Safari blockiert solche Abrufe aus lokalen Dateien oft.'));
+    const b = el('button', 'btn', 'Nochmal laden'); b.onclick = () => loadStreets(); box.append(b);
+  } else box.append(el('span', '', 'Straßennetz wird geladen … die Linien erscheinen gleich.'));
+  p.append(box);
+}
+function openRoute(r) { collapseOpen(() => { state.open = true; state.animOpen = r.n; pick(r); }); }
+function routeNav() {
+  const V = visible(), i = V.indexOf(state.route), prev = V[(i - 1 + V.length) % V.length], next = V[(i + 1) % V.length];
+  const nav = el('div', 'rnav');
+  const pb = el('button', 'btn nav-b', '‹'); pb.type = 'button'; pb.title = 'Vorige Route: ' + prev.from; pb.setAttribute('aria-label', 'Vorige Route ' + prev.n);
+  const nb = el('button', 'btn nav-b', '›'); nb.type = 'button'; nb.title = 'Nächste Route: ' + next.from; nb.setAttribute('aria-label', 'Nächste Route ' + next.n);
+  pb.onclick = e => { e.stopPropagation(); openRoute(prev); };
+  nb.onclick = e => { e.stopPropagation(); openRoute(next); };
+  nav.append(pb, el('span', 'nav-t', `Route ${state.route.n} · ${V.indexOf(state.route) + 1} von ${V.length}`), nb);
+  return nav;
+}
+function lernenBody(box) {
+  const r = state.route;
+  box.append(routeNav());
+  box.append(el('p', 'orig', `Im Skript: Route ${r.orig} · Kapitel ${r.chap + 1} ${CHAPTERS[r.chap].name}`));
+  if (r.note) box.append(el('span', 'badge warn', r.note));
+  box.append(el('p', 'hint', STREETS ? 'Lass die Route ablaufen – oder tipp die Straßen der Reihe nach an, in der Liste oder direkt auf der Karte.' : 'Lass die Route Schritt für Schritt ablaufen.'));
+  const bar = el('div', 'bar');
+  const ICON_PLAY = '<svg viewBox="0 0 16 16" width="13" height="13" aria-hidden="true"><path d="M4 2.5v11l9-5.5z" fill="currentColor"/></svg>';
+  const ICON_PAUSE = '<svg viewBox="0 0 16 16" width="13" height="13" aria-hidden="true"><path d="M3.5 2.5h3v11h-3zM9.5 2.5h3v11h-3z" fill="currentColor"/></svg>';
+  const play = el('button', 'btn primary playbtn');
+  play.innerHTML = state.playing ? ICON_PAUSE + '<span>Pause</span>' : ICON_PLAY + `<span>${state.paused ? 'Weiter' : 'Abspielen'}</span>`;
+  play.onclick = e => { e.stopPropagation(); if (state.playing) pauseRoute(); else playRoute(!!state.paused); };
+  bar.append(play);
+  if (STREETS) {
+    const all = el('button', 'btn', 'Route anzeigen');
+    all.onclick = e => { e.stopPropagation(); state.playing = false; drawAll(); state.step = r.steps.length; fitRoute(); render(); };
+    const hide = el('button', 'btn', 'Ausblenden');
+    hide.disabled = state.step === 0 && !state.playing;
+    hide.onclick = e => { e.stopPropagation(); clearRoute(); };
+    bar.append(all, hide);
+  }
+  const ol = el('ol', 'steps');
+  r.steps.forEach((s, i) => {
+    const li = el('li', i < state.step ? 'past' : '');
+    if (state.playing && i === state.step - 1) li.classList.add('now');
+    li.append(chip(s));
+    if (!state.playing && i === state.step && STREETS) li.classList.add('next');
+    li.onclick = () => { if (!STREETS || state.playing) return; if (i === state.step) advanceStep(); else if (state.step > 0) showUpTo(i); else flash(i); };
+    ol.append(li);
+  });
+  const dest = el('li', 'dest'); dest.append(el('span', 'chip dest', 'Ziel: ' + (r.goal ? r.goal[2] : r.dest))); ol.append(dest);
+  box.append(bar, ol);
+}
+function reduced() { return matchMedia('(prefers-reduced-motion: reduce)').matches; }
+function collapseOpen(done) {
+  state.playing = false; stopAnim();
+  const item = document.querySelector('.acc-item.open');
+  if (!item || reduced()) { done(); return; }
+  item.classList.remove('expanded');
+  setTimeout(done, 300);
+}
+function renderLernen(p) {
+  geoNotice(p);
+  p.append(chapSelect());
+  p.append(el('p', 'hint', 'Wähl eine Route, um sie aufzuklappen.'));
+  const list = el('div', 'acc');
+  let lastChap = null;
+  visible().forEach(r => {
+    if (state.chap < 0 && r.chap !== lastChap) { lastChap = r.chap; list.append(chapHead(r.chap)); }
+    const open = r === state.route && state.open;
+    const animIn = open && state.animOpen === r.n;
+    const item = el('div', 'acc-item' + (open ? ' open' : '') + (open && !animIn ? ' expanded' : ''));
+    const head = el('button', 'rt' + (open ? ' on' : '')); head.type = 'button';
+    head.setAttribute('aria-expanded', open ? 'true' : 'false');
+    const t = el('span', 'rt-t'); t.append(el('span', 'rt-from', r.from), el('span', 'rt-to', '→ ' + r.to));
+    const lv = el('span', 'rt-lv'); for (let i = 0; i < 3; i++) lv.append(el('i', i < level(r.n) ? 'f' : ''));
+    head.append(el('span', 'rt-n', r.n), t, lv, el('span', 'chev', '▸'));
+    head.onclick = () => {
+      const openNow = () => { state.open = true; state.animOpen = r.n; pick(r); };
+      if (open) collapseOpen(() => { state.open = false; clearRoute(); });
+      else if (state.open) collapseOpen(openNow);
+      else openNow();
+    };
+    item.append(head);
+    if (open) {
+      const wrap = el('div', 'acc-wrap'), body = el('div', 'acc-body'), inner = el('div', 'acc-inner');
+      lernenBody(inner); body.append(inner); wrap.append(body); item.append(wrap);
+      if (animIn) {
+        state.animOpen = null;
+        requestAnimationFrame(() => requestAnimationFrame(() => {
+          item.classList.add('expanded');
+          setTimeout(() => item.scrollIntoView({ block: 'nearest', behavior: reduced() ? 'auto' : 'smooth' }), 320);
+        }));
+      }
+    }
+    list.append(item);
+  });
+  p.append(list);
+}
+function pauseRoute() {
+  // aktuelle Straße wird beim Weiterspielen neu gefahren
+  state.playing = false; state.paused = true; stopAnim();
+  state.step = Math.max(0, state.step - 1);
+  routeLayer.clearLayers(); for (let k = 0; k < state.step; k++) drawSeg(k);
+  render();
+}
+function playRoute(resume) {
+  stopAnim();
+  if (!resume || !state.paused) { routeLayer.clearLayers(); state.step = 0; }
+  state.paused = false; state.playing = true; render();
+  const gen = drawGen;
+  const paths = routePaths(state.route) || [], first = paths.find(Boolean);
+  const from = state.step > 0 && paths[state.step - 1] ? paths[state.step - 1][paths[state.step - 1].length - 1] : null;
+  const startPt = from || (state.route.start ? [state.route.start[0], state.route.start[1]] : first ? first[0] : null);
+  const tick = () => {
+    if (state.mode !== 'lernen' || !state.playing || gen !== drawGen) return;
+    const i = state.step, T = SPEEDS[state.speed];
+    state.step++; render();
+    drawSeg(i, { animate: STREETS ? T * 0.65 : 0, label: stepName(state.route.steps[i]), onDone: () => {
+      if (!state.playing) return;
+      if (state.step < state.route.steps.length) setTimeout(tick, STREETS ? T * 0.35 : T);
+      else setTimeout(() => { state.playing = false; clearLabel(); showPoints(true); render(); }, 900);
+    } });
+  };
+  // nah an die Stelle, an der es losgeht, dann Straße für Straße
+  if (startPt && !reduced()) { camSeq++; camMove(() => map.flyTo(startPt, Math.max(17, Math.min(18, Math.round(map.getZoom()))), { duration: 0.8 }), 0.8).then(() => { if (gen === drawGen) setTimeout(tick, 250); }); }
+  else setTimeout(tick, 500);
+}
+
+// Reihenfolge
+function optionsFor(i) {
+  const keys = state.route.steps.map(streetKey), correct = keys[i];
+  let cand = [...POOL.keys()].filter(k => k !== correct && k !== keys[i - 1]);
+  if (STREETS && i > 0 && STREETS[keys[i - 1]]) {
+    // Nachbarstraßen der vorigen Straße als Ablenkung: erst grob über die Umrisse, dann genauer
+    const bbGap = (x, y) => { const dy = Math.max(0, x[0] - y[2], y[0] - x[2]) * 110540, dx = Math.max(0, x[1] - y[3], y[1] - x[3]) * 74000; return Math.hypot(dx, dy); };
+    const fb = STREET_BB[keys[i - 1]], thin = k => STREETS[k].map(w => w.filter((_, j) => j % 3 === 0 || j === w.length - 1));
+    const from = thin(keys[i - 1]);
+    cand = cand.filter(k => STREETS[k] && !HWY_KEYS.has(k)).map(k => [k, bbGap(fb, STREET_BB[k])]).filter(x => x[1] < 300).sort((a, b) => a[1] - b[1]).slice(0, 25)
+      .map(([k]) => [k, nearestPair(from, thin(k)).d]).sort((a, b) => a[1] - b[1]).slice(0, 7).map(x => x[0]);
+    if (cand.length < 3) cand = [...POOL.keys()].filter(k => k !== correct && k !== keys[i - 1]);
+  }
+  const picks = shuffle(cand).slice(0, 3);
+  // alle Antworten gleich beschriften (ohne Zusätze wie „Sonderspur“), sonst verrät sich die richtige
+  return shuffle([correct, ...picks]).map(k => ({ key: k, label: POOL.get(k), ok: k === correct }));
+}
+function renderReihe(p) {
+  const r = state.route;
+  p.append(el('p', 'hint', state.step === 0 ? `Start: ${r.from}. Welche Straße kommt zuerst?` : 'Welche Straße kommt als Nächstes?'));
+  const done = el('div', 'chain');
+  r.steps.slice(0, state.step).forEach(s => done.append(chip(s, 'ok')));
+  p.append(done);
+  if (state.step >= r.steps.length) return finish(p);
+  if (!state.opts || state.opts.step !== state.step) state.opts = { step: state.step, list: optionsFor(state.step) };
+  const grid = el('div', 'opts');
+  state.opts.list.forEach(o => {
+    const b = el('button', 'opt'); b.type = 'button'; b.append(chip(o.label));
+    b.onclick = () => {
+      if (o.ok) { drawSeg(state.step, { animate: 700, label: stepName(state.route.steps[state.step]) }); state.step++; render(); }
+      else { state.errors++; b.classList.add('no'); b.disabled = true; $('#score').textContent = state.errors + ' Fehler'; }
+    };
+    grid.append(b);
+  });
+  p.append(grid, progress());
+}
+
+// Auswahl (schriftlich)
+function renderAuswahl(p) {
+  const r = state.route;
+  if (!state.choices) state.choices = makeChoices(r, POOL, 3);
+  p.append(el('p', 'hint', 'Welche Route ist richtig? Genau eine stimmt mit dem Skript überein.'));
+  state.choices.forEach((c, idx) => {
+    const card = el('button', 'choice'); card.type = 'button';
+    card.append(el('span', 'letter', 'ABC'[idx]));
+    const ch = el('div', 'chain small');
+    c.steps.forEach((s, i) => {
+      let cls = '';
+      if (state.answered != null && !c.correct && (i === c.at || (c.kind === 'swap' && i === c.at + 1))) cls = 'diff';
+      ch.append(chip(s, cls));
+    });
+    card.append(ch);
+    if (state.answered != null && !c.correct) card.append(el('span', 'why', { swap: 'Zwei Straßen vertauscht', replace: 'Falsche Straße eingebaut', drop: 'Vor der markierten Straße fehlt eine', insert: 'Zusätzliche Straße eingebaut' }[c.kind]));
+    if (state.answered != null) { card.disabled = true; if (c.correct) card.classList.add('right'); else if (state.answered === idx) card.classList.add('wrong'); }
+    card.onclick = () => {
+      state.answered = idx; if (!c.correct) state.errors++;
+      drawAll(); fitRoute();
+      record(r.n, c.correct); render();
+    };
+    p.append(card);
+  });
+  if (state.answered != null) {
+    const ok = state.choices[state.answered].correct;
+    p.append(el('p', 'result ' + (ok ? 'good' : 'bad'), ok ? 'Richtig.' : 'Falsch. Die markierte Stelle weicht vom Skript ab.'));
+    p.append(nextBar());
+  }
+}
+
+// Nachfahren (mündlich)
+function renderFahren(p) {
+  const r = state.route;
+  if (!STREETS) { geoNotice(p); p.append(el('p', 'hint', 'Für diesen Modus muss das Straßennetz geladen sein.')); return; }
+  if (state.step >= r.steps.length) return finish(p);
+  p.append(el('p', 'hint', state.step === 0
+    ? `Wie bei der mündlichen Prüfung: Tipp auf der Karte die Straßen der Reihe nach an. Start: ${r.from}.`
+    : `${state.step} von ${r.steps.length} geschafft. Tipp die nächste Straße an.`));
+  const ch = el('div', 'chain'); r.steps.slice(0, state.step).forEach(s => ch.append(chip(s, 'ok'))); p.append(ch);
+  const fb = el('p', 'feedback'); fb.id = 'fb'; p.append(fb);
+  const bar = el('div', 'bar');
+  const hint = el('button', 'btn', 'Tipp'); hint.onclick = () => { state.errors++; $('#fb').textContent = 'Nächste Straße: ' + stepName(r.steps[state.step]); flash(state.step); $('#score').textContent = state.errors + ' Fehler'; };
+  const sol = el('button', 'btn', 'Lösung zeigen'); sol.onclick = () => { state.errors += 99; clearLabel(); for (let i = state.step; i < r.steps.length; i++) drawSeg(i); state.step = r.steps.length; fitRoute(); render(); };
+  bar.append(hint, sol); p.append(bar, progress());
+}
+const errLayer = L.layerGroup().addTo(map);
+// falsche Straße: das Stück rund um den Klick rot blinken lassen
+// Abstand Punkt -> Linienzug in Metern
+function distToPath(p, path) {
+  if (!path || !path.length) return Infinity;
+  if (path.length === 1) return dist(p, path[0]);
+  const kx = 111320 * Math.cos(48.21 * Math.PI / 180), ky = 110540; let best = Infinity;
+  for (let i = 1; i < path.length; i++) {
+    const ax = path[i - 1][1] * kx, ay = path[i - 1][0] * ky, bx = path[i][1] * kx, by = path[i][0] * ky, px = p[1] * kx, py = p[0] * ky;
+    const vx = bx - ax, vy = by - ay, L2 = vx * vx + vy * vy, t = L2 ? Math.max(0, Math.min(1, ((px - ax) * vx + (py - ay) * vy) / L2)) : 0;
+    best = Math.min(best, Math.hypot(px - ax - t * vx, py - ay - t * vy));
+  }
+  return best;
+}
+function blinkStreet(k, at, exclude) {
+  const c = [at.lat, at.lng], runs = [];
+  const keep = p => dist(p, c) < 140 && !(exclude && exclude.some(path => distToPath(p, path) < 9));
+  for (const w of STREETS[k] || []) { let cur = []; for (const p of w) { if (keep(p)) cur.push(p); else { if (cur.length > 1) runs.push(cur); cur = []; } } if (cur.length > 1) runs.push(cur); }
+  if (!runs.length) return;
+  const lines = runs.map(r => L.polyline(r, { color: css('--bad'), weight: 9, opacity: 0.85, lineCap: 'round', interactive: false }).addTo(errLayer));
+  let n = 0; const iv = setInterval(() => {
+    n++; lines.forEach(l => l.setStyle({ opacity: n % 2 ? 0.1 : 0.85 }));
+    if (n >= 6) { clearInterval(iv); lines.forEach(l => errLayer.removeLayer(l)); }
+  }, 170);
+}
+// Klick auf das tatsächlich gefahrene Stück (ohne die ersten Meter an der Kreuzung, damit die Gegenseite nicht zählt)
+function segHit(e, seg) {
+  const cp = map.latLngToContainerPoint(e.latlng);
+  if (seg.length < 2) return map.latLngToContainerPoint(seg[0]).distanceTo(cp) <= 26;
+  const mpp = map.distance(map.containerPointToLatLng([0, 0]), map.containerPointToLatLng([100, 0])) / 100;
+  const total = pathLength(seg);
+  const short = total < 26 * mpp * 2.2 || total < 40; // auf dem Bildschirm winzig -> ganzer Abschnitt zählt, etwas mehr Toleranz
+  const skip = short ? 0 : Math.min(total * 0.4, Math.max(10, 26 * mpp));
+  let acc = 0, best = Infinity;
+  for (let i = 1; i < seg.length; i++) {
+    const d = dist(seg[i - 1], seg[i]); acc += d;
+    if (acc < skip) continue;
+    const a = map.latLngToContainerPoint(seg[i - 1]), b = map.latLngToContainerPoint(seg[i]);
+    best = Math.min(best, L.LineUtil.pointToSegmentDistance(cp, a, b));
+  }
+  return best <= (short ? 28 : 22);
+}
+// übersprungene Straße: einzeichnen und ein rotes Namensschild für ein paar Sekunden zeigen
+function markSkipped(i) {
+  const r = state.route, seg = (routePaths(r) || [])[i];
+  drawSeg(i, {});
+  if (!seg) return;
+  let mid = seg[Math.floor(seg.length / 2)];
+  if (seg.length > 1) { const L2 = pathLength(seg) / 2; let acc = 0; for (let k = 1; k < seg.length; k++) { acc += dist(seg[k - 1], seg[k]); if (acc >= L2) { mid = seg[k]; break; } } }
+  const m = L.marker([mid[0], mid[1]], { interactive: false, keyboard: false, icon: L.divIcon({ className: 'arrow', html: `<span class="skiplabel">${stepName(r.steps[i])}</span>`, iconSize: [0, 0], iconAnchor: [0, 0] }) }).addTo(errLayer);
+  setTimeout(() => { const el = m.getElement(); if (el) el.classList.add('fade'); }, 2400);
+  setTimeout(() => errLayer.removeLayer(m), 3000);
+}
+function streetHit(e) {
+  const cp = map.latLngToContainerPoint(e.latlng);
+  const pxDist = (k) => {
+    let best = Infinity;
+    for (const w of STREETS[k] || []) for (let i = 0; i < w.length; i++) {
+      const a = map.latLngToContainerPoint(w[i]);
+      const b = i + 1 < w.length ? map.latLngToContainerPoint(w[i + 1]) : a;
+      best = Math.min(best, L.LineUtil.pointToSegmentDistance(cp, a, b));
+    }
+    return best;
+  };
+  const nearest = () => {
+    let near = null, nd = Infinity; const lat = e.latlng.lat, lng = e.latlng.lng;
+    for (const k in STREETS) {
+      const bb = STREET_BB[k]; if (!bb || lat < bb[0] - 0.003 || lat > bb[2] + 0.003 || lng < bb[1] - 0.004 || lng > bb[3] + 0.004) continue;
+      if (!STREETS[k].some(w => w.some(p => Math.abs(p[0] - lat) < 0.003 && Math.abs(p[1] - lng) < 0.004))) continue;
+      const d = pxDist(k); if (d < nd) { nd = d; near = k; }
+    }
+    return nd <= 22 ? near : null;
+  };
+  return { pxDist, nearest, TOL: 22 };
+}
+// richtige nächste Straße einzeichnen (Lernen per Liste/Karte und Nachfahren)
+function advanceStep() {
+  const r = state.route;
+  drawSeg(state.step, { animate: 700, label: stepName(r.steps[state.step]) });
+  state.step++;
+  if (state.mode === 'lernen' && state.step >= r.steps.length) setTimeout(() => { clearLabel(); showPoints(true); }, 800);
+  render();
+}
+function onMapClick(e) {
+  if (!STREETS || state.playing) return;
+  const lern = state.mode === 'lernen' && state.open;
+  if (!lern && state.mode !== 'fahren') return;
+  if (state.step >= state.route.steps.length) return;
+  const h = streetHit(e), want = streetKey(state.route.steps[state.step]);
+  const seg = (routePaths(state.route) || [])[state.step];
+  let ok;
+  if (seg) ok = segHit(e, seg);
+  else ok = h.pxDist(want) <= h.TOL;
+  if (ok) { advanceStep(); return; }
+  // übernächste Straße richtig getroffen? dann die ausgelassene rot zeigen und weitermachen
+  const segNext = (routePaths(state.route) || [])[state.step + 1];
+  if (segNext && state.step + 1 < state.route.steps.length && segHit(e, segNext)) {
+    const skipped = state.route.steps[state.step];
+    markSkipped(state.step); state.step++;
+    if (!lern) { state.errors++; $('#score').textContent = state.errors + ' Fehler'; }
+    advanceStep();
+    const fb = $('#fb'); if (fb) fb.textContent = `Übersprungen: ${stepName(skipped)}`;
+    return;
+  }
+  const near = h.nearest();
+  const wrongSide = seg && (near === want || h.pxDist(want) <= h.TOL);
+  if (near || wrongSide) blinkStreet(wrongSide ? want : near, e.latlng, wrongSide ? (routePaths(state.route) || []).slice(0, state.step + 1).filter(Boolean) : null);
+  if (lern) return;
+  state.errors++; $('#score').textContent = state.errors + ' Fehler';
+  const fb = $('#fb');
+  if (fb) fb.textContent = wrongSide ? `Richtige Straße, aber falsche Richtung – die Route fährt den anderen Teil von ${prettyKey(want)}.` : near ? `Das ist ${prettyKey(near)} – nicht die nächste Straße.` : 'Da ist keine Straße. Zoom näher heran und tipp direkt auf die Straße.';
+}
+function prettyKey(k) { return POOL.get(k) || k; }
+map.on('click', onMapClick);
+
+function progress() { const d = el('div', 'prog'); const f = el('i'); f.style.width = (100 * state.step / state.route.steps.length) + '%'; d.append(f); return d; }
+function finish(p) {
+  showPoints(true);
+  const r = state.route, perfect = state.errors === 0;
+  if (!state.done) { state.done = true; record(r.n, perfect); }
+  const box = el('div', 'result ' + (perfect ? 'good' : 'bad'));
+  box.append(el('strong', '', perfect ? 'Fehlerfrei – Ziel erreicht.' : (state.errors >= 99 ? 'Lösung angezeigt.' : `Ziel erreicht mit ${state.errors} Fehler${state.errors === 1 ? '' : 'n'}.`)));
+  box.append(el('div', '', 'Ziel: ' + r.dest));
+  p.append(box, nextBar()); fitRoute();
+}
+function nextBar() {
+  const bar = el('div', 'bar');
+  const again = el('button', 'btn', 'Nochmal'); again.onclick = reset;
+  const nx = el('button', 'btn primary', 'Nächste Route'); nx.onclick = () => nextRoute(false);
+  const rnd = el('button', 'btn', 'Zufällig (schwache zuerst)'); rnd.onclick = () => nextRoute(true);
+  bar.append(again, nx, rnd); return bar;
+}
+
+document.addEventListener('keydown', e => {
+  if (state.mode !== 'lernen' || !state.open || e.target.closest('input, textarea, select')) return;
+  const V = visible(), i = V.indexOf(state.route);
+  if (e.key === 'ArrowRight') { e.preventDefault(); openRoute(V[(i + 1) % V.length]); }
+  if (e.key === 'ArrowLeft') { e.preventDefault(); openRoute(V[(i - 1 + V.length) % V.length]); }
+});
+document.querySelectorAll('.tab').forEach(t => t.onclick = () => { state.mode = t.dataset.mode; reset(); $('#score').textContent = ''; });
+$('#shuffle').onclick = () => nextRoute(true);
+$('#reload').onclick = async () => { try { localStorage.removeItem(GEO_KEY); } catch (e) {} await idbDel(IDB_KEY); await idbDel('strassennetz-1bez-v3'); STREETS = null; render(); loadStreets(); };
+idbDel('strassennetz-1bez-v3');
+renderList(); render(); loadStreets();
+
+</script>
+</body>
+</html>
