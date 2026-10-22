@@ -246,6 +246,9 @@ ol.steps li.dest .chip { background: var(--acc); color: var(--acc-ink); padding:
 .rs-row b { font-size: 1.15rem; font-weight: 700; }
 .resultcard small { font-size: .78rem; color: rgba(20,20,20,.65); }
 .rs-next { flex: none; }
+.rs-close { position: absolute; top: -9px; right: -9px; width: 26px; height: 26px; padding: 0; border: 0; border-radius: 50%; background: #fff; color: #141414; display: grid; place-items: center; cursor: pointer; box-shadow: 0 2px 6px rgba(0,0,0,.3); z-index: 1; }
+.rs-close svg { width: 13px; height: 13px; }
+.rs-close:hover { background: #141414; color: var(--acc); }
 @keyframes rcin { from { opacity: 0; transform: translateX(-50%) translateY(12px) scale(.92); } to { opacity: 1; transform: translateX(-50%); } }
 /* Ziel erreicht: Konfetti */
 .confetti { position: absolute; left: 0; top: 0; pointer-events: none; }
@@ -878,7 +881,7 @@ const POOL = streetPool(ROUTES);
 const STORE_KEY = 'taxi-routen-wien-v2', GEO_KEY = 'taxi-routen-1bez-geo-v1', CHAP_KEY = 'taxi-kapitel-v1';
 let STREETS = null; // key -> [[ [lat,lng], ... ], ...]
 let STREET_BB = {}; // key -> [minLat, minLng, maxLat, maxLng]
-let state = { mode: 'lernen', route: ROUTES[0], step: 0, errors: 0, done: false, open: false, chap: -1, res: [], miss: {} };
+let state = { mode: 'lernen', route: ROUTES[0], step: 0, errors: 0, done: false, open: false, chap: -1, res: [], miss: {}, finished: false };
 try { const v = localStorage.getItem(CHAP_KEY); const c = v == null ? -1 : +v; if (c >= 0 && c < CHAPTERS.length) state.chap = c; } catch (e) {}
 // Routen des gewählten Kapitels (oder alle)
 function inChap() { return state.chap < 0 ? ROUTES : ROUTES.filter(r => r.chap === state.chap); }
@@ -1366,7 +1369,10 @@ function pin(kind, pt, away) {
   const html = `<span class="pinwrap"><span class="pinstem" style="width:${dist - 12}px;transform:rotate(${ang}deg)"></span><span class="pindot ${kind}"></span><span class="pin ${kind}" style="left:${ox}px;top:${oy}px">${lm || ICONS[type] || ICONS.ort}<b>${kind === 'start' ? 'START' : 'ZIEL'}</b></span></span>`;
   return L.marker([pt[0], pt[1]], { icon: L.divIcon({ className: 'arrow pinmarker', html, iconSize: [0, 0], iconAnchor: [0, 0] }), interactive: true, keyboard: false })
     .bindTooltip(pt[2], { direction: 'top', offset: [0, -14] })
-    .on('click', () => { camSeq++; map.flyTo([pt[0], pt[1]], 18, { duration: reduced() ? 0 : 0.9 }); });
+    .on('click', () => {
+      if (kind === 'goal' && state.finished && state.step >= state.route.steps.length) { resultCard(goalPoint(state.route)); return; }
+      camSeq++; map.flyTo([pt[0], pt[1]], 18, { duration: reduced() ? 0 : 0.9 });
+    });
 }
 function showPoints(withGoal) { try { showPointsInner(withGoal); } catch (e) { console.error(e); } }
 function showPointsInner(withGoal) {
@@ -1402,7 +1408,7 @@ function showUpTo(i) {
   showPoints(state.step >= state.route.steps.length);
   render(); flash(i);
 }
-function clearRoute() { state.paused = false; state.playing = false; state.res = []; state.miss = {}; stopAnim(); routeLayer.clearLayers(); flashLayer.clearLayers(); errLayer.clearLayers(); state.step = 0; showPoints(false); render(); }
+function clearRoute() { state.paused = false; state.playing = false; state.res = []; state.miss = {}; state.finished = false; stopAnim(); routeLayer.clearLayers(); flashLayer.clearLayers(); errLayer.clearLayers(); state.step = 0; showPoints(false); render(); }
 function drawAll() { stopAnim(); routeLayer.clearLayers(); state.route.steps.forEach((_, i) => drawSeg(i)); showPoints(true); }
 function routeBounds(route) {
   const ps = (routePaths(route) || []).filter(Boolean).flat();
@@ -1588,7 +1594,7 @@ async function cameraTo(r) {
   await go(target, close, 1.4);                      // 3) auf den Start reinzoomen
 }
 function pick(r) { state.route = r; reset(); renderList(); cameraTo(r); }
-function reset() { state.paused = false; state.playing = false; state.res = []; state.miss = {}; stopAnim(); state.opts = null; const sc = document.getElementById('score'); if (sc) sc.textContent = ''; state.step = 0; state.errors = 0; state.done = false; state.choices = null; state.answered = null; routeLayer.clearLayers(); flashLayer.clearLayers(); showPoints(false); render(); }
+function reset() { state.paused = false; state.playing = false; state.res = []; state.miss = {}; state.finished = false; stopAnim(); state.opts = null; const sc = document.getElementById('score'); if (sc) sc.textContent = ''; state.step = 0; state.errors = 0; state.done = false; state.choices = null; state.answered = null; routeLayer.clearLayers(); flashLayer.clearLayers(); showPoints(false); render(); }
 function nextRoute(random) {
   let r;
   const V = inChap();
@@ -1695,7 +1701,7 @@ function stepBack() {
   if (state.step <= 0) return;
   state.playing = false; state.paused = false; stopAnim();
   routeLayer.clearLayers(); flashLayer.clearLayers(); errLayer.clearLayers();
-  state.step--; state.res.length = state.step;
+  state.step--; state.res.length = state.step; state.finished = false;
   for (let k = 0; k < state.step; k++) drawSeg(k);
   showPoints(false); render();
   const paths = routePaths(state.route) || [], prev = state.step > 0 ? paths[state.step - 1] : null, r = state.route;
@@ -1747,7 +1753,7 @@ function pauseRoute() {
 }
 function playRoute(resume) {
   stopAnim();
-  if (!resume || !state.paused) { routeLayer.clearLayers(); state.step = 0; state.res = []; state.miss = {}; }
+  if (!resume || !state.paused) { routeLayer.clearLayers(); state.step = 0; state.res = []; state.miss = {}; state.finished = false; }
   state.paused = false; state.playing = true; render();
   const gen = drawGen;
   const paths = routePaths(state.route) || [], first = paths.find(Boolean);
@@ -1922,6 +1928,7 @@ function celebrate() {
   setTimeout(() => {
     if (gen !== drawGen || r !== state.route) return;
     const pt = goalPoint(r); if (!pt) return;
+    state.finished = true;
     if (!reduced()) {
       let html = '<span class="confetti">';
       for (let i = 0; i < 40; i++) {
@@ -1941,6 +1948,7 @@ function resultCard(pt) {
   let ok = 0, bad = 0; for (let i = 0; i < n; i++) { if (res[i] === 'ok') ok++; else if (res[i] === 'bad') bad++; }
   const shown = n - ok - bad;
   const html = `<div class="resultcard" role="status">
+    <button class="rs-close" type="button" title="Schließen – Klick aufs Ziel zeigt das Ergebnis wieder" aria-label="Ergebnis schließen"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M7 7l10 10M17 7L7 17"/></svg></button>
     <div class="rs-text"><b class="rs-h">Ziel erreicht</b>
       <span class="rs-row"><span class="rs-ok"><i>✓</i><b>${ok}</b> richtig</span><span class="rs-bad"><i>✕</i><b>${bad}</b> falsch</span></span>
       ${shown ? `<small>${shown} aufgedeckt</small>` : ''}</div>
@@ -1950,6 +1958,7 @@ function resultCard(pt) {
   const e = m.getElement(); if (!e) return;
   L.DomEvent.disableClickPropagation(e); L.DomEvent.disableScrollPropagation(e);
   e.querySelector('.rs-next').onclick = () => swipeRoute(1);
+  e.querySelector('.rs-close').onclick = () => resultLayer.clearLayers();
   // Karte so schieben, dass die Ergebnis-Karte ganz zu sehen ist
   const box = e.querySelector('.resultcard').getBoundingClientRect(), mb = map.getContainer().getBoundingClientRect();
   const dy = Math.min(0, box.top - mb.top - 90), dx = box.left < mb.left + 16 ? box.left - mb.left - 16 : box.right > mb.right - 80 ? box.right - mb.right + 80 : 0;
