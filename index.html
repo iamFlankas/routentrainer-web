@@ -10,7 +10,7 @@
 <style>
 /* Layout: große abgerundete Karte links (mit schwebenden Glas-Knöpfen), helle Leiste rechts; am Handy Karte oben, Leiste darunter */
 :root {
-  --page: #c9c8c4; --panel: #e9e8e4; --card: #ffffff; --fg: #141414; --muted: #8a8984; --line: #dcdad4; --soft: #f3f2ee;
+  --page: #0e0e0e; --panel: rgba(246, 178, 52, .9); --on-panel: #141414; --on-panel-muted: rgba(20, 20, 20, .62); --card: #ffffff; --fg: #141414; --muted: #8a8984; --line: #dcdad4; --soft: #f3f2ee;
   --dark: #151515; --dark-fg: #f4f3ef; --dark-muted: #9a9993;
   --acc: #f6b234; --acc-ink: #1a1a1a;
   --route: #f59f0b; --route-ink: #1a1a1a; --warn: #3d6bff;
@@ -21,15 +21,11 @@
   color-scheme: light;
 }
 @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
-  --page: #0b0b0c; --panel: #19191a; --card: #232325; --fg: #f2f1ed; --muted: #9b9a95; --line: #333335; --soft: #2b2b2e;
+  --page: #0e0e0e; --card: #232325; --fg: #f2f1ed; --muted: #9b9a95; --line: #333335; --soft: #2b2b2e;
   --dark: #0f0f10; --good: #6fd08d; --good-bg: #1d3324; --bad: #ff8a80; --bad-bg: #3a1f1c; color-scheme: dark; } }
 :root[data-theme="dark"] {
-  --page: #0b0b0c; --panel: #19191a; --card: #232325; --fg: #f2f1ed; --muted: #9b9a95; --line: #333335; --soft: #2b2b2e;
+  --page: #0e0e0e; --card: #232325; --fg: #f2f1ed; --muted: #9b9a95; --line: #333335; --soft: #2b2b2e;
   --dark: #0f0f10; --good: #6fd08d; --good-bg: #1d3324; --bad: #ff8a80; --bad-bg: #3a1f1c; color-scheme: dark; }
-/* Dark Mode: dieselbe basemap.at-Karte, nur dunkel gefiltert (Schrift bleibt lesbar) */
-@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .leaflet-tile-pane { filter: invert(1) hue-rotate(180deg) brightness(.9) contrast(.9) saturate(.55); } }
-:root[data-theme="dark"] .leaflet-tile-pane { filter: invert(1) hue-rotate(180deg) brightness(.9) contrast(.9) saturate(.55); }
-
 * { box-sizing: border-box; }
 [hidden] { display: none !important; }
 html, body { height: 100%; margin: 0; }
@@ -41,13 +37,13 @@ button, input, select { font: inherit; color: inherit; }
 .mapwrap { position: relative; border-radius: var(--r); overflow: hidden; background: #e7e5df; min-height: 0; box-shadow: 0 20px 50px rgba(0,0,0,.18); }
 #map { position: absolute; inset: 0; background: #e7e5df; }
 .leaflet-container { background: #e7e5df; font-family: var(--font); }
-.scrim { position: absolute; left: 0; right: 0; top: 0; height: 240px; background: linear-gradient(rgba(0,0,0,.62), rgba(0,0,0,.34) 55%, transparent); pointer-events: none; z-index: 1001; }
-.maphead { position: absolute; left: 30px; top: 26px; z-index: 1002; color: #fff; pointer-events: none; max-width: 40%; }
+.maphead { position: absolute; left: 30px; top: 26px; z-index: 1002; color: #141414; pointer-events: none; max-width: 40%; }
 .brand { display: flex; align-items: center; gap: 10px; font-weight: 500; font-size: 1.5rem; letter-spacing: -.01em; }
 .logo { font: 700 .62rem/1 var(--font); letter-spacing: .1em; background: var(--acc); color: var(--acc-ink); padding: 5px 6px; border-radius: 6px; }
 .maphead h1 { font-weight: 500; font-size: 1.75rem; letter-spacing: -.02em; margin: 30px 0 4px; }
 .maphead p { margin: 0; font-size: .95rem; opacity: .9; }
-.maphead, .brand { text-shadow: 0 1px 8px rgba(0,0,0,.35); }
+.maphead { text-shadow: 0 0 2px #fff, 0 0 6px #fff, 0 0 12px rgba(255,255,255,.9); }
+.logo { text-shadow: none; }
 .tabs { position: absolute; top: 24px; left: 50%; transform: translateX(-50%); z-index: 1002; display: flex; gap: 8px; }
 .gbtn { width: 46px; height: 46px; border-radius: 50%; display: grid; place-items: center; border: 1px solid var(--glass-line); background: var(--glass); color: #fff; cursor: pointer; padding: 0; backdrop-filter: blur(14px) saturate(1.3); -webkit-backdrop-filter: blur(14px) saturate(1.3); transition: background .2s, transform .15s; position: relative; }
 .gbtn:hover { background: rgba(28,28,28,.62); }
@@ -63,42 +59,28 @@ button, input, select { font: inherit; color: inherit; }
 .leaflet-top.leaflet-right { top: 14px; right: 14px; }
 .leaflet-control-attribution { font-size: 10px; border-radius: 8px 0 0 0; }
 
-/* schwebende Routenkarte auf der Karte */
-.routecard { position: absolute; left: 30px; top: 214px; z-index: 1002; width: 340px; }
-.rc { background: var(--card); color: var(--fg); border-radius: 26px; padding: 20px 22px 18px; box-shadow: 0 18px 40px rgba(0,0,0,.25); display: flex; flex-direction: column; gap: 16px; }
-.rc-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; }
-.rc-top b { display: block; font-weight: 500; font-size: 1.3rem; letter-spacing: -.01em; }
-.rc-top .sub { display: block; font-size: 1.02rem; line-height: 1.25; }
 .status { flex: none; display: inline-flex; align-items: center; gap: 6px; font-size: .8rem; padding: 4px 10px; border-radius: 999px; background: var(--soft); white-space: nowrap; }
 .status::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: var(--acc); }
-.rc-stats { display: flex; align-items: flex-end; gap: 20px; }
-.rc-stats > div { display: flex; flex-direction: column; gap: 6px; }
-.rc-stats small { color: var(--muted); font-size: .8rem; }
-.rc-len { margin-left: auto; text-align: right; font-size: .9rem; }
-.tag { display: inline-flex; align-items: center; gap: 6px; padding: 5px 11px; border-radius: 999px; background: var(--soft); font-weight: 500; font-size: .9rem; }
-.tag.acc { background: var(--acc); color: var(--acc-ink); }
-.tag svg { width: 16px; height: 16px; }
-.rc-close { margin: 12px 0 0 147px; }
-
 /* --- Leiste rechts --- */
-.panel { background: var(--panel); border-radius: var(--r); display: flex; flex-direction: column; min-height: 0; overflow: hidden; }
+.panel { background: var(--panel); color: var(--on-panel); border-radius: var(--r); display: flex; flex-direction: column; min-height: 0; overflow: hidden; }
+.search, .iconbtn, .card, .chip, .btn, .opt, .choice, .chipbtn, .pillbtn, .notice, .status { color: var(--fg); }
 .topbar { display: flex; gap: 10px; align-items: center; padding: 22px 22px 6px; }
 .search { flex: 1; display: flex; align-items: center; gap: 10px; background: var(--card); border-radius: 999px; padding: 0 16px; height: 48px; }
 .search svg { flex: none; width: 18px; height: 18px; color: var(--muted); }
 .search input { flex: 1; min-width: 0; border: 0; outline: 0; background: none; font-size: .95rem; }
 .search input::placeholder { color: var(--muted); }
-.search:focus-within { box-shadow: 0 0 0 2px var(--acc); }
+.search:focus-within { box-shadow: 0 0 0 2px #141414; }
 .iconbtn { flex: none; width: 48px; height: 48px; border-radius: 50%; border: 0; background: var(--card); display: grid; place-items: center; cursor: pointer; padding: 0; }
 .iconbtn svg { width: 20px; height: 20px; }
 .iconbtn:hover { box-shadow: inset 0 0 0 1px var(--line); }
 .scroll { overflow-y: auto; padding: 18px 22px 26px; display: flex; flex-direction: column; gap: 16px; min-height: 0; flex: 1; }
-.btn:focus-visible, .opt:focus-visible, .choice:focus-visible, .rt:focus-visible, .gbtn:focus-visible, .iconbtn:focus-visible, .chipbtn:focus-visible, .pillbtn:focus-visible { outline: 2px solid var(--acc); outline-offset: 2px; }
+.btn:focus-visible, .opt:focus-visible, .choice:focus-visible, .rt:focus-visible, .gbtn:focus-visible, .iconbtn:focus-visible, .chipbtn:focus-visible, .pillbtn:focus-visible { outline: 2px solid #141414; outline-offset: 2px; }
 
 #head { display: flex; flex-direction: column; gap: 14px; }
 .h-title { font-weight: 500; font-size: 2rem; line-height: 1.05; letter-spacing: -.02em; margin: 0; }
 .h-badges { display: flex; gap: 6px; flex-wrap: wrap; }
-.badge { font-weight: 500; font-size: .85rem; padding: 4px 11px; border-radius: 999px; background: var(--acc); color: var(--acc-ink); }
-.badge.soft { background: var(--card); color: var(--muted); }
+.badge { font-weight: 500; font-size: .85rem; padding: 4px 11px; border-radius: 999px; background: #141414; color: #fff; }
+.badge.soft { background: rgba(255,255,255,.55); color: #141414; }
 .card { background: var(--card); border-radius: 26px; padding: 18px 20px; }
 .card.lern { display: flex; flex-direction: column; gap: 14px; }
 .card.lern .btn:not(.primary) { background: var(--soft); }
@@ -111,7 +93,8 @@ button, input, select { font: inherit; color: inherit; }
 .tl-mid svg { width: 20px; height: 20px; }
 .tl-names { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 8px; font-size: .95rem; line-height: 1.25; }
 .tl-names span:last-child { text-align: right; }
-.hint { margin: 0; color: var(--muted); }
+.hint { margin: 0; color: var(--on-panel-muted); }
+.card .hint { color: var(--muted); }
 #score:empty { display: none; }
 #score { align-self: flex-start; font-weight: 500; font-size: .85rem; color: var(--bad); background: var(--bad-bg); padding: 4px 12px; border-radius: 999px; }
 #play { display: flex; flex-direction: column; gap: 12px; }
@@ -177,7 +160,7 @@ ol.steps li.dest .chip { background: var(--acc); color: var(--acc-ink); padding:
 /* Routenliste: dunkle Karten */
 .sec { display: flex; justify-content: space-between; align-items: center; gap: 10px; margin-top: 6px; }
 .sec h3 { margin: 0; font-weight: 500; font-size: 1.4rem; letter-spacing: -.01em; }
-.sec h3 small { font-size: .85rem; color: var(--muted); font-weight: 400; margin-left: 4px; }
+.sec h3 small { font-size: .85rem; color: var(--on-panel-muted); font-weight: 400; margin-left: 4px; }
 .pillbtn { border: 0; background: var(--card); border-radius: 999px; padding: 9px 16px; font-size: .88rem; cursor: pointer; }
 .pillbtn:hover { box-shadow: inset 0 0 0 1px var(--line); }
 #chapbox { display: flex; gap: 6px; overflow-x: auto; scrollbar-width: none; margin: -4px -22px 0; padding: 0 22px; }
@@ -186,15 +169,15 @@ ol.steps li.dest .chip { background: var(--acc); color: var(--acc-ink); padding:
 .chipbtn b { font-weight: 600; margin-right: 4px; }
 .chipbtn.on { background: var(--fg); color: var(--card); }
 #routes { display: flex; flex-direction: column; gap: 8px; }
-.chap-h { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; font-size: .85rem; color: var(--muted); padding: 10px 6px 0; }
-.chap-h b { font-weight: 600; color: var(--fg); }
+.chap-h { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; font-size: .85rem; color: var(--on-panel-muted); padding: 10px 6px 0; }
+.chap-h b { font-weight: 600; color: var(--on-panel); }
 .rt { display: grid; grid-template-columns: 52px 1fr; gap: 4px 12px; align-items: center; text-align: left; padding: 14px 18px 14px 16px; border: 0; border-radius: 24px; background: var(--dark); color: var(--dark-fg); cursor: pointer; position: relative; overflow: hidden; }
 .rt::before { content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 74px; opacity: .13; background:
   linear-gradient(115deg, transparent 46%, #fff 47%, #fff 49%, transparent 50%) 0 0 / 34px 30px,
   linear-gradient(25deg, transparent 46%, #fff 47%, #fff 49%, transparent 50%) 0 0 / 26px 38px;
   -webkit-mask: linear-gradient(90deg, #000 40%, transparent); mask: linear-gradient(90deg, #000 40%, transparent); }
 .rt:hover { background: #242424; }
-.rt.on { box-shadow: 0 0 0 3px var(--acc); }
+.rt.on { box-shadow: 0 0 0 3px #fff; }
 .rt-n { position: relative; font-weight: 500; font-size: 1.4rem; letter-spacing: -.02em; }
 .rt-body { position: relative; display: flex; flex-direction: column; gap: 4px; min-width: 0; }
 .rt-line { position: relative; display: flex; align-items: center; justify-content: space-between; height: 22px; }
@@ -208,9 +191,9 @@ ol.steps li.dest .chip { background: var(--acc); color: var(--acc-ink); padding:
 .rt-names { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; font-size: .9rem; line-height: 1.2; }
 .rt-names span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .rt-to { text-align: right; }
-.empty { color: var(--muted); text-align: center; padding: 20px 0; margin: 0; }
-.foot { font-size: .78rem; color: var(--muted); display: flex; justify-content: space-between; gap: 8px; flex-wrap: wrap; padding-top: 4px; }
-.foot button { border: 0; background: none; color: var(--muted); text-decoration: underline; font-size: inherit; cursor: pointer; padding: 0; }
+.empty { color: var(--on-panel-muted); text-align: center; padding: 20px 0; margin: 0; }
+.foot { font-size: .78rem; color: var(--on-panel-muted); display: flex; justify-content: space-between; gap: 8px; flex-wrap: wrap; padding-top: 4px; }
+.foot button { border: 0; background: none; color: var(--on-panel-muted); text-decoration: underline; font-size: inherit; cursor: pointer; padding: 0; }
 
 /* Filter (Leaflet-Steuerung oben rechts) */
 .filterctl { font: 14px var(--font); color: #141414; display: flex; flex-direction: column; align-items: flex-end; }
@@ -264,7 +247,6 @@ ol.steps li.dest .chip { background: var(--acc); color: var(--acc-ink); padding:
   .brand { font-size: 1.15rem; }
   .maphead h1 { font-size: 1.35rem; margin-top: 10px; }
   .maphead p { font-size: .85rem; }
-  .scrim { height: 160px; }
   .tabs { top: auto; bottom: 40px; }
   .tab.on::after { display: none; }
   .mapctl { right: 14px; bottom: 98px; gap: 8px; }
@@ -272,7 +254,6 @@ ol.steps li.dest .chip { background: var(--acc); color: var(--acc-ink); padding:
   .geo-pill { left: 14px; bottom: 98px; max-width: 62%; }
   .leaflet-control-attribution { font-size: 9px; }
   .geo-pill:has(#geo:not(.bad)) { display: none; }
-  .routecard { display: none; }
   .leaflet-top.leaflet-right { top: max(8px, env(safe-area-inset-top)); right: 6px; }
   .panel { border-radius: 0; overflow: visible; }
   .topbar { padding: 16px max(16px, env(safe-area-inset-right)) 0 max(16px, env(safe-area-inset-left)); }
@@ -288,7 +269,6 @@ ol.steps li.dest .chip { background: var(--acc); color: var(--acc-ink); padding:
 <div class="app">
   <main class="mapwrap">
     <div id="map"></div>
-    <div class="scrim"></div>
     <header class="maphead">
       <div class="brand"><span class="logo">TAXI</span>Routentrainer</div>
       <h1 id="modeTitle">Lernen</h1>
@@ -300,7 +280,6 @@ ol.steps li.dest .chip { background: var(--acc); color: var(--acc-ink); padding:
       <button class="gbtn tab" data-mode="auswahl" type="button" title="Auswahl" aria-label="Auswahl"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="3.5" width="17" height="17" rx="5"/><path d="M8 12.2l2.7 2.7L16.3 9"/></svg></button>
       <button class="gbtn tab" data-mode="fahren" type="button" title="Nachfahren" aria-label="Nachfahren"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="18" r="2.2"/><path d="M8.2 18H15a3.5 3.5 0 0 0 0-7H9a3.5 3.5 0 0 1 0-7h6.5"/><path d="M18 1.8c-1.7 0-3 1.3-3 2.9 0 2.2 3 4.8 3 4.8s3-2.6 3-4.8c0-1.6-1.3-2.9-3-2.9z"/></svg></button>
     </nav>
-    <div id="routecard" class="routecard" hidden></div>
     <div class="mapctl">
       <button class="gbtn" id="zin" type="button" title="Näher" aria-label="Näher zoomen"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></button>
       <button class="gbtn" id="zout" type="button" title="Weiter weg" aria-label="Weiter weg zoomen"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M5 12h14"/></svg></button>
@@ -1369,11 +1348,8 @@ function routeBounds(route) {
   if (route.start) ps.push([route.start[0], route.start[1]]); if (route.goal) ps.push([route.goal[0], route.goal[1]]);
   return ps.length ? L.latLngBounds(ps) : null;
 }
-// Ränder fürs Einpassen: oben Platz für Kopf und Modus-Knöpfe, links für die schwebende Routenkarte
-function fitPad() {
-  const card = $('#routecard'), wide = !card.hidden && card.offsetWidth > 0;
-  return { paddingTopLeft: [wide ? card.offsetLeft + card.offsetWidth + 30 : 30, wide ? 110 : 90], paddingBottomRight: [80, 40] };
-}
+// Ränder fürs Einpassen: oben Platz für Titel und Modus-Knöpfe, rechts für die Zoom-Knöpfe
+function fitPad() { return { paddingTopLeft: [30, 150], paddingBottomRight: [80, 40] }; }
 function fitRoute() { const b = routeBounds(state.route); if (b) map.fitBounds(b, { ...fitPad(), maxZoom: 18 }); }
 function flash(i) {
   flashLayer.clearLayers();
@@ -1487,7 +1463,6 @@ function renderChaps() {
 
 // --- Rendering ---
 const ICON_CAR = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 16.5v2.5M19 16.5v2.5M3.5 16.5h17V12l-2-5.5h-13l-2 5.5z"/><path d="M3.5 12h17M9.5 3.5h5v3h-5z"/></svg>';
-const ICON_X = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>';
 function levelDots(n) {
   const lv = el('span', 'rt-lv'); for (let i = 0; i < 3; i++) lv.append(el('i', i < level(n) ? 'f' : ''));
   lv.title = 'fehlerfreie Durchgänge in Folge'; return lv;
@@ -1570,29 +1545,6 @@ function header() {
   tl.append(top, line, names);
   h.append(el('h2', 'h-title', 'Route ' + r.n), badges, tl);
 }
-// schwebende Karte auf dem Plan: Fortschritt, Straßen, Länge
-function routeLength(r) {
-  if (r._len == null && STREETS) { const p = routePaths(r); r._len = p ? p.filter(Boolean).reduce((a, q) => a + pathLength(q), 0) : 0; }
-  return r._len || 0;
-}
-function routeCard() {
-  const box = $('#routecard'), r = state.route;
-  box.hidden = !shown(); box.innerHTML = ''; if (box.hidden) return;
-  const c = el('div', 'rc'), top = el('div', 'rc-top'), t = el('div');
-  t.append(el('b', '', 'Route ' + r.n), el('span', 'sub', '→ ' + r.to));
-  top.append(t, el('span', 'status', state.step >= r.steps.length ? 'Ziel erreicht' : `${state.step} von ${r.steps.length}`));
-  const st = el('div', 'rc-stats'), s1 = el('div'), s2 = el('div'), s3 = el('div', 'rc-len'), len = routeLength(r);
-  const tag = el('span', 'tag acc'); tag.innerHTML = ICON_CAR; tag.append(String(r.steps.length));
-  const lv = el('span', 'tag'); lv.append(levelDots(r.n));
-  s1.append(el('small', '', 'Straßen'), tag); s2.append(el('small', '', 'Fehlerfrei'), lv);
-  s3.append(el('small', '', 'Strecke'), el('b', '', len ? (len / 1000).toFixed(1).replace('.', ',') + ' km' : '–'));
-  st.append(s1, s2, s3); c.append(top, st); box.append(c);
-  if (state.mode === 'lernen') {
-    const x = el('button', 'gbtn rc-close'); x.type = 'button'; x.title = 'Route schließen'; x.setAttribute('aria-label', 'Route schließen'); x.innerHTML = ICON_X;
-    x.onclick = () => { state.open = false; clearRoute(); renderList(); };
-    box.append(x);
-  }
-}
 function chip(label, cls = '') {
   const c = el('span', 'chip ' + cls, stepName(label)); const n = stepNote(label); if (n) c.append(el('small', '', n)); return c;
 }
@@ -1603,7 +1555,7 @@ const MODES = {
   fahren: ['Nachfahren', 'Wie bei der mündlichen Prüfung: Straßen auf der Karte antippen'],
 };
 function render() {
-  header(); routeCard();
+  header();
   $('#modeTitle').textContent = MODES[state.mode][0]; $('#modeSub').textContent = MODES[state.mode][1];
   document.querySelectorAll('.tab').forEach(t => t.classList.toggle('on', t.dataset.mode === state.mode));
   const p = $('#play'); p.innerHTML = '';
