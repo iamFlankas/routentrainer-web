@@ -31,7 +31,10 @@
 html, body { height: 100%; margin: 0; }
 body { background: var(--page); color: var(--fg); font: 16px/1.4 var(--font); -webkit-font-smoothing: antialiased; }
 button, input, select { font: inherit; color: inherit; }
-.app { height: 100%; display: grid; grid-template-columns: 1fr minmax(360px, 440px); gap: var(--gap); padding: var(--gap); }
+.app { height: 100%; display: grid; grid-template-columns: minmax(360px, 440px) 1fr; gap: var(--gap); padding: var(--gap); }
+/* Menü links, Karte rechts (am Handy gilt die Reihenfolge weiter unten: Karte oben) */
+.panel { grid-column: 1; grid-row: 1; }
+.mapwrap { grid-column: 2; grid-row: 1; }
 
 /* --- Karte --- */
 .mapwrap { position: relative; border-radius: var(--r); overflow: hidden; background: #e7e5df; min-height: 0; box-shadow: 0 20px 50px rgba(0,0,0,.18); }
@@ -1353,7 +1356,7 @@ function routeBounds(route) {
   return ps.length ? L.latLngBounds(ps) : null;
 }
 // Ränder fürs Einpassen: oben Platz für Titel und Modus-Knöpfe, rechts für die Zoom-Knöpfe
-function fitPad() { return { paddingTopLeft: [30, 150], paddingBottomRight: [80, 40] }; }
+function fitPad() { return { paddingTopLeft: [70, 150], paddingBottomRight: [80, 40] }; }
 function fitRoute() { const b = routeBounds(state.route); if (b) map.fitBounds(b, { ...fitPad(), maxZoom: 18 }); }
 function flash(i) {
   flashLayer.clearLayers();
