@@ -233,6 +233,20 @@ ol.steps li.dest .chip { background: var(--acc); color: var(--acc-ink); padding:
 .okpulse { position: absolute; left: -17px; top: -17px; width: 34px; height: 34px; border-radius: 50%; display: grid; place-items: center; background: #2bb673; color: #fff; box-shadow: 0 0 0 0 rgba(43,182,115,.55); animation: okpop .85s ease-out forwards; }
 .okpulse svg { width: 18px; height: 18px; }
 @keyframes okpop { 0% { transform: scale(.3); opacity: 0; box-shadow: 0 0 0 0 rgba(43,182,115,.55); } 25% { transform: scale(1.08); opacity: 1; } 40% { transform: scale(1); } 75% { opacity: 1; box-shadow: 0 0 0 16px rgba(43,182,115,0); } 100% { transform: scale(.85); opacity: 0; box-shadow: 0 0 0 16px rgba(43,182,115,0); } }
+/* Ziel erreicht: Ergebnis-Karte über dem Ziel */
+.resultcard { position: absolute; left: 0; bottom: 64px; transform: translateX(-50%); display: flex; align-items: center; gap: 18px; padding: 14px 14px 14px 20px; border-radius: 24px; background: var(--acc); color: #141414; box-shadow: 0 14px 34px rgba(0,0,0,.28); white-space: nowrap; font-family: var(--font); cursor: default; animation: rcin .45s cubic-bezier(.2,.8,.2,1); }
+.resultcard::after { content: ""; position: absolute; left: 50%; bottom: -7px; width: 14px; height: 14px; margin-left: -7px; background: var(--acc); transform: rotate(45deg); border-radius: 3px; }
+.rs-text { display: flex; flex-direction: column; gap: 6px; }
+.rs-h { font-size: 1.05rem; font-weight: 600; }
+.rs-row { display: flex; gap: 14px; font-size: .95rem; }
+.rs-row > span { display: inline-flex; align-items: center; gap: 6px; }
+.rs-row i { font-style: normal; width: 20px; height: 20px; border-radius: 50%; display: grid; place-items: center; font-size: .72rem; font-weight: 700; color: #fff; }
+.rs-ok i { background: #1f8a45; }
+.rs-bad i { background: #d23b2f; }
+.rs-row b { font-size: 1.15rem; font-weight: 700; }
+.resultcard small { font-size: .78rem; color: rgba(20,20,20,.65); }
+.rs-next { flex: none; }
+@keyframes rcin { from { opacity: 0; transform: translateX(-50%) translateY(12px) scale(.92); } to { opacity: 1; transform: translateX(-50%); } }
 /* Ziel erreicht: Konfetti */
 .confetti { position: absolute; left: 0; top: 0; pointer-events: none; }
 .confetti i { position: absolute; left: -3px; top: -5px; width: 7px; height: 11px; border-radius: 2px; background: var(--c); box-shadow: 0 0 0 .5px rgba(0,0,0,.18); opacity: 0; animation: confetti 1.6s cubic-bezier(.2,.7,.3,1) var(--d) forwards; }
@@ -807,6 +821,32 @@ function extendNet(G, from, away, key, limit, penalty = 8) {
   const out = []; for (let v = best; v != null; v = P.get(v)) out.push(G.co[v]);
   return out.reverse();
 }
+// Abbiegen gehört zur nächsten Straße: biegt eine Straße kurz vor dem Übergang noch ab (z. B. um die Ecke eines Platzes),
+// endet sie an dieser Ecke und das Stück danach kommt zur nächsten Straße – sonst zeigt der Pfeil schon in die
+// Weiterfahrt und verrät sie. skip(i): Straße i nicht kürzen (z. B. „umkehren“).
+function handOverTurns(segs, skip, tail = 60, turn = 35) {
+  const out = segs.map(s => s && s.slice());
+  const kx = 111320 * Math.cos(48.21 * Math.PI / 180), ky = 110540;
+  const head = (a, b) => Math.atan2((b[0] - a[0]) * ky, (b[1] - a[1]) * kx);
+  // Richtung über ~10 m vor bzw. nach Punkt k (kurze Datenstückchen würden sonst rauschen)
+  const back = (a, k) => { let m = k, acc = 0; while (m > 0 && acc < 10) { acc += dist(a[m - 1], a[m]); m--; } return a[m]; };
+  const fwd = (a, k) => { let m = k, acc = 0; while (m < a.length - 1 && acc < 10) { acc += dist(a[m], a[m + 1]); m++; } return a[m]; };
+  for (let i = 0; i < out.length - 1; i++) {
+    const a = out[i]; if (!a || a.length < 3 || (skip && skip(i))) continue;
+    let j = i + 1; while (j < out.length && !out[j]) j++; if (j >= out.length) continue;
+    let acc = 0, cut = -1;
+    for (let k = a.length - 2; k >= 1; k--) {
+      acc += dist(a[k], a[k + 1]); if (acc > tail) break;
+      let d = Math.abs(head(back(a, k), a[k]) - head(a[k], fwd(a, k))); if (d > Math.PI) d = 2 * Math.PI - d;
+      if (d > turn * Math.PI / 180) cut = k; // von hinten gesucht: am Ende steht die früheste Ecke im Endstück
+    }
+    if (cut < 1 || pathLength(a.slice(0, cut + 1)) < 25) continue;
+    const b = out[j], end = a[a.length - 1];
+    out[i] = a.slice(0, cut + 1);
+    out[j] = a.slice(cut).concat(dist(b[0], end) < 1 ? b.slice(1) : b);
+  }
+  return out;
+}
 function densify(streets, step = 20) {
   const out = {};
   for (const k in streets) out[k] = streets[k].map(w => {
@@ -838,7 +878,7 @@ const POOL = streetPool(ROUTES);
 const STORE_KEY = 'taxi-routen-wien-v2', GEO_KEY = 'taxi-routen-1bez-geo-v1', CHAP_KEY = 'taxi-kapitel-v1';
 let STREETS = null; // key -> [[ [lat,lng], ... ], ...]
 let STREET_BB = {}; // key -> [minLat, minLng, maxLat, maxLng]
-let state = { mode: 'lernen', route: ROUTES[0], step: 0, errors: 0, done: false, open: false, chap: -1 };
+let state = { mode: 'lernen', route: ROUTES[0], step: 0, errors: 0, done: false, open: false, chap: -1, res: [], miss: {} };
 try { const v = localStorage.getItem(CHAP_KEY); const c = v == null ? -1 : +v; if (c >= 0 && c < CHAPTERS.length) state.chap = c; } catch (e) {}
 // Routen des gewählten Kapitels (oder alle)
 function inChap() { return state.chap < 0 ? ROUTES : ROUTES.filter(r => r.chap === state.chap); }
@@ -1182,6 +1222,7 @@ function routePaths(route) {
   let out = null;
   try { out = searchPaths(route); } catch (e) { console.error(e); }
   if (!out) out = streetwisePaths(route);
+  out = handOverTurns(out, i => /umkehren/i.test(route.steps[i]));
   // reine Durchfahrten (Kreuzung/Platz) als Punkt
   out = out.map(p => (p && p.length > 1 && pathLength(p) < 6 ? [p[p.length - 1]] : p));
   PATHS.set(route.n, out); return out;
@@ -1306,6 +1347,8 @@ function drawSeg(i, opts = {}) {
   return p;
 }
 const pointLayer = L.layerGroup().addTo(map);
+const resultLayer = L.layerGroup().addTo(map); // Ergebnis-Karte über dem Ziel
+map.createPane('result'); map.getPane('result').style.zIndex = 700; // über Straßenschildern (650)
 const ICONS = {
   taxi: '<span class="ico taxi">TAXI</span>',
   hotel: '<span class="ico hotel"><svg viewBox="0 0 20 20" width="14" height="14"><path d="M4 3v14M16 3v14M4 10h12" stroke="currentColor" stroke-width="2.6" fill="none" stroke-linecap="round"/></svg></span>',
@@ -1349,16 +1392,17 @@ function showPointsInner(withGoal) {
   }
 }
 let drawGen = 0, endActiveCam = null;
-function stopAnim() { if (endActiveCam) endActiveCam(); drawGen++; if (anim) cancelAnimationFrame(anim); anim = null; clearLabel(); }
+function stopAnim() { resultLayer.clearLayers(); if (endActiveCam) endActiveCam(); drawGen++; if (anim) cancelAnimationFrame(anim); anim = null; clearLabel(); }
 // Route genau bis Straße i zeigen (Rest ausblenden), Straße i hervorheben
 function showUpTo(i) {
+  for (let k = 0; k <= i; k++) if (!state.res[k]) state.res[k] = 'shown';
   stopAnim(); routeLayer.clearLayers(); errLayer.clearLayers();
   for (let k = 0; k <= i; k++) drawSeg(k);
   state.step = i + 1;
   showPoints(state.step >= state.route.steps.length);
   render(); flash(i);
 }
-function clearRoute() { state.paused = false; state.playing = false; stopAnim(); routeLayer.clearLayers(); flashLayer.clearLayers(); errLayer.clearLayers(); state.step = 0; showPoints(false); render(); }
+function clearRoute() { state.paused = false; state.playing = false; state.res = []; state.miss = {}; stopAnim(); routeLayer.clearLayers(); flashLayer.clearLayers(); errLayer.clearLayers(); state.step = 0; showPoints(false); render(); }
 function drawAll() { stopAnim(); routeLayer.clearLayers(); state.route.steps.forEach((_, i) => drawSeg(i)); showPoints(true); }
 function routeBounds(route) {
   const ps = (routePaths(route) || []).filter(Boolean).flat();
@@ -1544,7 +1588,7 @@ async function cameraTo(r) {
   await go(target, close, 1.4);                      // 3) auf den Start reinzoomen
 }
 function pick(r) { state.route = r; reset(); renderList(); cameraTo(r); }
-function reset() { state.paused = false; state.playing = false; stopAnim(); state.opts = null; const sc = document.getElementById('score'); if (sc) sc.textContent = ''; state.step = 0; state.errors = 0; state.done = false; state.choices = null; state.answered = null; routeLayer.clearLayers(); flashLayer.clearLayers(); showPoints(false); render(); }
+function reset() { state.paused = false; state.playing = false; state.res = []; state.miss = {}; stopAnim(); state.opts = null; const sc = document.getElementById('score'); if (sc) sc.textContent = ''; state.step = 0; state.errors = 0; state.done = false; state.choices = null; state.answered = null; routeLayer.clearLayers(); flashLayer.clearLayers(); showPoints(false); render(); }
 function nextRoute(random) {
   let r;
   const V = inChap();
@@ -1651,7 +1695,7 @@ function stepBack() {
   if (state.step <= 0) return;
   state.playing = false; state.paused = false; stopAnim();
   routeLayer.clearLayers(); flashLayer.clearLayers(); errLayer.clearLayers();
-  state.step--;
+  state.step--; state.res.length = state.step;
   for (let k = 0; k < state.step; k++) drawSeg(k);
   showPoints(false); render();
   const paths = routePaths(state.route) || [], prev = state.step > 0 ? paths[state.step - 1] : null, r = state.route;
@@ -1703,7 +1747,7 @@ function pauseRoute() {
 }
 function playRoute(resume) {
   stopAnim();
-  if (!resume || !state.paused) { routeLayer.clearLayers(); state.step = 0; }
+  if (!resume || !state.paused) { routeLayer.clearLayers(); state.step = 0; state.res = []; state.miss = {}; }
   state.paused = false; state.playing = true; render();
   const gen = drawGen;
   const paths = routePaths(state.route) || [], first = paths.find(Boolean);
@@ -1753,8 +1797,8 @@ function renderReihe(p) {
   state.opts.list.forEach(o => {
     const b = el('button', 'opt'); b.type = 'button'; b.append(chip(o.label));
     b.onclick = () => {
-      if (o.ok) { drawSeg(state.step, { animate: 700, label: stepName(state.route.steps[state.step]) }); state.step++; if (state.step >= state.route.steps.length) celebrate(); render(); }
-      else { state.errors++; b.classList.add('no'); b.disabled = true; $('#score').textContent = state.errors + ' Fehler'; }
+      if (o.ok) { state.res[state.step] = state.miss[state.step] ? 'bad' : 'ok'; drawSeg(state.step, { animate: 700, label: stepName(state.route.steps[state.step]) }); state.step++; if (state.step >= state.route.steps.length) celebrate(); render(); }
+      else { state.errors++; state.miss[state.step] = true; b.classList.add('no'); b.disabled = true; $('#score').textContent = state.errors + ' Fehler'; }
     };
     grid.append(b);
   });
@@ -1803,7 +1847,7 @@ function renderFahren(p) {
   const ch = el('div', 'chain'); r.steps.slice(0, state.step).forEach(s => ch.append(chip(s, 'ok'))); p.append(ch);
   const fb = el('p', 'feedback'); fb.id = 'fb'; p.append(fb);
   const bar = el('div', 'bar');
-  const hint = el('button', 'btn', 'Tipp'); hint.onclick = () => { state.errors++; $('#fb').textContent = 'Nächste Straße: ' + stepName(r.steps[state.step]); flash(state.step); $('#score').textContent = state.errors + ' Fehler'; };
+  const hint = el('button', 'btn', 'Tipp'); hint.onclick = () => { state.errors++; state.miss[state.step] = true; $('#fb').textContent = 'Nächste Straße: ' + stepName(r.steps[state.step]); flash(state.step); $('#score').textContent = state.errors + ' Fehler'; };
   const sol = el('button', 'btn', 'Lösung zeigen'); sol.onclick = () => { state.errors += 99; clearLabel(); for (let i = state.step; i < r.steps.length; i++) drawSeg(i); state.step = r.steps.length; fitRoute(); render(); };
   bar.append(hint, sol); p.append(bar, progress());
 }
@@ -1867,23 +1911,49 @@ function okPulse(latlng) {
   const m = L.marker(latlng, { interactive: false, keyboard: false, icon: L.divIcon({ className: 'arrow', html, iconSize: [0, 0], iconAnchor: [0, 0] }) }).addTo(errLayer);
   setTimeout(() => errLayer.removeLayer(m), 900);
 }
-// am Ziel angekommen: kleines Konfetti am Zielpunkt
+// am Ziel angekommen: kleines Konfetti am Zielpunkt, danach die Ergebnis-Karte darüber
 const CONFETTI = ['#f7c831', '#1d3fbf', '#ff6a00', '#2bb673', '#141414', '#ffffff'];
+function goalPoint(r) {
+  const paths = (routePaths(r) || []).filter(Boolean), last = paths.length ? paths[paths.length - 1] : null;
+  return r.goal ? [r.goal[0], r.goal[1]] : last ? last[last.length - 1] : null;
+}
 function celebrate() {
-  if (reduced()) return;
   const r = state.route, gen = drawGen;
   setTimeout(() => {
     if (gen !== drawGen || r !== state.route) return;
-    const paths = (routePaths(r) || []).filter(Boolean), last = paths.length ? paths[paths.length - 1] : null;
-    const pt = r.goal ? [r.goal[0], r.goal[1]] : last ? last[last.length - 1] : null; if (!pt) return;
-    let html = '<span class="confetti">';
-    for (let i = 0; i < 40; i++) {
-      const a = Math.random() * Math.PI * 2, d = 35 + Math.random() * 75;
-      html += `<i style="--x:${Math.round(Math.cos(a) * d)}px;--y:${Math.round(Math.sin(a) * d * 0.6 - 45)}px;--r:${Math.round(Math.random() * 900 - 450)}deg;--d:${Math.round(Math.random() * 150)}ms;--c:${CONFETTI[i % CONFETTI.length]}"></i>`;
+    const pt = goalPoint(r); if (!pt) return;
+    if (!reduced()) {
+      let html = '<span class="confetti">';
+      for (let i = 0; i < 40; i++) {
+        const a = Math.random() * Math.PI * 2, d = 35 + Math.random() * 75;
+        html += `<i style="--x:${Math.round(Math.cos(a) * d)}px;--y:${Math.round(Math.sin(a) * d * 0.6 - 45)}px;--r:${Math.round(Math.random() * 900 - 450)}deg;--d:${Math.round(Math.random() * 150)}ms;--c:${CONFETTI[i % CONFETTI.length]}"></i>`;
+      }
+      const m = L.marker(pt, { interactive: false, keyboard: false, icon: L.divIcon({ className: 'arrow', html: html + '</span>', iconSize: [0, 0], iconAnchor: [0, 0] }) }).addTo(errLayer);
+      setTimeout(() => errLayer.removeLayer(m), 2000);
     }
-    const m = L.marker(pt, { interactive: false, keyboard: false, icon: L.divIcon({ className: 'arrow', html: html + '</span>', iconSize: [0, 0], iconAnchor: [0, 0] }) }).addTo(errLayer);
-    setTimeout(() => errLayer.removeLayer(m), 2000);
+    setTimeout(() => { if (gen === drawGen && r === state.route) resultCard(pt); }, reduced() ? 0 : 450);
   }, 800);
+}
+// Karte über dem Ziel: wie viele Straßen selbst richtig gefunden, wie viele falsch, und weiter zur nächsten Route
+function resultCard(pt) {
+  resultLayer.clearLayers();
+  const n = state.route.steps.length, res = state.res;
+  let ok = 0, bad = 0; for (let i = 0; i < n; i++) { if (res[i] === 'ok') ok++; else if (res[i] === 'bad') bad++; }
+  const shown = n - ok - bad;
+  const html = `<div class="resultcard" role="status">
+    <div class="rs-text"><b class="rs-h">Ziel erreicht</b>
+      <span class="rs-row"><span class="rs-ok"><i>✓</i><b>${ok}</b> richtig</span><span class="rs-bad"><i>✕</i><b>${bad}</b> falsch</span></span>
+      ${shown ? `<small>${shown} aufgedeckt</small>` : ''}</div>
+    <button class="rbtn rs-next" type="button" title="Nächste Route" aria-label="Nächste Route"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg></button>
+  </div>`;
+  const m = L.marker(pt, { pane: 'result', interactive: true, keyboard: false, icon: L.divIcon({ className: 'arrow resultmarker', html, iconSize: [0, 0], iconAnchor: [0, 0] }) }).addTo(resultLayer);
+  const e = m.getElement(); if (!e) return;
+  L.DomEvent.disableClickPropagation(e); L.DomEvent.disableScrollPropagation(e);
+  e.querySelector('.rs-next').onclick = () => swipeRoute(1);
+  // Karte so schieben, dass die Ergebnis-Karte ganz zu sehen ist
+  const box = e.querySelector('.resultcard').getBoundingClientRect(), mb = map.getContainer().getBoundingClientRect();
+  const dy = Math.min(0, box.top - mb.top - 90), dx = box.left < mb.left + 16 ? box.left - mb.left - 16 : box.right > mb.right - 80 ? box.right - mb.right + 80 : 0;
+  if (dx || dy) { camSeq++; map.panBy([dx, dy], { animate: !reduced() }); }
 }
 function streetHit(e) {
   const cp = map.latLngToContainerPoint(e.latlng);
@@ -1908,8 +1978,9 @@ function streetHit(e) {
   return { pxDist, nearest, TOL: 22 };
 }
 // richtige nächste Straße einzeichnen (Lernen per Liste/Karte und Nachfahren)
-function advanceStep() {
+function advanceStep(kind) {
   const r = state.route;
+  state.res[state.step] = state.miss[state.step] ? 'bad' : kind === 'ok' ? 'ok' : 'shown';
   drawSeg(state.step, { animate: 700, label: stepName(r.steps[state.step]) });
   state.step++;
   if (state.mode === 'lernen' && state.step >= r.steps.length) setTimeout(() => { clearLabel(); showPoints(true); }, 800);
@@ -1926,19 +1997,20 @@ function onMapClick(e) {
   let ok;
   if (seg) ok = segHit(e, seg);
   else ok = h.pxDist(want) <= h.TOL;
-  if (ok) { okPulse(e.latlng); advanceStep(); return; }
+  if (ok) { okPulse(e.latlng); advanceStep('ok'); return; }
   // übernächste Straße richtig getroffen? dann die ausgelassene rot zeigen und weitermachen
   const segNext = (routePaths(state.route) || [])[state.step + 1];
   if (segNext && state.step + 1 < state.route.steps.length && segHit(e, segNext)) {
     const skipped = state.route.steps[state.step];
-    markSkipped(state.step); state.step++;
+    state.res[state.step] = 'bad'; markSkipped(state.step); state.step++;
     if (!lern) { state.errors++; $('#score').textContent = state.errors + ' Fehler'; }
-    advanceStep();
+    advanceStep('ok');
     const fb = $('#fb'); if (fb) fb.textContent = `Übersprungen: ${stepName(skipped)}`;
     return;
   }
   const near = h.nearest();
   const wrongSide = seg && (near === want || h.pxDist(want) <= h.TOL);
+  if (near || wrongSide) state.miss[state.step] = true;
   if (near || wrongSide) blinkStreet(wrongSide ? want : near, e.latlng, wrongSide ? (routePaths(state.route) || []).slice(0, state.step + 1).filter(Boolean) : null);
   if (lern) return;
   state.errors++; $('#score').textContent = state.errors + ' Fehler';
