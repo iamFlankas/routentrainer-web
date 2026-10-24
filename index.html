@@ -1264,36 +1264,6 @@ function streetwisePaths(route) {
   for (let i = 1; i < out.length; i++) if (out[i] && out[i - 1]) out[i] = [out[i - 1][out[i - 1].length - 1], ...out[i]];
   return out;
 }
-// Haltepunkte je Straße der Route: Kreuzungen mit anderen (befahrbaren) Straßen, mind. 30 m auseinander, und das Ende.
-// Beim Antippen fährt der Pfeil nur bis zur nächsten Kreuzung – dort entscheidet man: weiter geradeaus oder abbiegen.
-function stopsFor(route) {
-  if (route._stops) return route._stops;
-  const P = routePaths(route) || [], keys = route.steps.map(streetKey), sub = corridor(route), at = new Map();
-  const id = q => q[0].toFixed(6) + ',' + q[1].toFixed(6);
-  for (const k in sub) for (const w of sub[k]) { if (SLOW.has(w)) continue; for (const q of w) { const c = id(q); (at.get(c) || at.set(c, new Set()).get(c)).add(k); } }
-  return (route._stops = P.map((p, i) => {
-    if (!p || p.length < 2) return null;
-    const own = keys[i], cum = [0]; for (let j = 1; j < p.length; j++) cum.push(cum[j - 1] + dist(p[j - 1], p[j]));
-    const L = cum[cum.length - 1], junc = [];
-    for (let j = 1; j < p.length - 1; j++) {
-      // Kreuzung: eine andere Straße trifft nur hier auf den Weg (läuft sie mit, z. B. die Autobahn zwischen zwei Rampen, zählt sie nicht);
-      // unbenannte Flächen (Zufahrten, Hofdurchfahrten) zählen nicht
-      const ks = at.get(id(p[j])), kb = at.get(id(p[j - 1])), kf = at.get(id(p[j + 1]));
-      if (ks && [...ks].some(k => k !== own && !/^unbenannt/.test(k) && !(kb && kb.has(k)) && !(kf && kf.has(k)))) junc.push(j);
-    }
-    // nahe Knoten (< 35 m, z. B. zwei Fahrbahnen der Querstraße) sind eine Kreuzung: Halt am letzten Knoten, also mitten drin;
-    // die Kreuzung, aus der man einbiegt (beginnt in den ersten 30 m), und eine Kreuzung direkt am Ende zählen nicht
-    const out = [];
-    for (let a = 0; a < junc.length;) {
-      let b = a; while (b + 1 < junc.length && cum[junc[b + 1]] - cum[junc[b]] < 35) b++;
-      const first = cum[junc[a]], stop = junc[b];
-      if (first >= 30 && L - cum[stop] >= 30) out.push(stop);
-      a = b + 1;
-    }
-    out.push(p.length - 1);
-    return out;
-  }));
-}
 function routePaths(route) {
   if (!STREETS) return null;
   if (PATHS.has(route.n)) return PATHS.get(route.n);
@@ -1577,7 +1547,7 @@ function useStreets(s, how, slow, oneway) {
   // Autobahnen hängen hinten an, die Indizes der Wiener Wege bleiben gleich
   SLOW = new WeakMap(); for (const k in slow || {}) for (const i in slow[k]) if (STREETS[k] && STREETS[k][i]) SLOW.set(STREETS[k][i], slow[k][i]);
   for (const k in STREETS) { let a = 90, b = 180, c = -90, d = -180; for (const w of STREETS[k]) for (const p of w) { if (p[0] < a) a = p[0]; if (p[1] < b) b = p[1]; if (p[0] > c) c = p[0]; if (p[1] > d) d = p[1]; } STREET_BB[k] = [a, b, c, d]; }
-  geoState = 'ok'; WAYGRID = null; PATHS.clear(); ROUTES.forEach(r => { r._sub = r._net = r._global = r._stops = null; }); for (const k in GRAPH) delete GRAPH[k];
+  geoState = 'ok'; WAYGRID = null; PATHS.clear(); ROUTES.forEach(r => { r._sub = r._net = r._global = null; }); for (const k in GRAPH) delete GRAPH[k];
   geoReady(how);
 }
 async function loadStreets() {
@@ -1983,15 +1953,6 @@ function blinkStreet(k, at, exclude) {
   }, 170);
 }
 // Klick auf das tatsächlich gefahrene Stück (ohne die ersten Meter an der Kreuzung, damit die Gegenseite nicht zählt)
-// Tipp auf den noch nicht gefahrenen Teil einer Straße (ab Index from)? -> Index des Wegpunkts dort, sonst -1
-function aheadIndex(e, seg, from) {
-  const cp = map.latLngToContainerPoint(e.latlng); let best = Infinity, bi = -1;
-  for (let k = Math.max(1, from + 1); k < seg.length; k++) {
-    const a = map.latLngToContainerPoint(seg[k - 1]), b = map.latLngToContainerPoint(seg[k]), d = L.LineUtil.pointToSegmentDistance(cp, a, b);
-    if (d < best) { best = d; bi = k; }
-  }
-  return best <= 24 ? bi : -1;
-}
 function segHit(e, seg) {
   const cp = map.latLngToContainerPoint(e.latlng);
   if (seg.length < 2) return map.latLngToContainerPoint(seg[0]).distanceTo(cp) <= 26;
@@ -2098,31 +2059,13 @@ function streetHit(e) {
   return { pxDist, nearest, TOL: 22 };
 }
 // richtige nächste Straße einzeichnen (Lernen per Liste/Karte und Nachfahren)
-// --- Antippen auf der Karte: der Pfeil wartet kurz nach dem Einbiegen; erst die nächste Straße bestimmt, wo abgebogen wird ---
-// state.step = aktuelle Straße, state.at = bis wohin sie gefahren ist (null = noch nicht eingebogen), state.how[i] = 'ok' | 'shown'
+// --- Antippen auf der Karte: richtige Straße -> der Pfeil fährt sie bis zur Abbiegestelle (er bleibt in der Kreuzung stehen) ---
+// state.step = nächste Straße, state.how[i] = 'ok' (selbst gefunden) | 'shown' (aufgedeckt)
 const pathsOf = () => routePaths(state.route) || [];
 // solange der Pfeil fährt, zählen keine weiteren Tipps (sonst überholen sich die Schritte); Sicherheitsnetz nach 9 s
 let busyT = null;
 function busy(on) { state.busy = on; clearTimeout(busyT); if (on) busyT = setTimeout(() => { state.busy = false; }, 9000); }
-const stopsOf = i => (stopsFor(state.route) || [])[i];
-// aktuelle Straße ein Stück weiter fahren (bis Index to), ohne sie abzuschließen
-function driveOn(to, onDone) {
-  const r = state.route, i = state.step, p = pathsOf()[i]; if (!p) { if (onDone) onDone(); return; }
-  to = Math.min(to, p.length - 1);
-  const from = state.at ? pathLength(p.slice(0, state.at + 1)) / Math.max(1e-6, pathLength(p.slice(0, to + 1))) : 0;
-  state.at = to;
-  drawSeg(i, { animate: 700, label: stepName(r.steps[i]), path: p.slice(0, to + 1), from, onDone });
-}
-// einbiegen: bis zur ersten Kreuzung, dann warten (die Kamera schaut die Straße entlang voraus); die letzte Straße geht gleich bis ins Ziel
-function enterStreet(kind) {
-  const r = state.route, i = state.step, p = pathsOf()[i];
-  state.how[i] = kind;
-  if (i === r.steps.length - 1 || !p || p.length < 2) { completeStreet(); return; }
-  const st = stopsOf(i), gen = drawGen;
-  busy(true);
-  driveOn(st ? st[0] : p.length - 1, () => { busy(false); if (gen === drawGen) lookAhead(i); });
-  render();
-}
+function enterStreet(kind) { state.how[state.step] = kind; completeStreet(); }
 // aktuelle Straße bis zur Abbiegung fertig fahren; then() danach (z. B. in die nächste einbiegen)
 function completeStreet(then) {
   const r = state.route, i = state.step, p = pathsOf()[i], gen = drawGen;
@@ -2138,25 +2081,11 @@ function completeStreet(then) {
   } });
   render();
 }
-// nächste Straße (›, Liste, Pfeiltaste oder richtig angetippt): aktuelle fertig fahren und in die nächste einbiegen
+// nächste Straße (›, Liste, Pfeiltaste oder richtig angetippt)
 function advanceStep(kind) {
   const n = state.route.steps.length;
   if (state.step >= n || state.busy) return;
-  if (state.at == null) enterStreet(kind || 'shown');
-  else if (state.step < n - 1) completeStreet(() => enterStreet(kind || 'shown'));
-  else completeStreet();
-}
-// lange Straße: Kamera zeigt die Straße in Fahrtrichtung bis ~2,5 km voraus – nach der Straße, nicht nach der Abbiegung
-function lookAhead(i) {
-  const r = state.route, p = pathsOf()[i], at = state.at; if (!p || at == null) return;
-  const key = streetKey(r.steps[i]), here = p[at], back = pointBack(p.slice(0, at + 1), 40);
-  const dx = (here[1] - back[1]) * KX, dy = (here[0] - back[0]) * KY, L0 = Math.hypot(dx, dy) || 1, pts = [here];
-  for (const w of STREETS[key] || []) for (const q of w) {
-    if (dist(q, here) > 2500) continue;
-    const vx = (q[1] - here[1]) * KX, vy = (q[0] - here[0]) * KY; if ((vx * dx + vy * dy) / L0 > -30) pts.push(q);
-  }
-  const b = L.latLngBounds(pts); if (pts.length < 2 || map.getBounds().contains(b)) return;
-  camSeq++; map.flyToBounds(b, { ...fitPad(), maxZoom: 17, duration: reduced() ? 0 : 0.9 });
+  enterStreet(kind || 'shown');
 }
 // letzte Straße: oft nur ein kurzes Stück bis zum Ziel, das man kaum trifft – deshalb zählt auch ein Tipp
 // nahe an diesem Stück, nahe am Ziel oder irgendwo auf dieser Straße in Zielnähe
@@ -2185,29 +2114,19 @@ function onMapClick(e) {
   if (!lern && state.mode !== 'fahren') return;
   if (state.step >= state.route.steps.length) return;
   const h = streetHit(e), want = streetKey(state.route.steps[state.step]);
-  const r = state.route, n = r.steps.length, P = pathsOf(), seg = P[state.step], stops = stopsOf(state.step);
-  const nextI = state.at != null ? state.step + 1 : state.step;          // welche Straße als nächste genannt werden muss
+  const r = state.route, n = r.steps.length, P = pathsOf(), seg = P[state.step];
+  const nextI = state.step;
   const hitStreet = k => { // Tipp trifft Straße k (so wie sie die Route fährt)?
     const sg = P[k], key = streetKey(r.steps[k]); if (k >= n) return false;
     return (sg ? segHit(e, sg) : h.pxDist(key) <= h.TOL) || (k === n - 1 && lastStepHit(e, sg, key, h)) || plazaHit(e, key, sg, h, r.steps[k]);
   };
-  // richtige nächste Straße: aktuelle bis zur Abbiegung fahren und einbiegen
+  // richtige nächste Straße: bis zur Abbiegestelle fahren
   if (hitStreet(nextI)) { okPulse(e.latlng); advanceStep('ok'); return; }
-  // freiwillig nachrücken: weiter vorne auf der aktuellen Straße – höchstens bis zur letzten Kreuzung vor der Abbiegung (die verrät er nicht)
-  if (state.at != null && seg) {
-    const j = aheadIndex(e, seg, state.at);
-    if (j >= 0) {
-      // Kreuzungen zwischen hier und der Abbiegung (die Abbiegung selbst nicht): bis zur ersten an/nach der getippten Stelle
-      const mids = (stops || []).filter(x => x > state.at && x < seg.length - 1), to = mids.find(x => x >= j) ?? mids[mids.length - 1];
-      okPulse(e.latlng); if (to != null) { busy(true); driveOn(to, () => { busy(false); render(); }); }
-      render(); return;
-    }
-  }
   // übernächste Straße getroffen? dann die ausgelassene rot zeigen und weitermachen
   if (nextI + 1 < n && hitStreet(nextI + 1)) {
     const skip = () => { const k = state.step; state.res[k] = 'bad'; state.how[k] = 'shown'; markSkipped(k); state.step++; enterStreet('ok'); const fb = $('#fb'); if (fb) fb.textContent = `Übersprungen: ${stepName(r.steps[k])}`; };
     if (!lern) { state.errors++; $('#score').textContent = state.errors + ' Fehler'; }
-    if (state.at != null) completeStreet(skip); else skip();
+    skip();
     return;
   }
   const want2 = streetKey(r.steps[Math.min(nextI, n - 1)]);
@@ -2219,7 +2138,7 @@ function onMapClick(e) {
   if (lern) return;
   state.errors++; $('#score').textContent = state.errors + ' Fehler';
   const fb = $('#fb');
-  if (fb) fb.textContent = near === want && state.at != null ? `Zu weit – vorher abbiegen.` : wrongSide ? `Richtige Straße, aber falsche Richtung – die Route fährt den anderen Teil von ${prettyKey(want2)}.` : near ? `Das ist ${prettyKey(near)} – nicht die nächste Straße.` : 'Da ist keine Straße. Zoom näher heran und tipp direkt auf die Straße.';
+  if (fb) fb.textContent = wrongSide ? `Richtige Straße, aber falsche Richtung – die Route fährt den anderen Teil von ${prettyKey(want2)}.` : near ? `Das ist ${prettyKey(near)} – nicht die nächste Straße.` : 'Da ist keine Straße. Zoom näher heran und tipp direkt auf die Straße.';
 }
 function prettyKey(k) { return POOL.get(k) || k; }
 map.on('click', onMapClick);
