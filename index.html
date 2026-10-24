@@ -1274,13 +1274,21 @@ function stopsFor(route) {
   return (route._stops = P.map((p, i) => {
     if (!p || p.length < 2) return null;
     const own = keys[i], cum = [0]; for (let j = 1; j < p.length; j++) cum.push(cum[j - 1] + dist(p[j - 1], p[j]));
-    const L = cum[cum.length - 1], out = []; let last = 0;
+    const L = cum[cum.length - 1], junc = [];
     for (let j = 1; j < p.length - 1; j++) {
-      // Kreuzung: eine andere Straße trifft nur hier auf den Weg (läuft sie mit, z. B. die Autobahn zwischen zwei Rampen, zählt sie nicht)
+      // Kreuzung: eine andere Straße trifft nur hier auf den Weg (läuft sie mit, z. B. die Autobahn zwischen zwei Rampen, zählt sie nicht);
+      // unbenannte Flächen (Zufahrten, Hofdurchfahrten) zählen nicht
       const ks = at.get(id(p[j])), kb = at.get(id(p[j - 1])), kf = at.get(id(p[j + 1]));
-      if (!ks || ![...ks].some(k => k !== own && !(kb && kb.has(k)) && !(kf && kf.has(k)))) continue;
-      if (cum[j] - last < 30 || L - cum[j] < 30) continue;
-      out.push(j); last = cum[j];
+      if (ks && [...ks].some(k => k !== own && !/^unbenannt/.test(k) && !(kb && kb.has(k)) && !(kf && kf.has(k)))) junc.push(j);
+    }
+    // nahe Knoten (< 35 m, z. B. zwei Fahrbahnen der Querstraße) sind eine Kreuzung: Halt am letzten Knoten, also mitten drin;
+    // die Kreuzung, aus der man einbiegt (beginnt in den ersten 30 m), und eine Kreuzung direkt am Ende zählen nicht
+    const out = [];
+    for (let a = 0; a < junc.length;) {
+      let b = a; while (b + 1 < junc.length && cum[junc[b + 1]] - cum[junc[b]] < 35) b++;
+      const first = cum[junc[a]], stop = junc[b];
+      if (first >= 30 && L - cum[stop] >= 30) out.push(stop);
+      a = b + 1;
     }
     out.push(p.length - 1);
     return out;
