@@ -340,7 +340,7 @@ ol.steps li.dest .chip { background: var(--acc); color: var(--acc-ink); padding:
       </div>
       <div class="sec"><h3>Routen <small id="count"></small></h3><button id="shuffle" class="pillbtn" type="button">Zufällig</button></div>
       <div id="routes"></div>
-      <div class="foot"><span>Stand 25.10.2026 12:40 · Daten: Stadt Wien, basemap.at, OpenStreetMap</span><button id="reload" type="button">Straßennetz neu laden</button></div>
+      <div class="foot"><span>Stand 25.10.2026 13:04 · Daten: Stadt Wien, basemap.at, OpenStreetMap</span><button id="reload" type="button">Straßennetz neu laden</button></div>
     </div>
   </aside>
 </div>
@@ -374,7 +374,7 @@ const ROUTES = [
   {"n":23,"orig":"111","chap":1,"from":"Heldenplatz / Hofburg","to":"Neuwaldegger Straße / Höhenstraße","steps":["Burgring","Dr.-Karl-Renner-Ring","Universitätsring","Rathausplatz","Grillparzerstr","Landesgerichtsstr","Alser Str","Kinderspitalgasse","Hebragasse","Zimmermannplatz","Lazarettgasse","Jörgerstr","Elterleinplatz","Hernalser Hauptstr","Dornbacher Str","Vollbadgasse","Alszeile","Dornbacher Str"],"dest":"Neuwaldegger Straße / Höhenstraße","start":[48.206693,16.363004,"Heldenplatz / Hofburg","ort"],"goal":[48.235437,16.290542,"Neuwaldegger Straße / Höhenstraße","ort"]},
   {"n":24,"orig":"1602","chap":1,"from":"Ottakringer Straße – Taxistandplatz","to":"Neuwaldegger Straße","steps":["Weinheimergasse","Arnethgasse","Sandleitengasse","Güpferlingstr","Dornbacher Str","Vollbadgasse","Alszeile","Dornbacher Str"],"dest":"Neuwaldegger Straße","start":[48.21401,16.310562,"Ottakringer Straße – Taxistandplatz Weinheimergasse ggü. 5","taxi"],"goal":[48.235437,16.290542,"Neuwaldegger Straße","ort"]},
   {"n":25,"orig":"1702","chap":1,"from":"Neuwaldegger Straße","to":"Hotel Regina – Taxistandplatz","steps":["Dornbacher Str","Hernalser Hauptstr","Elterleinplatz","Hernalser Hauptstr","Hernalser Gürtel","Lazarettgasse","Zimmermannplatz","Lazarettgasse","Sensengasse","Währinger Str","Rooseveltplatz"],"dest":"Hotel Regina – Taxistandplatz","start":[48.235437,16.290542,"Neuwaldegger Straße","ort"],"goal":[48.21604,16.359208,"Hotel Regina – Taxistandplatz Rooseveltplatz ggü. 15","taxi"]},
-  {"n":26,"orig":"1704 (neu)","chap":1,"from":"Neuwaldegger Straße","to":"St. Anna Kinderspital (Haupteingang)","steps":["Neuwaldegger Str","Dornbacher Str","Hernalser Hauptstr","Elterleinplatz","Hernalser Hauptstr","Kinderspitalgasse","Hebragasse","Zimmermannplatz","Mariannengasse","Mauthnergasse","Kinderspitalgasse"],"dest":"St. Anna Kinderspital (Haupteingang)","start":[48.23944,16.272245,"Neuwaldegger Straße","ort"],"goal":[48.216216,16.344376,"St. Anna Kinderspital (Haupteingang)","klinik"]},
+  {"n":26,"orig":"1704 (neu)","chap":1,"from":"Neuwaldegger Straße","to":"St. Anna Kinderspital (Haupteingang)","steps":["Neuwaldegger Str","Dornbacher Str","Hernalser Hauptstr","Elterleinplatz","Hernalser Hauptstr","Kinderspitalgasse","Hebragasse","Zimmermannplatz","Mariannengasse","Mauthnergasse","Kinderspitalgasse"],"dest":"St. Anna Kinderspital (Haupteingang)","start":[48.23944,16.272245,"Neuwaldegger Straße","ort"],"goal":[48.215942,16.344341,"St. Anna Kinderspital (Haupteingang)","klinik"]},
   {"n":27,"orig":"1705","chap":1,"from":"Dornbach / Vollbadgasse","to":"Hofburg / Kongresszentrum","steps":["Dornbacher Str","Hernalser Hauptstr","Elterleinplatz","Hernalser Hauptstr","Kinderspitalgasse","Hebragasse","Alser Str","Universitätsstr","Schottengasse","Freyung","Strauchgasse","Herrengasse","Michaelerplatz","In der Burg","Heldenplatz"],"dest":"Hofburg / Kongresszentrum","start":[48.228175,16.301896,"Dornbach / Vollbadgasse","ort"],"goal":[48.206535,16.365142,"Hofburg / Kongresszentrum","ort"]},
   {"n":28,"orig":"103","chap":1,"from":"Bellariastraße – Taxistandplatz","to":"Gentzgasse / Gersthof","steps":["Hansenstr","Schmerlingplatz","Auerspergstr","Landesgerichtsstr","Friedrich-Schmidt-Platz","Landesgerichtsstr","Garnisongasse","Schwarzspanierstr","Währinger Str","Währinger Gürtel"],"dest":"Gentzgasse / Gersthof","start":[48.20624,16.359773,"Bellariastraße – Taxistandplatz Bellariastraße ggü. 2-4","taxi"],"goal":[48.231929,16.32876,"Gentzgasse / Gersthof","ort"]},
   {"n":29,"orig":"105 (neu)","chap":1,"from":"Hotel Hilton Vienna Plaza","to":"Neustift am Walde – Taxistandplatz","steps":["Schottenring (Nebenfahrbahn)","Hohenstaufengasse","Liechtensteinstr","Alserbachstr","Sechsschimmelgasse","Gentzgasse","Gersthofer Str","Pötzleinsdorfer Str","Khevenhüllerstr","Neustift am Walde"],"dest":"Neustift am Walde – Taxistandplatz","start":[48.215515,16.364686,"Hotel Hilton Vienna Plaza","hotel"],"goal":[48.251048,16.301012,"Neustift am Walde – Taxistandplatz Neustift am Walde 79","taxi"]},
@@ -637,29 +637,6 @@ function nearestPair(waysA, waysB) {
   }
   return { a: pa, b: pb, d: best };
 }
-// Ausschnitt einer Straße zwischen Vorgänger- und Nachfolger-Kreuzung
-function clipStreet(ways, A, B) {
-  const runs = [];
-  const keep = p => {
-    if (A && B) {
-      const L = dist(A, B);
-      if (L < 25) return dist(p, A) < 45;
-      const kx = 111320 * Math.cos(48.21 * Math.PI / 180), ky = 110540;
-      const ax = A[1] * kx, ay = A[0] * ky, bx = B[1] * kx, by = B[0] * ky, px = p[1] * kx, py = p[0] * ky;
-      const vx = bx - ax, vy = by - ay, t = ((px - ax) * vx + (py - ay) * vy) / (L * L);
-      const perp = Math.abs((px - ax) * vy - (py - ay) * vx) / L;
-      return t > -0.03 && t < 1.03 && perp < L * 0.45 + 25;
-    }
-    const C = A || B; return C ? dist(p, C) < 170 : true;
-  };
-  for (const w of ways) {
-    let cur = [];
-    for (const p of w) { if (keep(p)) cur.push(p); else { if (cur.length > 1) runs.push(cur); cur = []; } }
-    if (cur.length > 1) runs.push(cur);
-  }
-  return runs;
-}
-
 // ---------- Wegsuche entlang einer Straße ----------
 function streetGraph(ways) {
   const idx = new Map(), co = [], adj = [];
@@ -714,18 +691,19 @@ function buildPath(g, A, B, uturn, fallback) {
 // slow: optional Map/WeakMap Weg -> Faktor (Fußgängerzonen, Fußwege …): solche Stücke zählen entsprechend länger
 // oneway: optional Map/WeakMap Weg -> Richtung je Teilstück (1 = nur vorwärts, 2 = nur rückwärts erlaubt);
 // gegen die Einbahn zählt ein Meter ONEWAY_PENALTY-fach (nicht ganz verboten: die Daten passen nicht überall exakt)
+// twin: optional Set/WeakSet der Einbahn-Wege, zu denen es eine zweite Fahrbahn derselben Straße gibt (Gürtel u. ä.)
 const ONEWAY_PENALTY = 25;
-function globalGraph(streets, slow, oneway) {
+function globalGraph(streets, slow, oneway, twin) {
   const idx = new Map(), co = [], adj = [], keys = Object.keys(streets);
   const node = p => { const k = p[0].toFixed(6) + ',' + p[1].toFixed(6); if (!idx.has(k)) { idx.set(k, co.length); co.push(p); adj.push([]); } return idx.get(k); };
   keys.forEach((key, ki) => {
     for (const w of streets[key]) {
-      const f = (slow && slow.get(w)) || 1, ow = oneway && oneway.get(w); let prev = null;
+      const f = (slow && slow.get(w)) || 1, ow = oneway && oneway.get(w), tw = !!(twin && twin.has(w)); let prev = null;
       for (let j = 0; j < w.length; j++) {
         const n = node(w[j]);
         if (prev != null && prev !== n) {
           const d = dist(co[prev], co[n]) * f, o = ow ? ow[j - 1] : 0;
-          adj[prev].push([n, o === 2 ? d * ONEWAY_PENALTY : d, ki, d]); adj[n].push([prev, o === 1 ? d * ONEWAY_PENALTY : d, ki, d]);
+          adj[prev].push([n, o === 2 ? d * ONEWAY_PENALTY : d, ki, d, tw]); adj[n].push([prev, o === 1 ? d * ONEWAY_PENALTY : d, ki, d, tw]);
         }
         prev = n;
       }
@@ -757,8 +735,8 @@ function globalPath(G, a, b, key, penalty = 6) {
 
 // ---------- Ganze Route als ein Weg ----------
 // Netz mit Straßen-Zugehörigkeit je Knoten + kurzen Brücken über Datenlücken
-function routeNet(streets, needKeys, slow, oneway) {
-  const G = globalGraph(streets, slow, oneway);
+function routeNet(streets, needKeys, slow, oneway, twin) {
+  const G = globalGraph(streets, slow, oneway, twin);
   const keyIdx = new Map(G.keys.map((k, i) => [k, i]));
   const nk = G.co.map(() => []);
   G.keys.forEach((key, ki) => { for (const w of streets[key]) for (const p of w) { const n = G.idx.get(p[0].toFixed(6) + ',' + p[1].toFixed(6)); if (!nk[n].includes(ki)) nk[n].push(ki); } });
@@ -791,10 +769,11 @@ function routeNet(streets, needKeys, slow, oneway) {
 // keys: Straßenschlüssel der Route (fehlende vorher entfernt); startNodes: optionale Startknoten
 // Zustand je Knoten: (Schritt st, schon auf der Straße von st gewesen v). Weiter zur nächsten Straße erst, wenn die aktuelle
 // wirklich erreicht wurde (sonst „überspringt“ die Suche eine Skript-Straße und beschriftet eine andere mit ihrem Namen).
-// Gegen eine Einbahn: auf der vorgeschriebenen Straße 25-fach (richtige Fahrbahn, z. B. Gürtel oder Weinheimergasse),
-// außer der Schritt erlaubt es (soft[st], z. B. „Sonderspur“/„Bus-Spur“: Taxis dürfen dort); auf fremden Straßen
-// zusätzlich zum Umweg-Faktor 3-fach (sonst multipliziert sich das zu absurden Umwegen um den Block).
-function routeSearch(G, keys, startNodes, penalty = 8, goalNode = null, soft = null) {
+// Gegen eine Einbahn auf der vorgeschriebenen Straße: 25-fach, wenn sie eine zweite Fahrbahn in Gegenrichtung hat
+// (Gürtel, Weinheimergasse: dann die richtige nehmen), sonst nur 1,5-fach – das Skript schreibt die Straße vor
+// (Taxi-Ausnahmen, Sonderspuren; soft[st] erlaubt es immer). Auf fremden Straßen zusätzlich zum Umweg-Faktor 3-fach.
+// bans: optional Map Knoten -> [[aus Straße, in Straße], …] (Abbiegeverbote, die in den offenen Daten fehlen)
+function routeSearch(G, keys, startNodes, penalty = 8, goalNode = null, soft = null, bans = null) {
   const S = keys.length, SS = 2 * S, N = G.co.length, K = keys.map(k => G.keyIdx.get(k));
   if (K.some(k => k == null)) return null;
   const D = new Float64Array(N * SS).fill(Infinity), P = new Int32Array(N * SS).fill(-1), h = [];
@@ -807,10 +786,12 @@ function routeSearch(G, keys, startNodes, penalty = 8, goalNode = null, soft = n
     if (st === S - 1 && v && (goalNode == null || u === goalNode)) { goal = id; break; }
     if (d > 400000) break;
     if (v && G.nk[u].includes(K[st + 1])) { const t = u * SS + (st + 1) * 2 + 1; if (d < D[t]) { D[t] = d; P[t] = id; heapPush(h, [d, t]); } }
-    for (const [x, w, ki, base] of G.adj[u]) {
+    const ban = bans && bans.get(u);
+    for (const [x, w, ki, base, tw] of G.adj[u]) {
+      if (ban && ban.some(b => b[0] === K[st] && b[1] === ki)) continue;
       const nv = v || (G.nk[x].includes(K[st]) ? 1 : 0), t = x * SS + st * 2 + nv;
       const ow = base != null && w > base * 1.01, len = base ?? w;
-      const nd = d + (ki === K[st] ? len * (ow ? (soft && soft[st] ? 1.5 : ONEWAY_PENALTY) : 1) : len * penalty * (ow ? 3 : 1));
+      const nd = d + (ki === K[st] ? len * (ow ? (tw && !(soft && soft[st]) ? ONEWAY_PENALTY : 1.5) : 1) : len * penalty * (ow ? 3 : 1));
       if (nd < D[t]) { D[t] = nd; P[t] = id; heapPush(h, [nd, t]); }
     }
   }
@@ -918,10 +899,10 @@ function partialPath(p, f) {
 
 // ---------- App ----------
 const POOL = streetPool(ROUTES);
-const STORE_KEY = 'taxi-routen-wien-v2', GEO_KEY = 'taxi-routen-1bez-geo-v1', CHAP_KEY = 'taxi-kapitel-v1';
+const STORE_KEY = 'taxi-routen-wien-v2', CHAP_KEY = 'taxi-kapitel-v1';
 let STREETS = null; // key -> [[ [lat,lng], ... ], ...]
 let STREET_BB = {}; // key -> [minLat, minLng, maxLat, maxLng]
-let state = { mode: 'lernen', route: ROUTES[0], step: 0, errors: 0, done: false, open: false, chap: -1, res: [], miss: {}, how: {}, finished: false, at: null };
+let state = { mode: 'lernen', route: ROUTES[0], step: 0, errors: 0, done: false, open: false, chap: -1, res: [], miss: {}, how: {}, finished: false };
 try { const v = localStorage.getItem(CHAP_KEY); const c = v == null ? -1 : +v; if (c >= 0 && c < CHAPTERS.length) state.chap = c; } catch (e) {}
 // Routen des gewählten Kapitels (oder alle)
 function inChap() { return state.chap < 0 ? ROUTES : ROUTES.filter(r => r.chap === state.chap); }
@@ -1202,14 +1183,14 @@ function corridor(route) {
   } });
   return (route._sub = sub);
 }
-function globalFor(route) { return route._global || (route._global = globalGraph(corridor(route), SLOW, ONEWAY)); }
+function globalFor(route) { return route._global || (route._global = globalGraph(corridor(route), SLOW, ONEWAY, TWIN)); }
 const SPEEDS = { langsam: 2300, normal: 1600, schnell: 900 };
 state.speed = 'normal';
 let anim = null, labelHead = null;
 function graphFor(k) { if (!STREETS || !STREETS[k]) return null; return GRAPH[k] || (GRAPH[k] = streetGraph(STREETS[k])); }
 function placeKey(text) { const k = streetKey(String(text).split(/[–\/]/)[0]); return STREETS && STREETS[k] ? k : null; }
 function routeKeys(route) { return searchKeys(route.steps, k => !!STREETS[k]); }
-function netFor(route) { return route._net || (route._net = routeNet(corridor(route), route.steps.map(streetKey).concat(routeKeys(route).keys), SLOW, ONEWAY)); }
+function netFor(route) { return route._net || (route._net = routeNet(corridor(route), route.steps.map(streetKey).concat(routeKeys(route).keys), SLOW, ONEWAY, TWIN)); }
 // Punkt etwa m Meter vor dem Ende von pts (rückwärts gemessen)
 function pointBack(pts, m) { let acc = 0; for (let i = pts.length - 1; i > 0; i--) { acc += dist(pts[i], pts[i - 1]); if (acc >= m) return pts[i - 1]; } return pts[0]; }
 function pointAhead(pts, m) { let acc = 0; for (let i = 1; i < pts.length; i++) { acc += dist(pts[i - 1], pts[i]); if (acc >= m) return pts[i]; } return pts[pts.length - 1]; }
@@ -1224,6 +1205,21 @@ function extendBest(G, key, from, away, limit) {
   const gain = p => (p && p.length > 1 ? dist(p[p.length - 1], away) - dist(p[0], away) : 0);
   return gain(b) > gain(a) + 5 ? b : a;
 }
+const SOFT_KEYS = new Set(ROUTES.flatMap(r => r.steps.filter(x => /sonderspur|bus-?spur/i.test(x)).map(streetKey)));
+// Abbiegeverbote vor Ort, die in den Daten der Stadt Wien fehlen: an Punkt `at` nicht von Straße `from` in Straße `to`
+const TURN_BANS = [
+  // Schottentor: von der Universitätsstraße nicht quer über den Universitätsring, sondern nördlich ums Jonasreindl in die Schottengasse
+  { at: [48.21353, 16.36158], from: 'universitätsstr', to: 'universitätsring' },
+];
+function turnBans(G) {
+  const m = new Map();
+  for (const b of TURN_BANS) {
+    const f = G.keyIdx.get(b.from), t = G.keyIdx.get(b.to); if (f == null || t == null) continue;
+    let n = -1, bd = 8; G.co.forEach((p, i) => { const d = dist(p, b.at); if (d < bd) { bd = d; n = i; } });
+    if (n >= 0) (m.get(n) || m.set(n, []).get(n)).push([f, t]);
+  }
+  return m;
+}
 function searchPaths(route) {
   const keys = route.steps.map(streetKey), sk = routeKeys(route);
   const present = [...new Set(sk.own)];
@@ -1237,10 +1233,11 @@ function searchPaths(route) {
   route._startShown = route.start && !startIsStand && fixedStart != null ? [G.co[fixedStart][0], G.co[fixedStart][1]] : null;
   const fixedGoal = route.goal ? nearestOn(keys[present[present.length - 1]], route.goal) : null;
   const startNodes = fixedStart != null ? [fixedStart] : (startK && startK !== keys[present[0]] ? startNodesFor(G, startK, keys[present[0]]) : null);
-  // Sonder-/Busspuren: dort darf das Taxi gegen die Einbahn
-  const soft = sk.own.map(i => /sonderspur|bus-?spur/i.test(route.steps[i]));
-  let segs = routeSearch(G, sk.keys, startNodes, 8, fixedGoal, soft);
-  if (!segs && fixedGoal != null) segs = routeSearch(G, sk.keys, startNodes, 8, null, soft);
+  // Sonder-/Busspuren: dort darf das Taxi gegen die Einbahn (gilt für die Straße in allen Routen, sobald eine sie so nennt)
+  const soft = sk.keys.map(k => SOFT_KEYS.has(k));
+  const bans = turnBans(G);
+  let segs = routeSearch(G, sk.keys, startNodes, 8, fixedGoal, soft, bans);
+  if (!segs && fixedGoal != null) segs = routeSearch(G, sk.keys, startNodes, 8, null, soft, bans);
   if (!segs) return null;
   // versteckte Zwischenstücke (Autobahn zwischen zwei Rampen) hängen am Schritt davor
   const out = keys.map(() => null); sk.own.forEach((i, j) => (out[i] = out[i] ? out[i].concat(segs[j].slice(1)) : segs[j]));
@@ -1268,10 +1265,13 @@ function searchPaths(route) {
     for (const x of named) { const n = nearestOn(streetKey(x), route.goal); if (n != null && dist(G.co[n], route.goal) < 150) { gn = n; onNamed = x; break; } }
     if (gn == null) gn = nearestAny(route.goal);
     const en = G.idx.get(end[0].toFixed(6) + ',' + end[1].toFixed(6));
-    if (gn != null && en != null && gn !== en && dist(end, G.co[gn]) > 20) {
+    // nur, wenn das Stück das Ziel wirklich näher bringt (sonst z. B. eine Runde um den Spitalsblock oder über den Schwedenplatz);
+    // ohne genannte Zielstraße muss es deutlich näher sein
+    const worth = gn != null && dist(end, route.goal) - dist(G.co[gn], route.goal) > (onNamed ? 5 : 40);
+    if (gn != null && en != null && gn !== en && dist(end, G.co[gn]) > 20 && worth) {
       const tail = netPath(G, en, gn, 4000);
       // auf der genannten Zielstraße darf das Stück länger sein (die Straße gehört dann zur Route), sonst nur ein kurzes Stück
-      if (tail && tail.length > 1 && pathLength(tail) < (onNamed ? 1200 : 600)) {
+      if (tail && tail.length > 1 && pathLength(tail) < (onNamed ? 3000 : 600)) {
         // Zielstraße („Sensengasse / Zahnklinik“) ist eine andere als die letzte Skript-Straße: als eigene letzte Straße führen,
         // damit man an der Ecke stehen bleibt und sie selbst antippt
         const nk = onNamed && streetKey(onNamed);
@@ -1386,24 +1386,22 @@ function camMove(fn, dur) {
 // gezeichnete Linie + Pfeil je Straße der Route (um ein Teilstück durch ein längeres zu ersetzen)
 const SEG = {};
 function removeSeg(i) { const s = SEG[i]; if (s) { routeLayer.removeLayer(s.line); routeLayer.removeLayer(s.head); delete SEG[i]; } }
-// opts.path: nur dieses Stück zeichnen (z. B. bis zur nächsten Kreuzung); opts.from: Anteil, der schon gefahren ist
 function drawSeg(i, opts = {}) {
-  const paths = routePaths(state.route), p = opts.path || (paths && paths[i]);
+  const paths = routePaths(state.route), p = paths && paths[i];
   if (!p) { if (opts.onDone) opts.onDone(); return null; }
-  const color = opts.color || css('--route'), layer = opts.layer || routeLayer, from = opts.from || 0;
+  const color = opts.color || css('--route'), layer = opts.layer || routeLayer;
   // lange Straßen langsamer: Dauer wächst mit der Länge (Hauptroute), mind. die gewünschte Zeit
-  const ms = !opts.animate ? 0 : opts.layer ? opts.animate : Math.max(opts.animate, Math.min(7000, 600 + pathLength(p) * (1 - from) * 9));
+  const ms = !opts.animate ? 0 : opts.layer ? opts.animate : Math.max(opts.animate, Math.min(7000, 600 + pathLength(p) * 9));
   const motion = ms && !reduced();
   const gen = drawGen;
   const pass = p.length < 2;
   let line = null, head = null;
   const create = () => {
-    const start = from ? partialPath(p, from) : [p[0], p[0]];
-    line = L.polyline(start, { color, weight: opts.weight || 7, opacity: 0.55, lineCap: 'round', lineJoin: 'round', interactive: false }).addTo(layer);
-    head = new SmoothMarker(start[start.length - 1], { icon: pass ? L.divIcon({ className: 'arrow', html: '<span class="pass"></span>', iconSize: [12, 12], iconAnchor: [6, 6] }) : arrowIcon(color, true), interactive: false, keyboard: false }).addTo(layer);
+    line = L.polyline([p[0], p[0]], { color, weight: opts.weight || 7, opacity: 0.55, lineCap: 'round', lineJoin: 'round', interactive: false }).addTo(layer);
+    head = new SmoothMarker(p[0], { icon: pass ? L.divIcon({ className: 'arrow', html: '<span class="pass"></span>', iconSize: [12, 12], iconAnchor: [6, 6] }) : arrowIcon(color, true), interactive: false, keyboard: false }).addTo(layer);
     // jede Straße der Route bekommt ihr Namensschild, das stehen bleibt
     const label = opts.label != null ? opts.label : (!opts.layer && opts.label !== false ? stepName(state.route.steps[i]) : null);
-    if (label) { head._labelText = label; head._labelDir = null; labelHead = head; placeLabel(head, p.length > 1 ? (from ? start : p.slice(0, 2)) : p); }
+    if (label) { head._labelText = label; head._labelDir = null; labelHead = head; placeLabel(head, p.length > 1 ? p.slice(0, 2) : p); }
     if (layer === routeLayer) { removeSeg(i); SEG[i] = { line, head }; curHead = head; }
     if (followCam) { userZoom = false; userDrag = false; segRunning = true; }
   };
@@ -1465,7 +1463,7 @@ function drawSeg(i, opts = {}) {
       // falls die Karte gerade bewegt wird (z. B. vom Nutzer): anhalten, damit nichts verrutscht
       if (mapMoving) { if (pausedAt == null) pausedAt = now; anim = requestAnimationFrame(frame); return; }
       if (pausedAt != null) { t0 += now - pausedAt; pausedAt = null; }
-      const f = Math.min(1, (now - t0) / ms), part = partialPath(p, from + (1 - from) * f);
+      const f = Math.min(1, (now - t0) / ms), part = partialPath(p, f);
       camFrame(f, part[part.length - 1]);
       // nach dem Zoomen durch den Nutzer: Pfeil in der Mitte halten (beim gewählten Zoom); nach Verschieben: loslassen
       if (followCam) { if (userDrag) endFollow(); else if (!cam && userZoom) followHead(part[part.length - 1]); }
@@ -1537,7 +1535,6 @@ let drawGen = 0, endActiveCam = null;
 function stopAnim() { endFollow(); segRunning = false; curHead = null; updateFollowBtn(); state.busy = false; resultLayer.clearLayers(); if (endActiveCam) endActiveCam(); drawGen++; if (anim) cancelAnimationFrame(anim); anim = null; clearLabel(); }
 // Route genau bis Straße i zeigen (Rest ausblenden), Straße i hervorheben
 function showUpTo(i) {
-  state.at = null;
   for (let k = 0; k <= i; k++) if (!state.res[k]) state.res[k] = 'shown';
   stopAnim(); routeLayer.clearLayers(); errLayer.clearLayers();
   for (let k = 0; k <= i; k++) drawSeg(k);
@@ -1545,8 +1542,8 @@ function showUpTo(i) {
   showPoints(state.step >= state.route.steps.length);
   render(); flash(i);
 }
-function clearRoute() { state.paused = false; state.playing = false; state.res = []; state.miss = {}; state.how = {}; state.finished = false; state.at = null; stopAnim(); routeLayer.clearLayers(); flashLayer.clearLayers(); errLayer.clearLayers(); state.step = 0; showPoints(false); render(); }
-function drawAll() { state.at = null; stopAnim(); routeLayer.clearLayers(); state.route.steps.forEach((_, i) => drawSeg(i)); showPoints(true); }
+function clearRoute() { state.paused = false; state.playing = false; state.res = []; state.miss = {}; state.how = {}; state.finished = false; stopAnim(); routeLayer.clearLayers(); flashLayer.clearLayers(); errLayer.clearLayers(); state.step = 0; showPoints(false); render(); }
+function drawAll() { stopAnim(); routeLayer.clearLayers(); state.route.steps.forEach((_, i) => drawSeg(i)); showPoints(true); }
 function routeBounds(route) {
   const ps = (routePaths(route) || []).filter(Boolean).flat().concat(route._lead || []);
   if (route.start) ps.push([route.start[0], route.start[1]]); if (route.goal) ps.push([route.goal[0], route.goal[1]]);
@@ -1579,6 +1576,23 @@ const EINBAHN_WFS = 'https://data.wien.gv.at/daten/geo?service=WFS&request=GetFe
 const SLOW_FOW = { 6: 6, 12: 6, 14: 6, 15: 40, 16: 40, 18: 40, 220: 40 };
 let SLOW = new WeakMap(); // Weg -> Faktor
 let ONEWAY = new WeakMap(); // Weg -> Einbahn-Richtung je Teilstück
+let TWIN = new WeakSet();   // Einbahn-Wege mit zweiter Fahrbahn derselben Straße daneben (8–60 m seitlich)
+function findTwins() {
+  TWIN = new WeakSet();
+  for (const k in STREETS) {
+    const ws = STREETS[k]; if (ws.length < 2) continue;
+    for (const w of ws) {
+      if (!ONEWAY.get(w) || w.length < 2) continue;
+      const mid = pointAhead(w, pathLength(w) / 2), a = w[0], b = w[w.length - 1];
+      const found = ws.some(o => o !== w && o.some(q => {
+        const dw = distToPath(q, w); if (dw < 8 || dw > 60) return false;
+        // seitlich daneben (nicht die Fortsetzung hinter einem Ende) und auf Höhe der Wegmitte
+        return dw < Math.min(dist(q, a), dist(q, b)) - 3 && dist(q, mid) < Math.max(60, pathLength(w) / 2 + 20);
+      }));
+      if (found) TWIN.add(w);
+    }
+  }
+}
 // größerer Browser-Speicher (IndexedDB) statt localStorage
 function idb() { return new Promise((ok, no) => { try { const r = indexedDB.open('routentrainer', 1); r.onupgradeneeded = () => r.result.createObjectStore('kv'); r.onsuccess = () => ok(r.result); r.onerror = () => no(r.error); } catch (e) { no(e); } }); }
 async function idbGet(k) { try { const db = await idb(); return await new Promise(ok => { const q = db.transaction('kv').objectStore('kv').get(k); q.onsuccess = () => ok(q.result); q.onerror = () => ok(null); }); } catch (e) { return null; } }
@@ -1629,6 +1643,7 @@ function useStreets(s, how, slow, oneway) {
   STREETS = densify(s); STREET_BB = {};
   // Einbahn-Richtungen auf die verdichteten Wege übertragen
   const OW = new WeakMap(); for (const k in oneway || {}) for (const i in oneway[k]) if (STREETS[k] && STREETS[k][i]) OW.set(STREETS[k][i], densifyFlags(s[k][i], oneway[k][i])); ONEWAY = OW;
+  findTwins();
   // Autobahnen hängen hinten an, die Indizes der Wiener Wege bleiben gleich
   SLOW = new WeakMap(); for (const k in slow || {}) for (const i in slow[k]) if (STREETS[k] && STREETS[k][i]) SLOW.set(STREETS[k][i], slow[k][i]);
   for (const k in STREETS) { let a = 90, b = 180, c = -90, d = -180; for (const w of STREETS[k]) for (const p of w) { if (p[0] < a) a = p[0]; if (p[1] < b) b = p[1]; if (p[0] > c) c = p[0]; if (p[1] > d) d = p[1]; } STREET_BB[k] = [a, b, c, d]; }
@@ -1747,7 +1762,7 @@ async function cameraTo(r) {
   await go(target, close, 1.4);                      // 3) auf den Start reinzoomen
 }
 function pick(r) { state.route = r; reset(); renderList(); cameraTo(r); }
-function reset() { state.paused = false; state.playing = false; state.res = []; state.miss = {}; state.how = {}; state.finished = false; state.at = null; stopAnim(); state.opts = null; const sc = document.getElementById('score'); if (sc) sc.textContent = ''; state.step = 0; state.errors = 0; state.done = false; state.choices = null; state.answered = null; routeLayer.clearLayers(); flashLayer.clearLayers(); showPoints(false); render(); }
+function reset() { state.paused = false; state.playing = false; state.res = []; state.miss = {}; state.how = {}; state.finished = false; stopAnim(); state.opts = null; const sc = document.getElementById('score'); if (sc) sc.textContent = ''; state.step = 0; state.errors = 0; state.done = false; state.choices = null; state.answered = null; routeLayer.clearLayers(); flashLayer.clearLayers(); showPoints(false); render(); }
 function nextRoute(random) {
   let r;
   const V = inChap();
@@ -1841,7 +1856,7 @@ function routeNav() {
   const n = state.route.steps.length, nav = el('div', 'rnav');
   const pb = el('button', 'btn nav-b', '‹'); pb.type = 'button'; pb.title = 'Vorige Straße'; pb.setAttribute('aria-label', 'Vorige Straße');
   const nb = el('button', 'btn nav-b', '›'); nb.type = 'button'; nb.title = 'Nächste Straße'; nb.setAttribute('aria-label', 'Nächste Straße');
-  pb.disabled = !STREETS || state.playing || (state.step === 0 && state.at == null);
+  pb.disabled = !STREETS || state.playing || state.step === 0;
   nb.disabled = !STREETS || state.playing || state.step >= n;
   pb.onclick = e => { e.stopPropagation(); stepBack(); };
   nb.onclick = e => { e.stopPropagation(); advanceStep(); };
@@ -1851,10 +1866,10 @@ function routeNav() {
 }
 // letzte Straße wieder wegnehmen; die Karte schaut auf die Stelle, an der es weitergeht
 function stepBack() {
-  if (state.step <= 0 && state.at == null) return;
+  if (state.step <= 0) return;
   state.playing = false; state.paused = false; stopAnim();
   routeLayer.clearLayers(); flashLayer.clearLayers(); errLayer.clearLayers();
-  if (state.at != null) state.at = null; else state.step--;
+  state.step--;
   state.res.length = state.step; state.finished = false;
   for (let k = 0; k < state.step; k++) drawSeg(k);
   showPoints(false); render();
@@ -1883,11 +1898,10 @@ function lernenBody(box) {
   const ol = el('ol', 'steps');
   r.steps.forEach((s, i) => {
     const li = el('li', i < state.step ? 'past' : '');
-    if (state.at != null && i === state.step) li.classList.add('now');
     if (state.playing && i === state.step - 1) li.classList.add('now');
     li.append(chip(s));
     if (!state.playing && i === state.step && STREETS) li.classList.add('next');
-    li.onclick = () => { if (!STREETS || state.playing) return; const nx = state.at != null ? state.step + 1 : state.step; if (i === nx) advanceStep(); else if (state.step > 0 || state.at != null) showUpTo(i); else flash(i); };
+    li.onclick = () => { if (!STREETS || state.playing) return; if (i === state.step) advanceStep(); else if (state.step > 0) showUpTo(i); else flash(i); };
     ol.append(li);
   });
   const dest = el('li', 'dest'); dest.append(el('span', 'chip dest', 'Ziel: ' + (r.goal ? r.goal[2] : r.dest))); ol.append(dest);
@@ -1908,7 +1922,7 @@ function pauseRoute() {
 }
 function playRoute(resume) {
   stopAnim();
-  if (!resume || !state.paused) { routeLayer.clearLayers(); state.step = 0; state.res = []; state.miss = {}; state.how = {}; state.finished = false; state.at = null; }
+  if (!resume || !state.paused) { routeLayer.clearLayers(); state.step = 0; state.res = []; state.miss = {}; state.how = {}; state.finished = false; }
   state.paused = false; state.playing = true; render();
   const gen = drawGen;
   const paths = routePaths(state.route) || [], first = paths.find(Boolean);
@@ -2008,8 +2022,8 @@ function renderFahren(p) {
   const ch = el('div', 'chain'); r.steps.slice(0, state.step).forEach(s => ch.append(chip(s, 'ok'))); p.append(ch);
   const fb = el('p', 'feedback'); fb.id = 'fb'; p.append(fb);
   const bar = el('div', 'bar');
-  const hint = el('button', 'btn', 'Tipp'); hint.onclick = () => { const nx = Math.min(state.at != null ? state.step + 1 : state.step, r.steps.length - 1); state.errors++; state.miss[nx] = true; $('#fb').textContent = 'Nächste Straße: ' + stepName(r.steps[nx]); flash(nx); $('#score').textContent = state.errors + ' Fehler'; };
-  const sol = el('button', 'btn', 'Lösung zeigen'); sol.onclick = () => { state.errors += 99; state.at = null; clearLabel(); for (let i = state.step; i < r.steps.length; i++) drawSeg(i); state.step = r.steps.length; fitRoute(); render(); };
+  const hint = el('button', 'btn', 'Tipp'); hint.onclick = () => { const nx = state.step; state.errors++; state.miss[nx] = true; $('#fb').textContent = 'Nächste Straße: ' + stepName(r.steps[nx]); flash(nx); $('#score').textContent = state.errors + ' Fehler'; };
+  const sol = el('button', 'btn', 'Lösung zeigen'); sol.onclick = () => { state.errors += 99; clearLabel(); for (let i = state.step; i < r.steps.length; i++) drawSeg(i); state.step = r.steps.length; fitRoute(); render(); };
   bar.append(hint, sol); p.append(bar, progress());
 }
 const errLayer = L.layerGroup().addTo(map);
@@ -2150,27 +2164,21 @@ const pathsOf = () => routePaths(state.route) || [];
 // solange der Pfeil fährt, zählen keine weiteren Tipps (sonst überholen sich die Schritte); Sicherheitsnetz nach 9 s
 let busyT = null;
 function busy(on) { state.busy = on; clearTimeout(busyT); if (on) busyT = setTimeout(() => { state.busy = false; }, 9000); }
-function enterStreet(kind) { state.how[state.step] = kind; completeStreet(); }
-// aktuelle Straße bis zur Abbiegung fertig fahren; then() danach (z. B. in die nächste einbiegen)
-function completeStreet(then) {
-  const r = state.route, i = state.step, p = pathsOf()[i], gen = drawGen;
-  const from = p && state.at ? pathLength(p.slice(0, state.at + 1)) / Math.max(1e-6, pathLength(p)) : 0;
+// nächste Straße fahren (richtig angetippt = 'ok', sonst per ›, Liste oder Pfeiltaste aufgedeckt)
+function advanceStep(kind) {
+  const r = state.route, i = state.step, gen = drawGen;
+  if (i >= r.steps.length || state.busy) return;
+  state.how[i] = kind || 'shown';
   state.res[i] = state.miss[i] ? 'bad' : state.how[i] === 'ok' ? 'ok' : 'shown';
-  state.at = null; state.step++;
+  state.step++;
   const end = state.step >= r.steps.length;
   busy(true);
-  drawSeg(i, { animate: 700, label: stepName(r.steps[i]), from, onDone: () => {
-    busy(false); if (gen !== drawGen) return;
-    if (end) { if (state.mode === 'lernen') { clearLabel(); showPoints(true); } celebrate(); }
-    else if (then) then();
+  drawSeg(i, { animate: 700, label: stepName(r.steps[i]), onDone: () => {
+    busy(false); if (gen !== drawGen || !end) return;
+    if (state.mode === 'lernen') { clearLabel(); showPoints(true); }
+    celebrate();
   } });
   render();
-}
-// nächste Straße (›, Liste, Pfeiltaste oder richtig angetippt)
-function advanceStep(kind) {
-  const n = state.route.steps.length;
-  if (state.step >= n || state.busy) return;
-  enterStreet(kind || 'shown');
 }
 // letzte Straße: oft nur ein kurzes Stück bis zum Ziel, das man kaum trifft – deshalb zählt auch ein Tipp
 // nahe an diesem Stück, nahe am Ziel oder irgendwo auf dieser Straße in Zielnähe
@@ -2207,7 +2215,7 @@ function onMapClick(e) {
   if (hitStreet(nextI)) { okPulse(e.latlng); advanceStep('ok'); return; }
   // übernächste Straße getroffen? dann die ausgelassene rot zeigen und weitermachen
   if (nextI + 1 < n && hitStreet(nextI + 1)) {
-    const skip = () => { const k = state.step; state.res[k] = 'bad'; state.how[k] = 'shown'; markSkipped(k); state.step++; enterStreet('ok'); const fb = $('#fb'); if (fb) fb.textContent = `Übersprungen: ${stepName(r.steps[k])}`; };
+    const skip = () => { const k = state.step; state.res[k] = 'bad'; state.how[k] = 'shown'; markSkipped(k); state.step++; advanceStep('ok'); const fb = $('#fb'); if (fb) fb.textContent = `Übersprungen: ${stepName(r.steps[k])}`; };
     if (!lern) { state.errors++; $('#score').textContent = state.errors + ' Fehler'; }
     skip();
     return;
@@ -2281,8 +2289,7 @@ function applyTheme() {
 }
 $('#theme').onclick = () => { theme = THEMES[(THEMES.indexOf(theme) + 1) % THEMES.length]; try { localStorage.setItem(THEME_KEY, theme); } catch (e) {} applyTheme(); };
 applyTheme();
-$('#reload').onclick = async () => { try { localStorage.removeItem(GEO_KEY); } catch (e) {} await idbDel(IDB_KEY); await idbDel('strassennetz-1bez-v3'); STREETS = null; render(); loadStreets(); };
-idbDel('strassennetz-1bez-v3');
+$('#reload').onclick = async () => { await idbDel(IDB_KEY); STREETS = null; render(); loadStreets(); };
 renderList(); render(); loadStreets();
 
 </script>
