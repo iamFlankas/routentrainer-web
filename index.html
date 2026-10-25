@@ -340,7 +340,7 @@ ol.steps li.dest .chip { background: var(--acc); color: var(--acc-ink); padding:
       </div>
       <div class="sec"><h3>Routen <small id="count"></small></h3><button id="shuffle" class="pillbtn" type="button">Zufällig</button></div>
       <div id="routes"></div>
-      <div class="foot"><span>Stand 25.10.2026 13:23 · Daten: Stadt Wien, basemap.at, OpenStreetMap</span><button id="reload" type="button">Straßennetz neu laden</button></div>
+      <div class="foot"><span>Stand 25.10.2026 20:40 · Daten: Stadt Wien, basemap.at, OpenStreetMap</span><button id="reload" type="button">Straßennetz neu laden</button></div>
     </div>
   </aside>
 </div>
@@ -1207,7 +1207,13 @@ function extendBest(G, key, from, away, limit) {
   return gain(b) > gain(a) + 5 ? b : a;
 }
 const SOFT_KEYS = new Set(ROUTES.flatMap(r => r.steps.filter(x => /sonderspur|bus-?spur/i.test(x)).map(streetKey)));
-// Abbiegeverbote vor Ort, die in den Daten der Stadt Wien fehlen: an Punkt `at` nicht von Straße `from` in Straße `to`
+// --- Korrekturen vor Ort (fehlen in den Daten der Stadt Wien) ---
+// Einbahn aufheben: Wege der Straße `key` im Umkreis `r` Meter um `at` sind in beide Richtungen befahrbar
+const ONEWAY_FREE = [
+  // Bellariastraße: Taxistand auf der Nebenfahrbahn, die man zurück zur Hansenstraße fahren kann (Nebenfahrbahn fehlt in den Daten)
+  { key: 'bellariastr', at: [48.20624, 16.359773], r: 30 },
+];
+// Abbiegeverbote: an Punkt `at` nicht von Straße `from` in Straße `to`
 const TURN_BANS = [
   // Schottentor: von der Universitätsstraße nicht quer über den Universitätsring, sondern nördlich ums Jonasreindl in die Schottengasse
   { at: [48.21353, 16.36158], from: 'universitätsstr', to: 'universitätsring' },
@@ -1650,6 +1656,7 @@ function useStreets(s, how, slow, oneway) {
   STREETS = densify(s); STREET_BB = {};
   // Einbahn-Richtungen auf die verdichteten Wege übertragen
   const OW = new WeakMap(); for (const k in oneway || {}) for (const i in oneway[k]) if (STREETS[k] && STREETS[k][i]) OW.set(STREETS[k][i], densifyFlags(s[k][i], oneway[k][i])); ONEWAY = OW;
+  for (const f of ONEWAY_FREE) for (const w of STREETS[f.key] || []) if (distToPath(f.at, w) < f.r) ONEWAY.delete(w);
   findTwins();
   // Autobahnen hängen hinten an, die Indizes der Wiener Wege bleiben gleich
   SLOW = new WeakMap(); for (const k in slow || {}) for (const i in slow[k]) if (STREETS[k] && STREETS[k][i]) SLOW.set(STREETS[k][i], slow[k][i]);
