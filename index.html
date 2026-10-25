@@ -339,7 +339,7 @@ ol.steps li.dest .chip { background: var(--acc); color: var(--acc-ink); padding:
       </div>
       <div class="sec"><h3>Routen <small id="count"></small></h3><button id="shuffle" class="pillbtn" type="button">Zufällig</button></div>
       <div id="routes"></div>
-      <div class="foot"><span>Stand 25.10.2026 12:08 · Daten: Stadt Wien, basemap.at, OpenStreetMap</span><button id="reload" type="button">Straßennetz neu laden</button></div>
+      <div class="foot"><span>Stand 25.10.2026 12:21 · Daten: Stadt Wien, basemap.at, OpenStreetMap</span><button id="reload" type="button">Straßennetz neu laden</button></div>
     </div>
   </aside>
 </div>
@@ -371,7 +371,7 @@ const ROUTES = [
   {"n":21,"orig":"121","chap":0,"from":"Stephansplatz","to":"Naschmarkt","steps":["Rotenturmstr","Wollzeile","Dr.-Karl-Lueger-Platz","Parkring","Schubertring","Kärntner Ring","Opernring","Operngasse","Friedrichstr","Linke Wienzeile"],"dest":"Naschmarkt","start":[48.208464,16.372044,"Stephansplatz","ort"],"goal":[48.19818,16.362622,"Naschmarkt","ort"]},
   {"n":22,"orig":"206","chap":1,"from":"Karmeliterplatz – Taxistandplatz","to":"Sensengasse / Zahnklinik","steps":["Schmelzgasse","Karmeliterplatz","Kleine Sperlgasse","Hollandstr","Obere Donaustr","Roßauer Brücke","Türkenstr","Schlickplatz","Hörlgasse","Währinger Str"],"dest":"Sensengasse / Zahnklinik","start":[48.215785,16.38239,"Karmeliterplatz – Taxistandplatz Große Mohrengasse 20","taxi"],"goal":[48.220312,16.355331,"Sensengasse / Zahnklinik","klinik"]},
   {"n":23,"orig":"111","chap":1,"from":"Heldenplatz / Hofburg","to":"Neuwaldegger Straße / Höhenstraße","steps":["Burgring","Dr.-Karl-Renner-Ring","Universitätsring","Rathausplatz","Grillparzerstr","Landesgerichtsstr","Alser Str","Kinderspitalgasse","Hebragasse","Zimmermannplatz","Lazarettgasse","Jörgerstr","Elterleinplatz","Hernalser Hauptstr","Dornbacher Str","Vollbadgasse","Alszeile","Dornbacher Str"],"dest":"Neuwaldegger Straße / Höhenstraße","start":[48.206693,16.363004,"Heldenplatz / Hofburg","ort"],"goal":[48.235437,16.290542,"Neuwaldegger Straße / Höhenstraße","ort"]},
-  {"n":24,"orig":"1602","chap":1,"from":"Ottakringer Straße – Taxistandplatz","to":"Neuwaldegger Straße","steps":["Weinheimergasse","Arnethgasse","Sandleitengasse","Güpferlingstr","Dornbacher Str","Vollbadgasse","Alszeile","Dornbacher Str"],"dest":"Neuwaldegger Straße","start":[48.212683,16.325079,"Ottakringer Straße – Taxistandplatz Ottakringer Straße 1","taxi"],"goal":[48.235437,16.290542,"Neuwaldegger Straße","ort"]},
+  {"n":24,"orig":"1602","chap":1,"from":"Ottakringer Straße – Taxistandplatz","to":"Neuwaldegger Straße","steps":["Weinheimergasse","Arnethgasse","Sandleitengasse","Güpferlingstr","Dornbacher Str","Vollbadgasse","Alszeile","Dornbacher Str"],"dest":"Neuwaldegger Straße","start":[48.21401,16.310562,"Ottakringer Straße – Taxistandplatz Weinheimergasse ggü. 5","taxi"],"goal":[48.235437,16.290542,"Neuwaldegger Straße","ort"]},
   {"n":25,"orig":"1702","chap":1,"from":"Neuwaldegger Straße","to":"Hotel Regina – Taxistandplatz","steps":["Dornbacher Str","Hernalser Hauptstr","Elterleinplatz","Hernalser Hauptstr","Hernalser Gürtel","Lazarettgasse","Zimmermannplatz","Lazarettgasse","Sensengasse","Währinger Str","Rooseveltplatz"],"dest":"Hotel Regina – Taxistandplatz","start":[48.235437,16.290542,"Neuwaldegger Straße","ort"],"goal":[48.21604,16.359208,"Hotel Regina – Taxistandplatz Rooseveltplatz ggü. 15","taxi"]},
   {"n":26,"orig":"1704 (neu)","chap":1,"from":"Neuwaldegger Straße","to":"St. Anna Kinderspital (Haupteingang)","steps":["Neuwaldegger Str","Dornbacher Str","Hernalser Hauptstr","Elterleinplatz","Hernalser Hauptstr","Kinderspitalgasse","Hebragasse","Zimmermannplatz","Mariannengasse","Mauthnergasse","Kinderspitalgasse"],"dest":"St. Anna Kinderspital (Haupteingang)","start":[48.23944,16.272245,"Neuwaldegger Straße","ort"],"goal":[48.216216,16.344376,"St. Anna Kinderspital (Haupteingang)","klinik"]},
   {"n":27,"orig":"1705","chap":1,"from":"Dornbach / Vollbadgasse","to":"Hofburg / Kongresszentrum","steps":["Dornbacher Str","Hernalser Hauptstr","Elterleinplatz","Hernalser Hauptstr","Kinderspitalgasse","Hebragasse","Alser Str","Universitätsstr","Schottengasse","Freyung","Strauchgasse","Herrengasse","Michaelerplatz","In der Burg","Heldenplatz"],"dest":"Hofburg / Kongresszentrum","start":[48.228175,16.301896,"Dornbach / Vollbadgasse","ort"],"goal":[48.206535,16.365142,"Hofburg / Kongresszentrum","ort"]},
@@ -724,7 +724,7 @@ function globalGraph(streets, slow, oneway) {
         const n = node(w[j]);
         if (prev != null && prev !== n) {
           const d = dist(co[prev], co[n]) * f, o = ow ? ow[j - 1] : 0;
-          adj[prev].push([n, o === 2 ? d * ONEWAY_PENALTY : d, ki]); adj[n].push([prev, o === 1 ? d * ONEWAY_PENALTY : d, ki]);
+          adj[prev].push([n, o === 2 ? d * ONEWAY_PENALTY : d, ki, d]); adj[n].push([prev, o === 1 ? d * ONEWAY_PENALTY : d, ki, d]);
         }
         prev = n;
       }
@@ -788,28 +788,34 @@ function routeNet(streets, needKeys, slow, oneway) {
   G.nk = nk; G.keyIdx = keyIdx; return G;
 }
 // keys: Straßenschlüssel der Route (fehlende vorher entfernt); startNodes: optionale Startknoten
+// Zustand je Knoten: (Schritt st, schon auf der Straße von st gewesen v). Weiter zur nächsten Straße erst, wenn die aktuelle
+// wirklich erreicht wurde (sonst „überspringt“ die Suche eine Skript-Straße und beschriftet eine andere mit ihrem Namen).
+// Gegen eine Einbahn: auf der vorgeschriebenen Straße 4-fach (richtige Fahrbahn bevorzugt, Bus-/Sonderspuren bleiben möglich),
+// auf fremden Straßen zusätzlich zum Umweg-Faktor 3-fach (sonst multipliziert sich das zu absurden Umwegen um den Block).
 function routeSearch(G, keys, startNodes, penalty = 8, goalNode = null) {
-  const S = keys.length, N = G.co.length, K = keys.map(k => G.keyIdx.get(k));
+  const S = keys.length, SS = 2 * S, N = G.co.length, K = keys.map(k => G.keyIdx.get(k));
   if (K.some(k => k == null)) return null;
-  const D = new Float64Array(N * S).fill(Infinity), P = new Int32Array(N * S).fill(-1), h = [];
+  const D = new Float64Array(N * SS).fill(Infinity), P = new Int32Array(N * SS).fill(-1), h = [];
   const starts = startNodes && startNodes.length ? startNodes : G.co.map((_, i) => i).filter(i => G.nk[i].includes(K[0]));
-  for (const s of starts) { D[s * S] = 0; heapPush(h, [0, s * S]); }
+  for (const s0 of starts) { const id = s0 * SS + (G.nk[s0].includes(K[0]) ? 1 : 0); D[id] = 0; heapPush(h, [0, id]); }
   let goal = -1;
   while (h.length) {
     const [d, id] = heapPop(h); if (d > D[id]) continue;
-    const u = Math.floor(id / S), st = id % S;
-    if (st === S - 1 && (goalNode == null || u === goalNode)) { goal = id; break; }
+    const u = Math.floor(id / SS), q = id % SS, st = q >> 1, v = q & 1;
+    if (st === S - 1 && v && (goalNode == null || u === goalNode)) { goal = id; break; }
     if (d > 400000) break;
-    if (G.nk[u].includes(K[st + 1])) { const v = u * S + st + 1; if (d < D[v]) { D[v] = d; P[v] = id; heapPush(h, [d, v]); } }
-    for (const [x, w, ki] of G.adj[u]) {
-      const v = x * S + st, nd = d + w * (ki === K[st] ? 1 : penalty);
-      if (nd < D[v]) { D[v] = nd; P[v] = id; heapPush(h, [nd, v]); }
+    if (v && G.nk[u].includes(K[st + 1])) { const t = u * SS + (st + 1) * 2 + 1; if (d < D[t]) { D[t] = d; P[t] = id; heapPush(h, [d, t]); } }
+    for (const [x, w, ki, base] of G.adj[u]) {
+      const nv = v || (G.nk[x].includes(K[st]) ? 1 : 0), t = x * SS + st * 2 + nv;
+      const ow = base != null && w > base * 1.01, len = base ?? w;
+      const nd = d + (ki === K[st] ? len * (ow ? 4 : 1) : len * penalty * (ow ? 3 : 1));
+      if (nd < D[t]) { D[t] = nd; P[t] = id; heapPush(h, [nd, t]); }
     }
   }
   if (goal < 0) return null;
   const chain = []; for (let id = goal; id >= 0; id = P[id]) chain.push(id); chain.reverse();
   const segs = keys.map(() => []);
-  chain.forEach(id => { const u = Math.floor(id / S), st = id % S, seg = segs[st]; const p = G.co[u]; if (!seg.length || seg[seg.length - 1] !== p) seg.push(p); });
+  chain.forEach(id => { const u = Math.floor(id / SS), st = (id % SS) >> 1, seg = segs[st]; const p = G.co[u]; if (!seg.length || seg[seg.length - 1] !== p) seg.push(p); });
   for (let i = 1; i < S; i++) if (segs[i - 1].length && segs[i][0] !== segs[i - 1][segs[i - 1].length - 1]) segs[i].unshift(segs[i - 1][segs[i - 1].length - 1]);
   return segs;
 }
@@ -1291,13 +1297,23 @@ function handOverForeign(route, out) {
   }
   return out;
 }
+// Anfahrt vom Taxistand bis zur ersten Skript-Straße: eigenes Stück, beim Start gestrichelt gezeigt –
+// so fährt der erste Tipp nur die erste Straße und biegt nicht „von selbst“ ab
+function splitLead(route, out) {
+  route._lead = null;
+  const s = out[0], G = route._net; if (!s || !route.start) return out;
+  const ki = G.keyIdx.get(streetKey(route.steps[0])); if (ki == null) return out;
+  let j = 0; while (j < s.length) { const m = G.idx.get(s[j][0].toFixed(6) + ',' + s[j][1].toFixed(6)); if (m != null && G.nk[m].includes(ki)) break; j++; }
+  if (j === 0 || j >= s.length || pathLength(s.slice(0, j + 1)) < 20) return out;
+  route._lead = s.slice(0, j + 1); out = out.slice(); out[0] = s.slice(j); return out;
+}
 function routePaths(route) {
   if (!STREETS) return null;
   if (PATHS.has(route.n)) return PATHS.get(route.n);
   let out = null;
   try { out = searchPaths(route); } catch (e) { console.error(e); }
   if (!out) out = streetwisePaths(route);
-  if (route._net) out = handOverForeign(route, out);
+  if (route._net) out = splitLead(route, handOverForeign(route, out));
   out = handOverTurns(out, i => /umkehren/i.test(route.steps[i]));
   // reine Durchfahrten (Kreuzung/Platz) als Punkt
   out = out.map(p => (p && p.length > 1 && pathLength(p) < 6 ? [p[p.length - 1]] : p));
@@ -1473,6 +1489,7 @@ function showPointsInner(withGoal) {
   // Bildschirm-Winkel zwischen zwei Punkten
   const angle = (a, b) => { const pa = map.latLngToContainerPoint(a), pb = map.latLngToContainerPoint(b); return Math.atan2(pb.y - pa.y, pb.x - pa.x) * 180 / Math.PI; };
   const along = (path, m) => { let acc = 0; for (let i = 1; i < path.length; i++) { acc += dist(path[i - 1], path[i]); if (acc >= m) return path[i]; } return path[path.length - 1]; };
+  if (r._lead) L.polyline(r._lead, { color: css('--route'), weight: 4, opacity: 0.6, dashArray: '1 9', lineCap: 'round', interactive: false }).addTo(pointLayer);
   if (r.start) {
     const all = segs.flat();
     // Schild weg von der Richtung, in die die Route losfährt
@@ -1502,7 +1519,7 @@ function showUpTo(i) {
 function clearRoute() { state.paused = false; state.playing = false; state.res = []; state.miss = {}; state.how = {}; state.finished = false; state.at = null; stopAnim(); routeLayer.clearLayers(); flashLayer.clearLayers(); errLayer.clearLayers(); state.step = 0; showPoints(false); render(); }
 function drawAll() { state.at = null; stopAnim(); routeLayer.clearLayers(); state.route.steps.forEach((_, i) => drawSeg(i)); showPoints(true); }
 function routeBounds(route) {
-  const ps = (routePaths(route) || []).filter(Boolean).flat();
+  const ps = (routePaths(route) || []).filter(Boolean).flat().concat(route._lead || []);
   if (route.start) ps.push([route.start[0], route.start[1]]); if (route.goal) ps.push([route.goal[0], route.goal[1]]);
   return ps.length ? L.latLngBounds(ps) : null;
 }
