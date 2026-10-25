@@ -340,7 +340,7 @@ ol.steps li.dest .chip { background: var(--acc); color: var(--acc-ink); padding:
       </div>
       <div class="sec"><h3>Routen <small id="count"></small></h3><button id="shuffle" class="pillbtn" type="button">Zufällig</button></div>
       <div id="routes"></div>
-      <div class="foot"><span>Stand 25.10.2026 13:04 · Daten: Stadt Wien, basemap.at, OpenStreetMap</span><button id="reload" type="button">Straßennetz neu laden</button></div>
+      <div class="foot"><span>Stand 25.10.2026 13:23 · Daten: Stadt Wien, basemap.at, OpenStreetMap</span><button id="reload" type="button">Straßennetz neu laden</button></div>
     </div>
   </aside>
 </div>
@@ -376,7 +376,7 @@ const ROUTES = [
   {"n":25,"orig":"1702","chap":1,"from":"Neuwaldegger Straße","to":"Hotel Regina – Taxistandplatz","steps":["Dornbacher Str","Hernalser Hauptstr","Elterleinplatz","Hernalser Hauptstr","Hernalser Gürtel","Lazarettgasse","Zimmermannplatz","Lazarettgasse","Sensengasse","Währinger Str","Rooseveltplatz"],"dest":"Hotel Regina – Taxistandplatz","start":[48.235437,16.290542,"Neuwaldegger Straße","ort"],"goal":[48.21604,16.359208,"Hotel Regina – Taxistandplatz Rooseveltplatz ggü. 15","taxi"]},
   {"n":26,"orig":"1704 (neu)","chap":1,"from":"Neuwaldegger Straße","to":"St. Anna Kinderspital (Haupteingang)","steps":["Neuwaldegger Str","Dornbacher Str","Hernalser Hauptstr","Elterleinplatz","Hernalser Hauptstr","Kinderspitalgasse","Hebragasse","Zimmermannplatz","Mariannengasse","Mauthnergasse","Kinderspitalgasse"],"dest":"St. Anna Kinderspital (Haupteingang)","start":[48.23944,16.272245,"Neuwaldegger Straße","ort"],"goal":[48.215942,16.344341,"St. Anna Kinderspital (Haupteingang)","klinik"]},
   {"n":27,"orig":"1705","chap":1,"from":"Dornbach / Vollbadgasse","to":"Hofburg / Kongresszentrum","steps":["Dornbacher Str","Hernalser Hauptstr","Elterleinplatz","Hernalser Hauptstr","Kinderspitalgasse","Hebragasse","Alser Str","Universitätsstr","Schottengasse","Freyung","Strauchgasse","Herrengasse","Michaelerplatz","In der Burg","Heldenplatz"],"dest":"Hofburg / Kongresszentrum","start":[48.228175,16.301896,"Dornbach / Vollbadgasse","ort"],"goal":[48.206535,16.365142,"Hofburg / Kongresszentrum","ort"]},
-  {"n":28,"orig":"103","chap":1,"from":"Bellariastraße – Taxistandplatz","to":"Gentzgasse / Gersthof","steps":["Hansenstr","Schmerlingplatz","Auerspergstr","Landesgerichtsstr","Friedrich-Schmidt-Platz","Landesgerichtsstr","Garnisongasse","Schwarzspanierstr","Währinger Str","Währinger Gürtel"],"dest":"Gentzgasse / Gersthof","start":[48.20624,16.359773,"Bellariastraße – Taxistandplatz Bellariastraße ggü. 2-4","taxi"],"goal":[48.231929,16.32876,"Gentzgasse / Gersthof","ort"]},
+  {"n":28,"orig":"103","chap":1,"from":"Bellariastraße – Taxistandplatz","to":"Gentzgasse / Gersthof","steps":["Hansenstr","Schmerlingplatz","Auerspergstr","Landesgerichtsstr","Friedrich-Schmidt-Platz","Landesgerichtsstr","Garnisongasse","Schwarzspanierstr","Währinger Str","Währinger Gürtel"],"dest":"Gentzgasse / Gersthof","start":[48.20624,16.359773,"Bellariastraße – Taxistandplatz Bellariastraße ggü. 2-4","taxi"],"goal":[48.22618,16.34905,"Gentzgasse / Gersthof","ort"]},
   {"n":29,"orig":"105 (neu)","chap":1,"from":"Hotel Hilton Vienna Plaza","to":"Neustift am Walde – Taxistandplatz","steps":["Schottenring (Nebenfahrbahn)","Hohenstaufengasse","Liechtensteinstr","Alserbachstr","Sechsschimmelgasse","Gentzgasse","Gersthofer Str","Pötzleinsdorfer Str","Khevenhüllerstr","Neustift am Walde"],"dest":"Neustift am Walde – Taxistandplatz","start":[48.215515,16.364686,"Hotel Hilton Vienna Plaza","hotel"],"goal":[48.251048,16.301012,"Neustift am Walde – Taxistandplatz Neustift am Walde 79","taxi"]},
   {"n":30,"orig":"1504","chap":1,"from":"Westbahnhof – Haupteingang","to":"Neustift am Walde","steps":["Europaplatz","Mariahilfer Str","Neubaugürtel","Lerchenfelder Gürtel","Hernalser Gürtel","Jörgerstr","Martinstr","Währinger Str","Aumannplatz","Gentzgasse","Gersthofer Str","Pötzleinsdorfer Str","Khevenhüllerstr"],"dest":"Neustift am Walde","start":[48.195901,16.338353,"Westbahnhof – Haupteingang","bahn"],"goal":[48.249068,16.306195,"Neustift am Walde","ort"]},
   {"n":31,"orig":"1801","chap":1,"from":"Herbeckstraße – Gersthof / Taxistandplatz","to":"City Air Terminal – CAT","steps":["Gersthofer Str","Währinger Str","Semperstr","Schulgasse","Währinger Str","Schottengasse","Schottenring","Franz-Josefs-Kai","Schwedenplatz","Franz-Josefs-Kai","Julius-Raab-Platz","Stubenring","Oskar-Kokoschka-Platz","Kleine Marxerbrücke","Marxergasse"],"dest":"City Air Terminal – CAT","start":[48.231209,16.327428,"Herbeckstraße – Taxistandplatz Herbeckstraße 1-7","taxi"],"goal":[48.208384,16.384461,"City Air Terminal – CAT","flug"]},
@@ -950,7 +950,7 @@ function prefetchTiles(layer) {
 }
 // --- Filter: Lernhilfen aus den offenen Daten der Stadt Wien ---
 const FKEY = 'taxi-filter-v1';
-let FILTER = { einbahn: false, fussgeher: false, taxi: false, bezirke: false };
+let FILTER = { einbahn: false, fussgeher: false, taxi: false, bezirke: false, starthilfe: true };
 try { const saved = JSON.parse(localStorage.getItem(FKEY) || '{}'); Object.keys(FILTER).forEach(k => { if (k in saved) FILTER[k] = !!saved[k]; }); } catch (e) {}
 map.createPane('hilfen'); map.getPane('hilfen').style.zIndex = 350;
 const hilfenRenderer = L.canvas({ pane: 'hilfen' });
@@ -1043,6 +1043,7 @@ const FILTER_ITEMS = [
   ['fussgeher', 'Fußgängerzonen', 'mit Zufahrtszeiten beim Drüberfahren'],
   ['taxi', 'Taxistandplätze', 'Standplätze laut Stadt Wien'],
   ['bezirke', 'Bezirksgrenzen', 'mit Bezirksnamen'],
+  ['starthilfe', 'Start-Hilfe', 'Anfahrt vom Taxistand gestrichelt, antippbar'],
 ];
 let filterUI = null;
 function updateFilterUI() {
@@ -1053,7 +1054,7 @@ function updateFilterUI() {
     const st = row.querySelector('.fst'), s = hilfeState[k];
     st.textContent = s === 'laden' ? 'lädt …' : s === 'fehler' ? 'nicht erreichbar' : (k === 'einbahn' && FILTER[k] && !zoomOk(k)) ? 'näher zoomen' : '';
   });
-  const n = Object.values(FILTER).filter(Boolean).length;
+  const n = Object.keys(HILFEN).filter(k => FILTER[k]).length; // nur Kartenebenen zählen
   filterUI.querySelector('.fbtn b').textContent = n ? String(n) : '';
 }
 const FilterControl = L.Control.extend({
@@ -1067,7 +1068,7 @@ const FilterControl = L.Control.extend({
       row.innerHTML = `<input type="checkbox" id="f-${k}"><span><span class="fl">${label}</span><span class="fs">${sub}</span></span><span class="fst"></span>`;
       row.querySelector('input').addEventListener('change', e => {
         FILTER[k] = e.target.checked; try { localStorage.setItem(FKEY, JSON.stringify(FILTER)); } catch (x) {}
-        applyHilfe(k);
+        if (HILFEN[k]) applyHilfe(k); else showPoints(state.step >= state.route.steps.length);
         updateFilterUI();
       });
       panel.append(row);
@@ -1269,7 +1270,12 @@ function searchPaths(route) {
     // ohne genannte Zielstraße muss es deutlich näher sein
     const worth = gn != null && dist(end, route.goal) - dist(G.co[gn], route.goal) > (onNamed ? 5 : 40);
     if (gn != null && en != null && gn !== en && dist(end, G.co[gn]) > 20 && worth) {
-      const tail = netPath(G, en, gn, 4000);
+      // über die genannte Zielstraße mit denselben Regeln wie die Route (Sonderspur, Einbahn, Abbiegeverbote), sonst kürzester Weg;
+      // ein riesiger Umweg im Verhältnis zur Luftlinie deutet auf eine Datenlücke – dann lieber weglassen
+      const nk0 = onNamed && streetKey(onNamed);
+      const viaNamed = nk0 && routeSearch(G, [nk0], [en], 8, gn, [SOFT_KEYS.has(nk0)], bans);
+      let tail = viaNamed ? viaNamed[0] : netPath(G, en, gn, 4000);
+      if (tail && pathLength(tail) > 3 * dist(end, G.co[gn]) + 400) tail = null;
       // auf der genannten Zielstraße darf das Stück länger sein (die Straße gehört dann zur Route), sonst nur ein kurzes Stück
       if (tail && tail.length > 1 && pathLength(tail) < (onNamed ? 3000 : 600)) {
         // Zielstraße („Sensengasse / Zahnklinik“) ist eine andere als die letzte Skript-Straße: als eigene letzte Straße führen,
@@ -1387,7 +1393,8 @@ function camMove(fn, dur) {
 const SEG = {};
 function removeSeg(i) { const s = SEG[i]; if (s) { routeLayer.removeLayer(s.line); routeLayer.removeLayer(s.head); delete SEG[i]; } }
 function drawSeg(i, opts = {}) {
-  const paths = routePaths(state.route), p = paths && paths[i];
+  const paths = routePaths(state.route), lead = i === 0 && !opts.layer && state.route._lead;
+  const p = paths && paths[i] && (lead ? lead.concat(paths[i].slice(1)) : paths[i]);
   if (!p) { if (opts.onDone) opts.onDone(); return null; }
   const color = opts.color || css('--route'), layer = opts.layer || routeLayer;
   // lange Straßen langsamer: Dauer wächst mit der Länge (Hauptroute), mind. die gewünschte Zeit
@@ -1516,7 +1523,7 @@ function showPointsInner(withGoal) {
   // Bildschirm-Winkel zwischen zwei Punkten
   const angle = (a, b) => { const pa = map.latLngToContainerPoint(a), pb = map.latLngToContainerPoint(b); return Math.atan2(pb.y - pa.y, pb.x - pa.x) * 180 / Math.PI; };
   const along = (path, m) => { let acc = 0; for (let i = 1; i < path.length; i++) { acc += dist(path[i - 1], path[i]); if (acc >= m) return path[i]; } return path[path.length - 1]; };
-  if (r._lead) L.polyline(r._lead, { color: css('--route'), weight: 4, opacity: 0.6, dashArray: '1 9', lineCap: 'round', interactive: false }).addTo(pointLayer);
+  if (r._lead && FILTER.starthilfe) L.polyline(r._lead, { color: css('--route'), weight: 4, opacity: 0.6, dashArray: '1 9', lineCap: 'round', interactive: false }).addTo(pointLayer);
   if (r.start) {
     const all = segs.flat();
     // Schild weg von der Richtung, in die die Route losfährt
@@ -2052,6 +2059,12 @@ function blinkStreet(k, at, exclude) {
   }, 170);
 }
 // Klick auf das tatsächlich gefahrene Stück (ohne die ersten Meter an der Kreuzung, damit die Gegenseite nicht zählt)
+// Abstand des Tipps zu einer Linie in Bildschirm-Pixeln höchstens tol?
+function nearLine(e, line, tol) {
+  const cp = map.latLngToContainerPoint(e.latlng); let best = Infinity;
+  for (let i = 1; i < line.length; i++) best = Math.min(best, L.LineUtil.pointToSegmentDistance(cp, map.latLngToContainerPoint(line[i - 1]), map.latLngToContainerPoint(line[i])));
+  return best <= tol;
+}
 function segHit(e, seg) {
   const cp = map.latLngToContainerPoint(e.latlng);
   if (seg.length < 2) return map.latLngToContainerPoint(seg[0]).distanceTo(cp) <= 26;
@@ -2209,7 +2222,8 @@ function onMapClick(e) {
   const nextI = state.step;
   const hitStreet = k => { // Tipp trifft Straße k (so wie sie die Route fährt)?
     const sg = P[k], key = streetKey(r.steps[k]); if (k >= n) return false;
-    return (sg ? segHit(e, sg) : h.pxDist(key) <= h.TOL) || (k === n - 1 && lastStepHit(e, sg, key, h)) || plazaHit(e, key, sg, h, r.steps[k]);
+    return (sg ? segHit(e, sg) : h.pxDist(key) <= h.TOL) || (k === n - 1 && lastStepHit(e, sg, key, h)) || plazaHit(e, key, sg, h, r.steps[k])
+      || (k === 0 && FILTER.starthilfe && r._lead && nearLine(e, r._lead, 24)); // Start-Hilfe: Tipp auf die gestrichelte Anfahrt
   };
   // richtige nächste Straße: bis zur Abbiegestelle fahren
   if (hitStreet(nextI)) { okPulse(e.latlng); advanceStep('ok'); return; }
