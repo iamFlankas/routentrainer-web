@@ -237,7 +237,8 @@ ol.steps li.dest .chip { background: var(--acc); color: var(--acc-ink); padding:
 .resultcard { position: absolute; left: 0; bottom: 64px; transform: translateX(-50%); display: flex; align-items: center; gap: 18px; padding: 14px 14px 14px 20px; border-radius: 24px; background: var(--acc); color: #141414; box-shadow: 0 14px 34px rgba(0,0,0,.28); white-space: nowrap; font-family: var(--font); cursor: default; animation: rcin .45s cubic-bezier(.2,.8,.2,1); }
 .resultcard::after { content: ""; position: absolute; left: 50%; bottom: -7px; width: 14px; height: 14px; margin-left: -7px; background: var(--acc); transform: rotate(45deg); border-radius: 3px; }
 .rs-text { display: flex; flex-direction: column; gap: 6px; }
-.rs-h { font-size: 1.05rem; font-weight: 600; }
+.rs-k { font-size: .78rem; font-weight: 500; color: rgba(20,20,20,.65); margin-bottom: -4px; }
+.rs-h { font-size: 1.05rem; font-weight: 600; white-space: normal; max-width: 250px; line-height: 1.2; }
 .rs-row { display: flex; gap: 14px; font-size: .95rem; }
 .rs-row > span { display: inline-flex; align-items: center; gap: 6px; }
 .rs-row i { font-style: normal; width: 20px; height: 20px; border-radius: 50%; display: grid; place-items: center; font-size: .72rem; font-weight: 700; color: #fff; }
@@ -338,7 +339,7 @@ ol.steps li.dest .chip { background: var(--acc); color: var(--acc-ink); padding:
       </div>
       <div class="sec"><h3>Routen <small id="count"></small></h3><button id="shuffle" class="pillbtn" type="button">Zufällig</button></div>
       <div id="routes"></div>
-      <div class="foot"><span>Stand 24.10.2026 22:34 · Daten: Stadt Wien, basemap.at, OpenStreetMap</span><button id="reload" type="button">Straßennetz neu laden</button></div>
+      <div class="foot"><span>Stand 25.10.2026 12:08 · Daten: Stadt Wien, basemap.at, OpenStreetMap</span><button id="reload" type="button">Straßennetz neu laden</button></div>
     </div>
   </aside>
 </div>
@@ -1233,15 +1234,23 @@ function searchPaths(route) {
   if (fixedGoal != null) {
     const seg = out[l], end = seg[seg.length - 1];
     // Zielpunkt auf der Straße, die im Zielnamen steht („Sensengasse / Zahnklinik“, „Hotel … – Riemergasse“), sonst die nächste Straße
-    const named = String(route.to).replace(/\(.*?\)/g, ' ').split(/[–\/]/).map(x => streetKey(x.trim())).filter(k => G.keyIdx.has(k));
-    let gn = null, onNamed = false;
-    for (const k of named) { const n = nearestOn(k, route.goal); if (n != null && dist(G.co[n], route.goal) < 150) { gn = n; onNamed = true; break; } }
+    const named = String(route.to).replace(/\(.*?\)/g, ' ').split(/[–\/]/).map(x => x.trim()).filter(x => G.keyIdx.has(streetKey(x)));
+    let gn = null, onNamed = null;
+    for (const x of named) { const n = nearestOn(streetKey(x), route.goal); if (n != null && dist(G.co[n], route.goal) < 150) { gn = n; onNamed = x; break; } }
     if (gn == null) gn = nearestAny(route.goal);
     const en = G.idx.get(end[0].toFixed(6) + ',' + end[1].toFixed(6));
     if (gn != null && en != null && gn !== en && dist(end, G.co[gn]) > 20) {
       const tail = netPath(G, en, gn, 4000);
       // auf der genannten Zielstraße darf das Stück länger sein (die Straße gehört dann zur Route), sonst nur ein kurzes Stück
-      if (tail && tail.length > 1 && pathLength(tail) < (onNamed ? 1200 : 600)) out[l] = seg.concat(tail.slice(1));
+      if (tail && tail.length > 1 && pathLength(tail) < (onNamed ? 1200 : 600)) {
+        // Zielstraße („Sensengasse / Zahnklinik“) ist eine andere als die letzte Skript-Straße: als eigene letzte Straße führen,
+        // damit man an der Ecke stehen bleibt und sie selbst antippt
+        const nk = onNamed && streetKey(onNamed);
+        if (nk && nk !== keys[l] && !route._extra && l === keys.length - 1) {
+          route._extra = onNamed; route.steps = route.steps.concat(onNamed); out.push(tail);
+          if (!POOL.has(nk)) POOL.set(nk, onNamed);
+        } else out[l] = seg.concat(tail.slice(1));
+      }
     }
     return out;
   }
@@ -1264,12 +1273,31 @@ function streetwisePaths(route) {
   for (let i = 1; i < out.length; i++) if (out[i] && out[i - 1]) out[i] = [out[i - 1][out[i - 1].length - 1], ...out[i]];
   return out;
 }
+// Endet eine Straße im Netz vor der Abbiegung (z. B. Landesgerichtsstraße an der Universitätsstraße), fährt die Wegsuche
+// über fremde Straßen weiter bis zur nächsten. Dieses Verbindungsstück gehört zur nächsten Straße – sonst biegt der Pfeil
+// schon „von selbst“ ab. Die Straße endet am letzten eigenen Punkt.
+function handOverForeign(route, out) {
+  const G = route._net, keys = route.steps.map(streetKey);
+  const has = (q, k) => { const m = G.idx.get(q[0].toFixed(6) + ',' + q[1].toFixed(6)), ki = G.keyIdx.get(k); return m != null && ki != null && G.nk[m].includes(ki); };
+  out = out.map(x => x && x.slice());
+  for (let i = 0; i < out.length - 1; i++) {
+    const a = out[i]; if (!a || a.length < 2 || /umkehren/i.test(route.steps[i])) continue;
+    let j = i + 1; while (j < out.length && !out[j]) j++; if (j >= out.length) continue;
+    let last = a.length - 1; while (last > 0 && !has(a[last], keys[i])) last--;
+    if (last <= 0 || last === a.length - 1 || pathLength(a.slice(last)) < 15) continue;
+    const b = out[j], end = a[a.length - 1];
+    out[i] = a.slice(0, last + 1);
+    out[j] = a.slice(last).concat(dist(b[0], end) < 1 ? b.slice(1) : b);
+  }
+  return out;
+}
 function routePaths(route) {
   if (!STREETS) return null;
   if (PATHS.has(route.n)) return PATHS.get(route.n);
   let out = null;
   try { out = searchPaths(route); } catch (e) { console.error(e); }
   if (!out) out = streetwisePaths(route);
+  if (route._net) out = handOverForeign(route, out);
   out = handOverTurns(out, i => /umkehren/i.test(route.steps[i]));
   // reine Durchfahrten (Kreuzung/Platz) als Punkt
   out = out.map(p => (p && p.length > 1 && pathLength(p) < 6 ? [p[p.length - 1]] : p));
@@ -1282,10 +1310,21 @@ function arrowIcon(color, big) {
 }
 function headAngle(p) {
   const a = map.latLngToContainerPoint(p[p.length - 1]); let b = a;
-  for (let j = p.length - 2; j >= 0; j--) { b = map.latLngToContainerPoint(p[j]); if (Math.hypot(a.x - b.x, a.y - b.y) > 3) break; }
+  for (let j = p.length - 2; j >= 0; j--) { b = map.latLngToContainerPoint(p[j]); if (Math.hypot(a.x - b.x, a.y - b.y) > 14) break; }
   return Math.atan2(a.y - b.y, a.x - b.x) * 180 / Math.PI;
 }
-function rotate(marker, p) { const e = marker.getElement(); const svg = e && e.querySelector('svg'); if (svg && p.length > 1) svg.style.transform = `rotate(${headAngle(p)}deg)`; if (marker._labelText) placeLabel(marker, p); }
+// smooth: Richtung nur ein Stück weit nachführen (sonst zuckt der Pfeil an jedem Knick der Daten)
+function rotate(marker, p, smooth) {
+  const e = marker.getElement(), svg = e && e.querySelector('svg');
+  if (svg && p.length > 1) {
+    let a = headAngle(p);
+    if (smooth && marker._ang != null) a = marker._ang + ((((a - marker._ang) % 360) + 540) % 360 - 180) * 0.25;
+    marker._ang = a; svg.style.transform = `rotate(${a}deg)`;
+  }
+  if (marker._labelText) placeLabel(marker, p);
+}
+// Marker ohne Rundung auf ganze Pixel: der Pfeil gleitet, statt in Pixelschritten zu springen
+const SmoothMarker = L.Marker.extend({ update() { if (this._icon && this._map) this._setPos(this._map.project(this._latlng)._subtract(this._map.getPixelOrigin())); return this; } });
 // Schild auf die Seite, von der man kommt, damit der Blick nach vorne frei bleibt
 const LABEL_POS = { top: [0, -16], bottom: [0, 16], left: [-16, 0], right: [16, 0] };
 function placeLabel(marker, p) {
@@ -1322,7 +1361,7 @@ function drawSeg(i, opts = {}) {
   const create = () => {
     const start = from ? partialPath(p, from) : [p[0], p[0]];
     line = L.polyline(start, { color, weight: opts.weight || 7, opacity: 0.55, lineCap: 'round', lineJoin: 'round', interactive: false }).addTo(layer);
-    head = L.marker(start[start.length - 1], { icon: pass ? L.divIcon({ className: 'arrow', html: '<span class="pass"></span>', iconSize: [12, 12], iconAnchor: [6, 6] }) : arrowIcon(color, true), interactive: false, keyboard: false }).addTo(layer);
+    head = new SmoothMarker(start[start.length - 1], { icon: pass ? L.divIcon({ className: 'arrow', html: '<span class="pass"></span>', iconSize: [12, 12], iconAnchor: [6, 6] }) : arrowIcon(color, true), interactive: false, keyboard: false }).addTo(layer);
     // jede Straße der Route bekommt ihr Namensschild, das stehen bleibt
     const label = opts.label != null ? opts.label : (!opts.layer && opts.label !== false ? stepName(state.route.steps[i]) : null);
     if (label) { head._labelText = label; head._labelDir = null; labelHead = head; placeLabel(head, p.length > 1 ? (from ? start : p.slice(0, 2)) : p); }
@@ -1385,7 +1424,7 @@ function drawSeg(i, opts = {}) {
       if (pausedAt != null) { t0 += now - pausedAt; pausedAt = null; }
       const f = Math.min(1, (now - t0) / ms), part = partialPath(p, from + (1 - from) * f);
       camFrame(f, part[part.length - 1]);
-      line.setLatLngs(part); head.setLatLng(part[part.length - 1]); rotate(head, part);
+      line.setLatLngs(part); head.setLatLng(part[part.length - 1]); rotate(head, part, true);
       if (f < 1) anim = requestAnimationFrame(frame); else finish();
     };
     anim = requestAnimationFrame(frame);
@@ -2019,7 +2058,7 @@ function resultCard(pt) {
   const shown = n - ok - bad;
   const html = `<div class="resultcard" role="status">
     <button class="rs-close" type="button" title="Schließen – Klick aufs Ziel zeigt das Ergebnis wieder" aria-label="Ergebnis schließen"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M7 7l10 10M17 7L7 17"/></svg></button>
-    <div class="rs-text"><b class="rs-h">Ziel erreicht</b>
+    <div class="rs-text"><small class="rs-k">Ziel erreicht</small><b class="rs-h">${state.route.to.replace(/[&<>]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' })[c])}</b>
       <span class="rs-row"><span class="rs-ok"><i>✓</i><b>${ok}</b> richtig</span><span class="rs-bad"><i>✕</i><b>${bad}</b> falsch</span></span>
       ${shown ? `<small>${shown} aufgedeckt</small>` : ''}</div>
     <button class="rbtn rs-redo" type="button" title="Nochmal von vorne" aria-label="Route nochmal von vorne"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 12a8 8 0 1 1-2.6-5.9"/><path d="M20 4v5h-5"/></svg></button>
@@ -2102,9 +2141,7 @@ function lastStepHit(e, seg, want, h) {
 }
 // Plätze und Kreisverkehre (z. B. Michaelerplatz): jede Stelle des Platzes zählt, nicht nur die tatsächlich befahrene Seite
 function plazaHit(e, want, seg, h, label = state.route.steps[state.step]) {
-  const bb = STREET_BB[want]; if (!bb || !seg) return false;
-  const small = dist([bb[0], bb[1]], [bb[2], bb[3]]) < 300;
-  if (!small && !/platz|kreisverkehr|rondeau/i.test(label)) return false;
+  if (!seg || !/platz|kreisverkehr|rondeau|markt$|^am hof$|^freyung$/i.test(stepName(label || ''))) return false;
   if (h.pxDist(want) > h.TOL) return false;
   const p = [e.latlng.lat, e.latlng.lng]; return seg.some(q => dist(q, p) < 120);
 }
