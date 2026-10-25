@@ -322,6 +322,7 @@ ol.steps li.dest .chip { background: var(--acc); color: var(--acc-ink); padding:
     <div class="mapctl">
       <button class="gbtn" id="zin" type="button" title="Näher" aria-label="Näher zoomen"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></button>
       <button class="gbtn" id="zout" type="button" title="Weiter weg" aria-label="Weiter weg zoomen"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M5 12h14"/></svg></button>
+      <button class="gbtn" id="zarrow" type="button" title="Zum Pfeil" aria-label="Kamera zum Pfeil" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linejoin="round"><path d="M4.5 11.2L19.5 4.5l-6.7 15-1.9-6.4z"/></svg></button>
       <button class="gbtn" id="zfit" type="button" title="Ganze Route zeigen" aria-label="Ganze Route zeigen"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="3.2"/><path d="M12 2.5v3M12 18.5v3M2.5 12h3M18.5 12h3"/><circle cx="12" cy="12" r="7.2"/></svg></button>
     </div>
     <div class="geo-pill"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M8.5 15.5l2-7 5 3-7 4z"/></svg><span id="geo"></span></div>
@@ -339,7 +340,7 @@ ol.steps li.dest .chip { background: var(--acc); color: var(--acc-ink); padding:
       </div>
       <div class="sec"><h3>Routen <small id="count"></small></h3><button id="shuffle" class="pillbtn" type="button">Zufällig</button></div>
       <div id="routes"></div>
-      <div class="foot"><span>Stand 25.10.2026 12:27 · Daten: Stadt Wien, basemap.at, OpenStreetMap</span><button id="reload" type="button">Straßennetz neu laden</button></div>
+      <div class="foot"><span>Stand 25.10.2026 12:40 · Daten: Stadt Wien, basemap.at, OpenStreetMap</span><button id="reload" type="button">Straßennetz neu laden</button></div>
     </div>
   </aside>
 </div>
@@ -1108,7 +1109,7 @@ let wheelZ = null, wheelPt = null, wheelLL = null, wheelRaf = null;
 map.getContainer().addEventListener('wheel', e => {
   if (e.target.closest && e.target.closest('.filterctl')) return;
   e.preventDefault();
-  camSeq++;
+  camSeq++; userZoom = true;
   if (wheelZ == null) { map._stop(); map._moveStart(true, false); wheelZ = map.getZoom(); }
   const px = e.deltaMode === 1 ? e.deltaY * 33 : e.deltaMode === 2 ? e.deltaY * 400 : e.deltaY;
   wheelZ = Math.max(map.getMinZoom(), Math.min(map.getMaxZoom(), wheelZ - px / (e.ctrlKey ? 100 : 260)));
@@ -1142,6 +1143,25 @@ function moveMap(c, z) { const same = Math.abs(map.getZoom() - z) < 1e-9; map._m
 let mapMoving = false, ownCam = false;
 map.on('movestart zoomstart', () => { if (!ownCam) mapMoving = true; });
 map.on('moveend zoomend', () => { mapMoving = false; });
+// Eingriffe während der Fahrt: Zoomen -> die Kamera folgt dem Pfeil weiter (beim gewählten Zoom);
+// Verschieben -> die Kamera lässt los, der Knopf „Zum Pfeil“ holt ihn zurück
+let userZoom = false, userDrag = false, follow = false, curHead = null, segRunning = false;
+map.on('dragstart', () => { userDrag = true; });
+map.on('dblclick', () => { userZoom = true; });
+map.getContainer().addEventListener('touchstart', e => { if (e.touches.length > 1) userZoom = true; }, { passive: true });
+function followHead(pt) {
+  if (wheelZ != null || map._animatingZoom) return;
+  if (!follow) { follow = true; ownCam = true; map._stop(); map._moveStart(true, false); }
+  moveMap(L.latLng(pt[0], pt[1]), map.getZoom());
+}
+function endFollow() { if (follow) { follow = false; ownCam = false; map._moveEnd(true); } }
+// Knopf „Zum Pfeil“: nur sichtbar, wenn man weggeschoben hat oder der Pfeil nicht (mehr) im Bild ist
+function updateFollowBtn() {
+  const b = document.getElementById('zarrow'); if (!b) return;
+  const on = curHead && map.hasLayer(curHead);
+  b.hidden = !(on && (userDrag || !map.getBounds().pad(-0.06).contains(curHead.getLatLng())));
+}
+map.on('moveend', updateFollowBtn);
 // Linien, die sich während einer Kartenbewegung ändern, auf den aktuellen Kartenstand bringen
 const routeLayer = L.layerGroup().addTo(map);
 const flashLayer = L.layerGroup().addTo(map);
@@ -1384,7 +1404,8 @@ function drawSeg(i, opts = {}) {
     // jede Straße der Route bekommt ihr Namensschild, das stehen bleibt
     const label = opts.label != null ? opts.label : (!opts.layer && opts.label !== false ? stepName(state.route.steps[i]) : null);
     if (label) { head._labelText = label; head._labelDir = null; labelHead = head; placeLabel(head, p.length > 1 ? (from ? start : p.slice(0, 2)) : p); }
-    if (layer === routeLayer) { removeSeg(i); SEG[i] = { line, head }; }
+    if (layer === routeLayer) { removeSeg(i); SEG[i] = { line, head }; curHead = head; }
+    if (followCam) { userZoom = false; userDrag = false; segRunning = true; }
   };
   // Kamera fährt in einer durchgehenden Bewegung mit dem Pfeil mit; am Ende steht das Ziel der Straße in der Mitte.
   // Ist die Straße zu lang fürs Bild, zoomt sie unterwegs sanft raus und wieder rein (wie ein Bogen).
@@ -1403,6 +1424,7 @@ function drawSeg(i, opts = {}) {
     return { c0, end, z0, zMid, token: ++camSeq, started: false };
   };
   const camFrame = (f, headPt) => {
+    if (cam && cam.token === camSeq && (userZoom || userDrag)) camSeq++; // Nutzer zoomt/verschiebt: geplante Kamerafahrt endet
     if (!cam || cam.token !== camSeq) { if (cam && cam.started) { cam.started = false; ownCam = false; map._moveEnd(true); endActiveCam = null; } cam = null; return; }
     if (map._animatingZoom) return; // läuft gerade eine Zoom-Animation von Leaflet: diesen Schritt auslassen
     if (!cam.started) {
@@ -1422,6 +1444,7 @@ function drawSeg(i, opts = {}) {
     if (f >= 1) { cam.started = false; ownCam = false; map._moveEnd(true); cam = null; endActiveCam = null; }
   };
   const finish = async () => {
+    if (followCam) { endFollow(); segRunning = false; }
     if (gen !== drawGen) return;
     if (mapMoving) { map.once('moveend', () => setTimeout(finish, 0)); return; }
     line.setLatLngs(p); head.setLatLng(p[p.length - 1]);
@@ -1429,6 +1452,7 @@ function drawSeg(i, opts = {}) {
     if (head._labelText) { head._labelDir = null; placeLabel(head, p); }
     rotate(head, p);
     if (gen !== drawGen) return;
+    updateFollowBtn();
     if (opts.onDone) opts.onDone();
   };
   const run = () => {
@@ -1443,6 +1467,8 @@ function drawSeg(i, opts = {}) {
       if (pausedAt != null) { t0 += now - pausedAt; pausedAt = null; }
       const f = Math.min(1, (now - t0) / ms), part = partialPath(p, from + (1 - from) * f);
       camFrame(f, part[part.length - 1]);
+      // nach dem Zoomen durch den Nutzer: Pfeil in der Mitte halten (beim gewählten Zoom); nach Verschieben: loslassen
+      if (followCam) { if (userDrag) endFollow(); else if (!cam && userZoom) followHead(part[part.length - 1]); }
       line.setLatLngs(part); head.setLatLng(part[part.length - 1]); rotate(head, part, true);
       if (f < 1) anim = requestAnimationFrame(frame); else finish();
     };
@@ -1508,7 +1534,7 @@ function showPointsInner(withGoal) {
   }
 }
 let drawGen = 0, endActiveCam = null;
-function stopAnim() { state.busy = false; resultLayer.clearLayers(); if (endActiveCam) endActiveCam(); drawGen++; if (anim) cancelAnimationFrame(anim); anim = null; clearLabel(); }
+function stopAnim() { endFollow(); segRunning = false; curHead = null; updateFollowBtn(); state.busy = false; resultLayer.clearLayers(); if (endActiveCam) endActiveCam(); drawGen++; if (anim) cancelAnimationFrame(anim); anim = null; clearLabel(); }
 // Route genau bis Straße i zeigen (Rest ausblenden), Straße i hervorheben
 function showUpTo(i) {
   state.at = null;
@@ -2230,8 +2256,14 @@ document.querySelectorAll('.tab').forEach(t => t.onclick = () => { state.mode = 
 $('#shuffle').onclick = () => { if (state.mode === 'lernen') state.open = true; nextRoute(true); scrollPanelTop(); };
 $('#chap').onchange = e => setChap(+e.target.value);
 // Knöpfe auf der Karte
-$('#zin').onclick = () => { camSeq++; map.zoomIn(); };
-$('#zout').onclick = () => { camSeq++; map.zoomOut(); };
+$('#zin').onclick = () => { camSeq++; userZoom = true; map.zoomIn(); };
+$('#zout').onclick = () => { camSeq++; userZoom = true; map.zoomOut(); };
+$('#zarrow').onclick = () => {
+  if (!curHead) return;
+  userDrag = false; camSeq++; if (segRunning) userZoom = true; // während der Fahrt danach weiter mitfahren
+  map.flyTo(curHead.getLatLng(), Math.max(Math.round(map.getZoom()), 16), { duration: reduced() ? 0 : 0.7 });
+  updateFollowBtn();
+};
 $('#zfit').onclick = () => { camSeq++; if (shown()) fitRoute(); else map.flyTo([48.2085, 16.3725], 13, { duration: reduced() ? 0 : 0.8 }); };
 // Darstellung: wie das System, hell oder dunkel (im Dunklen wird die Karte gefiltert)
 const THEME_KEY = 'taxi-theme-v1', THEMES = ['auto', 'light', 'dark'];
