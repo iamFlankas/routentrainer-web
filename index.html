@@ -339,7 +339,7 @@ ol.steps li.dest .chip { background: var(--acc); color: var(--acc-ink); padding:
       </div>
       <div class="sec"><h3>Routen <small id="count"></small></h3><button id="shuffle" class="pillbtn" type="button">Zufällig</button></div>
       <div id="routes"></div>
-      <div class="foot"><span>Stand 25.10.2026 12:21 · Daten: Stadt Wien, basemap.at, OpenStreetMap</span><button id="reload" type="button">Straßennetz neu laden</button></div>
+      <div class="foot"><span>Stand 25.10.2026 12:27 · Daten: Stadt Wien, basemap.at, OpenStreetMap</span><button id="reload" type="button">Straßennetz neu laden</button></div>
     </div>
   </aside>
 </div>
@@ -790,9 +790,10 @@ function routeNet(streets, needKeys, slow, oneway) {
 // keys: Straßenschlüssel der Route (fehlende vorher entfernt); startNodes: optionale Startknoten
 // Zustand je Knoten: (Schritt st, schon auf der Straße von st gewesen v). Weiter zur nächsten Straße erst, wenn die aktuelle
 // wirklich erreicht wurde (sonst „überspringt“ die Suche eine Skript-Straße und beschriftet eine andere mit ihrem Namen).
-// Gegen eine Einbahn: auf der vorgeschriebenen Straße 4-fach (richtige Fahrbahn bevorzugt, Bus-/Sonderspuren bleiben möglich),
-// auf fremden Straßen zusätzlich zum Umweg-Faktor 3-fach (sonst multipliziert sich das zu absurden Umwegen um den Block).
-function routeSearch(G, keys, startNodes, penalty = 8, goalNode = null) {
+// Gegen eine Einbahn: auf der vorgeschriebenen Straße 25-fach (richtige Fahrbahn, z. B. Gürtel oder Weinheimergasse),
+// außer der Schritt erlaubt es (soft[st], z. B. „Sonderspur“/„Bus-Spur“: Taxis dürfen dort); auf fremden Straßen
+// zusätzlich zum Umweg-Faktor 3-fach (sonst multipliziert sich das zu absurden Umwegen um den Block).
+function routeSearch(G, keys, startNodes, penalty = 8, goalNode = null, soft = null) {
   const S = keys.length, SS = 2 * S, N = G.co.length, K = keys.map(k => G.keyIdx.get(k));
   if (K.some(k => k == null)) return null;
   const D = new Float64Array(N * SS).fill(Infinity), P = new Int32Array(N * SS).fill(-1), h = [];
@@ -808,7 +809,7 @@ function routeSearch(G, keys, startNodes, penalty = 8, goalNode = null) {
     for (const [x, w, ki, base] of G.adj[u]) {
       const nv = v || (G.nk[x].includes(K[st]) ? 1 : 0), t = x * SS + st * 2 + nv;
       const ow = base != null && w > base * 1.01, len = base ?? w;
-      const nd = d + (ki === K[st] ? len * (ow ? 4 : 1) : len * penalty * (ow ? 3 : 1));
+      const nd = d + (ki === K[st] ? len * (ow ? (soft && soft[st] ? 1.5 : ONEWAY_PENALTY) : 1) : len * penalty * (ow ? 3 : 1));
       if (nd < D[t]) { D[t] = nd; P[t] = id; heapPush(h, [nd, t]); }
     }
   }
@@ -1216,8 +1217,10 @@ function searchPaths(route) {
   route._startShown = route.start && !startIsStand && fixedStart != null ? [G.co[fixedStart][0], G.co[fixedStart][1]] : null;
   const fixedGoal = route.goal ? nearestOn(keys[present[present.length - 1]], route.goal) : null;
   const startNodes = fixedStart != null ? [fixedStart] : (startK && startK !== keys[present[0]] ? startNodesFor(G, startK, keys[present[0]]) : null);
-  let segs = routeSearch(G, sk.keys, startNodes, 8, fixedGoal);
-  if (!segs && fixedGoal != null) segs = routeSearch(G, sk.keys, startNodes);
+  // Sonder-/Busspuren: dort darf das Taxi gegen die Einbahn
+  const soft = sk.own.map(i => /sonderspur|bus-?spur/i.test(route.steps[i]));
+  let segs = routeSearch(G, sk.keys, startNodes, 8, fixedGoal, soft);
+  if (!segs && fixedGoal != null) segs = routeSearch(G, sk.keys, startNodes, 8, null, soft);
   if (!segs) return null;
   // versteckte Zwischenstücke (Autobahn zwischen zwei Rampen) hängen am Schritt davor
   const out = keys.map(() => null); sk.own.forEach((i, j) => (out[i] = out[i] ? out[i].concat(segs[j].slice(1)) : segs[j]));
