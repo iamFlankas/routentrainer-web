@@ -372,7 +372,7 @@ ol.steps li.dest .chip { background: var(--acc); color: var(--acc-ink); padding:
       </div>
       <div class="sec"><h3>Routen <small id="count"></small></h3><button id="shuffle" class="pillbtn" type="button">Zufällig</button></div>
       <div id="routes"></div>
-      <div class="foot"><span>Stand 26.10.2026 21:26 · Routen: WKO-Fragenkatalog 2026 · Daten: Stadt Wien, basemap.at, OpenStreetMap</span><button id="reload" type="button">Straßennetz neu laden</button></div>
+      <div class="foot"><span>Stand 26.10.2026 21:57 · Routen: WKO-Fragenkatalog 2026 · Daten: Stadt Wien, basemap.at, OpenStreetMap</span><button id="reload" type="button">Straßennetz neu laden</button></div>
     </div>
   </aside>
 </div>
@@ -1531,6 +1531,10 @@ function rotate(marker, p, smooth) {
 }
 // Marker ohne Rundung auf ganze Pixel: der Pfeil gleitet, statt in Pixelschritten zu springen
 const SmoothMarker = L.Marker.extend({ update() { if (this._icon && this._map) this._setPos(this._map.project(this._latlng)._subtract(this._map.getPixelOrigin())); return this; } });
+// Linienbreite je Zoom: bis Stufe 16 wie angegeben, weiter draußen schmaler (Stufe 11: knapp die Hälfte),
+// sonst wirkt die Route beim Rauszoomen immer fetter, weil die Straßen kleiner werden, die Linie aber nicht
+function zoomWeight(w, z = map.getZoom()) { return w * Math.max(0.45, Math.min(1, 1 - (16 - z) * 0.11)); }
+map.on('zoom', () => map.eachLayer(l => { if (l._baseW) l.setStyle({ weight: zoomWeight(l._baseW) }); }));
 // dasselbe für die mitwachsende Linie: Leaflet rundet die Punkte auf ganze Pixel und vereinfacht die Linie bei jedem Bild neu –
 // fährt die Kamera mit, zittert der schon gefahrene Weg dadurch leicht. Hier ohne Rundung und ohne Vereinfachung.
 const SmoothPolyline = L.Polyline.extend({
@@ -1580,11 +1584,12 @@ function drawSeg(i, opts = {}) {
   const pass = p.length < 2;
   let line = null, head = null;
   const create = () => {
-    line = new SmoothPolyline([p[0], p[0]], { color, weight: opts.weight || 7, opacity: 0.55, lineCap: 'round', lineJoin: 'round', interactive: false }).addTo(layer);
+    line = new SmoothPolyline([p[0], p[0]], { color, weight: zoomWeight(opts.weight || 7), opacity: 0.55, lineCap: 'round', lineJoin: 'round', interactive: false }).addTo(layer);
     head = new SmoothMarker(p[0], { icon: pass ? L.divIcon({ className: 'arrow', html: '<span class="pass"></span>', iconSize: [12, 12], iconAnchor: [6, 6] }) : arrowIcon(color, true), interactive: false, keyboard: false }).addTo(layer);
     // jede Straße der Route bekommt ihr Namensschild, das stehen bleibt
     const label = opts.label != null ? opts.label : (!opts.layer && opts.label !== false ? stepName(state.route.steps[i]) : null);
     if (label) { head._labelText = label; head._labelDir = null; labelHead = head; placeLabel(head, p.length > 1 ? p.slice(0, 2) : p); }
+    line._baseW = opts.weight || 7;
     if (layer === routeLayer) { removeSeg(i); SEG[i] = { line, head }; curHead = head; }
     if (followCam) { userZoom = false; userDrag = false; segRunning = true; }
   };
@@ -1703,7 +1708,7 @@ function showPointsInner(withGoal) {
   // Bildschirm-Winkel zwischen zwei Punkten
   const angle = (a, b) => { const pa = map.latLngToContainerPoint(a), pb = map.latLngToContainerPoint(b); return Math.atan2(pb.y - pa.y, pb.x - pa.x) * 180 / Math.PI; };
   const along = (path, m) => { let acc = 0; for (let i = 1; i < path.length; i++) { acc += dist(path[i - 1], path[i]); if (acc >= m) return path[i]; } return path[path.length - 1]; };
-  if (r._lead && FILTER.starthilfe) L.polyline(r._lead, { color: css('--route'), weight: 4, opacity: 0.6, dashArray: '1 9', lineCap: 'round', interactive: false }).addTo(pointLayer);
+  if (r._lead && FILTER.starthilfe) { const l = L.polyline(r._lead, { color: css('--route'), weight: zoomWeight(4), opacity: 0.6, dashArray: '1 9', lineCap: 'round', interactive: false }).addTo(pointLayer); l._baseW = 4; }
   if (r.start) {
     const all = segs.flat();
     // Schild weg von der Richtung, in die die Route losfährt
