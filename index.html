@@ -357,7 +357,7 @@ ol.steps li.dest .chip { background: var(--acc); color: var(--acc-ink); padding:
       </div>
       <div class="sec"><h3>Routen <small id="count"></small></h3><button id="shuffle" class="pillbtn" type="button">Zufällig</button></div>
       <div id="routes"></div>
-      <div class="foot"><span>Stand 26.10.2026 17:14 · Routen: WKO-Fragenkatalog 2026 · Daten: Stadt Wien, basemap.at, OpenStreetMap</span><button id="reload" type="button">Straßennetz neu laden</button></div>
+      <div class="foot"><span>Stand 26.10.2026 17:38 · Routen: WKO-Fragenkatalog 2026 · Daten: Stadt Wien, basemap.at, OpenStreetMap</span><button id="reload" type="button">Straßennetz neu laden</button></div>
     </div>
   </aside>
 </div>
@@ -980,7 +980,44 @@ const SFX = {
     for (let i = 0; i < 6; i++) tone(c, 2000 + Math.random() * 1800, 0.45 + i * 0.07, 0.12, { vol: 0.03 });
   },
 };
-function sfx(name) { if (!FILTER.ton) return; const c = audioCtx(); if (c) try { SFX[name](c); } catch (e) {} }
+// Rauschen (für Swoosh und Fahrgeräusch): einmal erzeugt, dann als Schleife abgespielt
+let noiseBuf = null;
+function noise(c) {
+  if (!noiseBuf) { noiseBuf = c.createBuffer(1, c.sampleRate * 2, c.sampleRate); const d = noiseBuf.getChannelData(0); for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1; }
+  const s = c.createBufferSource(); s.buffer = noiseBuf; s.loop = true; return s;
+}
+// Anflug zum Start: Rauschen, dessen Filter hoch- und wieder runterzieht – wie ein langes „Swoosh“ (dur in s)
+function swoosh(c, dur) {
+  const s = noise(c), f = c.createBiquadFilter(), g = c.createGain(), t = c.currentTime;
+  f.type = 'bandpass'; f.Q.value = 1.4;
+  f.frequency.setValueAtTime(260, t); f.frequency.exponentialRampToValueAtTime(1500, t + dur * 0.45); f.frequency.exponentialRampToValueAtTime(320, t + dur);
+  g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(0.16, t + dur * 0.4); g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+  s.connect(f).connect(g).connect(c.destination); s.start(t); s.stop(t + dur + 0.05);
+}
+// Fahrgeräusch, solange der Pfeil fährt: leises, tiefes Rollen mit weichem Ein- und Ausblenden (dur in s)
+let driveNode = null;
+function drive(c, dur) {
+  stopDrive();
+  const s = noise(c), f = c.createBiquadFilter(), g = c.createGain(), o = c.createOscillator(), og = c.createGain(), t = c.currentTime;
+  f.type = 'lowpass'; f.frequency.value = 420;
+  o.type = 'sine'; o.frequency.setValueAtTime(70, t); o.frequency.linearRampToValueAtTime(95, t + dur * 0.5); o.frequency.linearRampToValueAtTime(65, t + dur);
+  const fade = Math.min(0.25, dur / 3);
+  [[g, 0.05], [og, 0.035]].forEach(([n, v]) => { n.gain.setValueAtTime(0.0001, t); n.gain.exponentialRampToValueAtTime(v, t + fade); n.gain.setValueAtTime(v, t + dur - fade); n.gain.exponentialRampToValueAtTime(0.0001, t + dur); });
+  s.connect(f).connect(g).connect(c.destination); o.connect(og).connect(c.destination);
+  s.start(t); o.start(t); s.stop(t + dur + 0.05); o.stop(t + dur + 0.05);
+  driveNode = { s, o, g, og }; s.onended = () => { if (driveNode && driveNode.s === s) driveNode = null; };
+}
+function stopDrive() {
+  if (!driveNode || !actx) return;
+  const t = actx.currentTime, d = driveNode; driveNode = null;
+  [d.g, d.og].forEach(n => { n.gain.cancelScheduledValues(t); n.gain.setValueAtTime(n.gain.value, t); n.gain.exponentialRampToValueAtTime(0.0001, t + 0.15); });
+  try { d.s.stop(t + 0.2); d.o.stop(t + 0.2); } catch (e) {}
+}
+SFX.flug = (c, dur = 1.2) => swoosh(c, dur);
+SFX.fahrt = (c, dur = 1) => drive(c, dur);
+// jeder Klang einzeln abschaltbar (Einstellungen → Sounds)
+const SFX_KEY = { ok: 'tonRichtig', skip: 'tonFalsch', wrong: 'tonFalsch', goal: 'tonZiel', flug: 'tonFlug', fahrt: 'tonFahrt' };
+function sfx(name, dur) { if (!FILTER[SFX_KEY[name]]) return; const c = audioCtx(); if (c) try { SFX[name](c, dur); } catch (e) {} }
 const VOICES = {}; Object.entries(typeof VOICE_FILES !== 'undefined' ? VOICE_FILES : {}).forEach(([k, v]) => { VOICES[k] = new Set(v); });
 const SPRECHER = [['jonas', 'Jonas'], ['judith', 'Judith']], SPRECHER_KEY = 'taxi-stimme-v1';
 let sprecher = 'jonas';
@@ -1011,8 +1048,13 @@ function sayStreet(label, delay = 0) {
 }
 // --- Filter: Lernhilfen aus den offenen Daten der Stadt Wien ---
 const FKEY = 'taxi-filter-v1';
-let FILTER = { einbahn: false, fussgeher: false, taxi: false, bezirke: false, starthilfe: true, ton: true, stimme: true };
-try { const saved = JSON.parse(localStorage.getItem(FKEY) || '{}'); Object.keys(FILTER).forEach(k => { if (k in saved) FILTER[k] = !!saved[k]; }); } catch (e) {}
+let FILTER = { einbahn: false, fussgeher: false, taxi: false, bezirke: false, starthilfe: true, stimme: true,
+  tonRichtig: true, tonFalsch: true, tonZiel: true, tonFlug: true, tonFahrt: true };
+try {
+  const saved = JSON.parse(localStorage.getItem(FKEY) || '{}');
+  if (saved.ton === false) Object.keys(FILTER).forEach(k => { if (k.startsWith('ton')) FILTER[k] = false; }); // früher ein Schalter für alle Töne
+  Object.keys(FILTER).forEach(k => { if (k in saved) FILTER[k] = !!saved[k]; });
+} catch (e) {}
 map.createPane('hilfen'); map.getPane('hilfen').style.zIndex = 350;
 const hilfenRenderer = L.canvas({ pane: 'hilfen' });
 const OGD = 'https://data.wien.gv.at/daten/geo?service=WFS&request=GetFeature&version=1.1.0&srsName=EPSG:4326&outputFormat=json&typeName=';
@@ -1109,8 +1151,13 @@ const FILTER_ITEMS = [
 ];
 const SOUND_ITEMS = [
   ['stimme', 'Straßennamen vorlesen', 'bei jeder aufgedeckten Straße'],
-  ['ton', 'Töne', 'bei richtig, falsch und am Ziel'],
+  ['tonRichtig', 'Richtig getippt', 'helles „Pling“'],
+  ['tonFalsch', 'Falsch getippt', 'tiefer Ton, auch beim Überspringen'],
+  ['tonZiel', 'Ziel erreicht', 'kleine Fanfare'],
+  ['tonFlug', 'Anflug zum Start', '„Swoosh“ beim Öffnen einer Route'],
+  ['tonFahrt', 'Fahrgeräusch', 'leises Rollen, während der Pfeil fährt'],
 ];
+const TON_DEMO = { tonRichtig: 'ok', tonFalsch: 'wrong', tonZiel: 'goal', tonFlug: 'flug', tonFahrt: 'fahrt' };
 let filterUI = null;
 function updateFilterUI() {
   if (!filterUI) return;
@@ -1122,7 +1169,8 @@ function updateFilterUI() {
   });
   filterUI.querySelectorAll('.fseg button').forEach(b => b.classList.toggle('on', b.dataset.v === sprecher));
   const name = (SPRECHER.find(([id]) => id === sprecher) || [])[1];
-  filterUI.querySelector('.fsound .fs').textContent = [FILTER.stimme ? 'Stimme: ' + name : 'Vorlesen aus', FILTER.ton ? 'Töne an' : 'Töne aus'].join(' · ');
+  const tOn = SOUND_ITEMS.filter(([k]) => k.startsWith('ton') && FILTER[k]).length, tAll = SOUND_ITEMS.length - 1;
+  filterUI.querySelector('.fsound .fs').textContent = [FILTER.stimme ? 'Stimme: ' + name : 'Vorlesen aus', tOn === tAll ? 'alle Töne an' : tOn ? `${tOn} von ${tAll} Tönen an` : 'Töne aus'].join(' · ');
   const n = Object.keys(HILFEN).filter(k => FILTER[k]).length; // nur Kartenebenen zählen
   filterUI.querySelector('.fbtn b').textContent = n ? String(n) : '';
 }
@@ -1131,7 +1179,8 @@ function filterRow([k, label, sub]) {
   row.innerHTML = `<input type="checkbox" id="f-${k}"><span><span class="fl">${label}</span><span class="fs">${sub}</span></span><span class="fst"></span>`;
   row.querySelector('input').addEventListener('change', e => {
     FILTER[k] = e.target.checked; try { localStorage.setItem(FKEY, JSON.stringify(FILTER)); } catch (x) {}
-    if (HILFEN[k]) applyHilfe(k); else if (k === 'ton' || k === 'stimme') { if (FILTER[k]) sfx('ok'); else stopVoice(); } else showPoints(state.step >= state.route.steps.length);
+    if (HILFEN[k]) applyHilfe(k); else if (TON_DEMO[k]) { if (FILTER[k]) sfx(TON_DEMO[k]); else if (k === 'tonFahrt') stopDrive(); }
+    else if (k === 'stimme') { if (FILTER[k]) sayStreet(state.route.steps[Math.max(0, state.step - 1)]); else stopVoice(); } else showPoints(state.step >= state.route.steps.length);
     updateFilterUI();
   });
   return row;
@@ -1564,6 +1613,7 @@ function drawSeg(i, opts = {}) {
     create();
     if (pass && ms) { setTimeout(finish, Math.min(ms, 700)); return; }
     if (!motion) { finish(); return; }
+    if (!opts.layer) sfx('fahrt', ms / 1000);
     let t0 = performance.now(), pausedAt = null;
     const frame = now => {
       // falls die Karte gerade bewegt wird (z. B. vom Nutzer): anhalten, damit nichts verrutscht
@@ -1638,7 +1688,7 @@ function showPointsInner(withGoal) {
   }
 }
 let drawGen = 0, endActiveCam = null;
-function stopAnim() { stopVoice(); endFollow(); segRunning = false; curHead = null; updateFollowBtn(); state.busy = false; resultLayer.clearLayers(); if (endActiveCam) endActiveCam(); drawGen++; if (anim) cancelAnimationFrame(anim); anim = null; clearLabel(); }
+function stopAnim() { stopVoice(); stopDrive(); endFollow(); segRunning = false; curHead = null; updateFollowBtn(); state.busy = false; resultLayer.clearLayers(); if (endActiveCam) endActiveCam(); drawGen++; if (anim) cancelAnimationFrame(anim); anim = null; clearLabel(); }
 // Route genau bis Straße i zeigen (Rest ausblenden), Straße i hervorheben
 function showUpTo(i) {
   for (let k = 0; k <= i; k++) if (!state.res[k]) state.res[k] = 'shown';
@@ -1859,7 +1909,8 @@ async function cameraTo(r) {
     if (sameC) map.setZoom(zoom, { animate: true }); else map.flyTo(center, zoom, { duration: dur, easeLinearity: 0.25 });
   });
   const here = map.getCenter();
-  if (map.distance(here, target) < 150) { await go(target, close, 0.7); return; }
+  if (map.distance(here, target) < 150) { if (Math.abs(map.getZoom() - close) > 0.5) sfx('flug', 0.9); await go(target, close, 0.7); return; }
+  sfx('flug', 3.3);                                  // ein langes „Swoosh“ über alle drei Bewegungen
   const both = L.latLngBounds([here, target]); if (b) both.extend(b);
   const outZ = Math.min(Math.round(map.getZoom()), Math.max(11, Math.floor(Math.min(map.getBoundsZoom(both, false, L.point(80, 80)), map.getZoom() - 1, 15))));
   await go(here, outZ, 0.8);                         // 1) rauszoomen
