@@ -357,7 +357,7 @@ ol.steps li.dest .chip { background: var(--acc); color: var(--acc-ink); padding:
       </div>
       <div class="sec"><h3>Routen <small id="count"></small></h3><button id="shuffle" class="pillbtn" type="button">Zufällig</button></div>
       <div id="routes"></div>
-      <div class="foot"><span>Stand 26.10.2026 17:38 · Routen: WKO-Fragenkatalog 2026 · Daten: Stadt Wien, basemap.at, OpenStreetMap</span><button id="reload" type="button">Straßennetz neu laden</button></div>
+      <div class="foot"><span>Stand 26.10.2026 20:52 · Routen: WKO-Fragenkatalog 2026 · Daten: Stadt Wien, basemap.at, OpenStreetMap</span><button id="reload" type="button">Straßennetz neu laden</button></div>
     </div>
   </aside>
 </div>
@@ -1001,17 +1001,19 @@ function drive(c, dur) {
   const s = noise(c), f = c.createBiquadFilter(), g = c.createGain(), o = c.createOscillator(), og = c.createGain(), t = c.currentTime;
   f.type = 'lowpass'; f.frequency.value = 420;
   o.type = 'sine'; o.frequency.setValueAtTime(70, t); o.frequency.linearRampToValueAtTime(95, t + dur * 0.5); o.frequency.linearRampToValueAtTime(65, t + dur);
-  const fade = Math.min(0.25, dur / 3);
-  [[g, 0.05], [og, 0.035]].forEach(([n, v]) => { n.gain.setValueAtTime(0.0001, t); n.gain.exponentialRampToValueAtTime(v, t + fade); n.gain.setValueAtTime(v, t + dur - fade); n.gain.exponentialRampToValueAtTime(0.0001, t + dur); });
+  // weich (Kosinus-Kurve) ein- und ausblenden, damit nichts knackt oder abrupt einsetzt
+  const fade = Math.min(0.45, dur / 3);
+  [[g, 0.03], [og, 0.02]].forEach(([n, v]) => { n.gain.value = 0; n.gain.setValueCurveAtTime(cosCurve(0, v), t, fade); n.gain.setValueCurveAtTime(cosCurve(v, 0), t + dur - fade, fade); });
   s.connect(f).connect(g).connect(c.destination); o.connect(og).connect(c.destination);
   s.start(t); o.start(t); s.stop(t + dur + 0.05); o.stop(t + dur + 0.05);
   driveNode = { s, o, g, og }; s.onended = () => { if (driveNode && driveNode.s === s) driveNode = null; };
 }
+function cosCurve(from, to, n = 32) { const c = new Float32Array(n); for (let i = 0; i < n; i++) c[i] = from + (to - from) * (0.5 - 0.5 * Math.cos(Math.PI * i / (n - 1))); return c; }
 function stopDrive() {
   if (!driveNode || !actx) return;
   const t = actx.currentTime, d = driveNode; driveNode = null;
-  [d.g, d.og].forEach(n => { n.gain.cancelScheduledValues(t); n.gain.setValueAtTime(n.gain.value, t); n.gain.exponentialRampToValueAtTime(0.0001, t + 0.15); });
-  try { d.s.stop(t + 0.2); d.o.stop(t + 0.2); } catch (e) {}
+  [d.g, d.og].forEach(n => { n.gain.cancelScheduledValues(t); n.gain.setValueAtTime(n.gain.value, t); n.gain.setTargetAtTime(0, t, 0.08); });
+  try { d.s.stop(t + 0.5); d.o.stop(t + 0.5); } catch (e) {}
 }
 SFX.flug = (c, dur = 1.2) => swoosh(c, dur);
 SFX.fahrt = (c, dur = 1) => drive(c, dur);
