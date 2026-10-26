@@ -144,6 +144,7 @@ ol.steps li.dest .chip { background: var(--acc); color: var(--acc-ink); padding:
 .btn.primary { background: var(--fg); color: var(--card); }
 .btn:disabled { opacity: .4; cursor: default; }
 .playbtn { display: inline-flex; align-items: center; gap: 8px; }
+.btn > svg:only-child { width: 18px; height: 18px; display: block; margin: 0 auto; }
 .rnav { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
 .bar.row3 { flex-wrap: nowrap; }
 .bar.row3 .btn { flex: 1 1 0; min-width: 0; padding: 10px 8px; justify-content: center; white-space: nowrap; }
@@ -340,7 +341,7 @@ ol.steps li.dest .chip { background: var(--acc); color: var(--acc-ink); padding:
       </div>
       <div class="sec"><h3>Routen <small id="count"></small></h3><button id="shuffle" class="pillbtn" type="button">Zufällig</button></div>
       <div id="routes"></div>
-      <div class="foot"><span>Stand 25.10.2026 20:40 · Daten: Stadt Wien, basemap.at, OpenStreetMap</span><button id="reload" type="button">Straßennetz neu laden</button></div>
+      <div class="foot"><span>Stand 26.10.2026 13:27 · Daten: Stadt Wien, basemap.at, OpenStreetMap</span><button id="reload" type="button">Straßennetz neu laden</button></div>
     </div>
   </aside>
 </div>
@@ -376,7 +377,7 @@ const ROUTES = [
   {"n":25,"orig":"1702","chap":1,"from":"Neuwaldegger Straße","to":"Hotel Regina – Taxistandplatz","steps":["Dornbacher Str","Hernalser Hauptstr","Elterleinplatz","Hernalser Hauptstr","Hernalser Gürtel","Lazarettgasse","Zimmermannplatz","Lazarettgasse","Sensengasse","Währinger Str","Rooseveltplatz"],"dest":"Hotel Regina – Taxistandplatz","start":[48.235437,16.290542,"Neuwaldegger Straße","ort"],"goal":[48.21604,16.359208,"Hotel Regina – Taxistandplatz Rooseveltplatz ggü. 15","taxi"]},
   {"n":26,"orig":"1704 (neu)","chap":1,"from":"Neuwaldegger Straße","to":"St. Anna Kinderspital (Haupteingang)","steps":["Neuwaldegger Str","Dornbacher Str","Hernalser Hauptstr","Elterleinplatz","Hernalser Hauptstr","Kinderspitalgasse","Hebragasse","Zimmermannplatz","Mariannengasse","Mauthnergasse","Kinderspitalgasse"],"dest":"St. Anna Kinderspital (Haupteingang)","start":[48.23944,16.272245,"Neuwaldegger Straße","ort"],"goal":[48.215942,16.344341,"St. Anna Kinderspital (Haupteingang)","klinik"]},
   {"n":27,"orig":"1705","chap":1,"from":"Dornbach / Vollbadgasse","to":"Hofburg / Kongresszentrum","steps":["Dornbacher Str","Hernalser Hauptstr","Elterleinplatz","Hernalser Hauptstr","Kinderspitalgasse","Hebragasse","Alser Str","Universitätsstr","Schottengasse","Freyung","Strauchgasse","Herrengasse","Michaelerplatz","In der Burg","Heldenplatz"],"dest":"Hofburg / Kongresszentrum","start":[48.228175,16.301896,"Dornbach / Vollbadgasse","ort"],"goal":[48.206535,16.365142,"Hofburg / Kongresszentrum","ort"]},
-  {"n":28,"orig":"103","chap":1,"from":"Bellariastraße – Taxistandplatz","to":"Gentzgasse / Gersthof","steps":["Hansenstr","Schmerlingplatz","Auerspergstr","Landesgerichtsstr","Friedrich-Schmidt-Platz","Landesgerichtsstr","Garnisongasse","Schwarzspanierstr","Währinger Str","Währinger Gürtel"],"dest":"Gentzgasse / Gersthof","start":[48.20624,16.359773,"Bellariastraße – Taxistandplatz Bellariastraße ggü. 2-4","taxi"],"goal":[48.22618,16.34905,"Gentzgasse / Gersthof","ort"]},
+  {"n":28,"orig":"103","chap":1,"from":"Bellariastraße – Taxistandplatz","to":"Gentzgasse / Gersthof","steps":["Hansenstr","Schmerlingplatz","Auerspergstr","Landesgerichtsstr","Friedrich-Schmidt-Platz","Landesgerichtsstr","Garnisongasse","Schwarzspanierstr","Währinger Str","Währinger Gürtel"],"dest":"Gentzgasse / Gersthof","start":[48.20624,16.359773,"Bellariastraße – Taxistandplatz Bellariastraße ggü. 2-4","taxi"],"goal":[48.231998,16.329643,"Gentzgasse / Gersthof","ort"]},
   {"n":29,"orig":"105 (neu)","chap":1,"from":"Hotel Hilton Vienna Plaza","to":"Neustift am Walde – Taxistandplatz","steps":["Schottenring (Nebenfahrbahn)","Hohenstaufengasse","Liechtensteinstr","Alserbachstr","Sechsschimmelgasse","Gentzgasse","Gersthofer Str","Pötzleinsdorfer Str","Khevenhüllerstr","Neustift am Walde"],"dest":"Neustift am Walde – Taxistandplatz","start":[48.215515,16.364686,"Hotel Hilton Vienna Plaza","hotel"],"goal":[48.251048,16.301012,"Neustift am Walde – Taxistandplatz Neustift am Walde 79","taxi"]},
   {"n":30,"orig":"1504","chap":1,"from":"Westbahnhof – Haupteingang","to":"Neustift am Walde","steps":["Europaplatz","Mariahilfer Str","Neubaugürtel","Lerchenfelder Gürtel","Hernalser Gürtel","Jörgerstr","Martinstr","Währinger Str","Aumannplatz","Gentzgasse","Gersthofer Str","Pötzleinsdorfer Str","Khevenhüllerstr"],"dest":"Neustift am Walde","start":[48.195901,16.338353,"Westbahnhof – Haupteingang","bahn"],"goal":[48.249068,16.306195,"Neustift am Walde","ort"]},
   {"n":31,"orig":"1801","chap":1,"from":"Herbeckstraße – Gersthof / Taxistandplatz","to":"City Air Terminal – CAT","steps":["Gersthofer Str","Währinger Str","Semperstr","Schulgasse","Währinger Str","Schottengasse","Schottenring","Franz-Josefs-Kai","Schwedenplatz","Franz-Josefs-Kai","Julius-Raab-Platz","Stubenring","Oskar-Kokoschka-Platz","Kleine Marxerbrücke","Marxergasse"],"dest":"City Air Terminal – CAT","start":[48.231209,16.327428,"Herbeckstraße – Taxistandplatz Herbeckstraße 1-7","taxi"],"goal":[48.208384,16.384461,"City Air Terminal – CAT","flug"]},
@@ -1227,7 +1228,23 @@ function turnBans(G) {
   }
   return m;
 }
+// Zielstraße aus dem Zielnamen („Sensengasse / Zahnklinik“, „… – Riemergasse“, „Gentzgasse / Gersthof“): liegt der Zielpunkt
+// an ihr und näher als an der letzten Skript-Straße, kommt sie als eigene letzte Straße in die Wegsuche – so wird sie an ihrer
+// Einmündung erreicht und man tippt sie selbst an
+function addGoalStreet(route) {
+  if (!route.goal || route._extra) return;
+  const near = k => { let d = Infinity; for (const w of STREETS[k] || []) for (const q of w) d = Math.min(d, dist(q, route.goal)); return d; };
+  const lastK = streetKey(route.steps[route.steps.length - 1]), dLast = near(lastK);
+  for (const x of String(route.to).replace(/\(.*?\)/g, ' ').split(/[–\/]/).map(y => y.trim())) {
+    const k = streetKey(x); if (!x || !STREETS[k] || k === lastK) continue;
+    const d = near(k); if (d > 150 || dLast - d <= 5) continue;
+    route._extra = x; route.steps = route.steps.concat(x); route._sub = route._net = route._global = null;
+    if (!POOL.has(k)) POOL.set(k, x);
+    return;
+  }
+}
 function searchPaths(route) {
+  addGoalStreet(route);
   const keys = route.steps.map(streetKey), sk = routeKeys(route);
   const present = [...new Set(sk.own)];
   if (present.length < 2) return null;
@@ -1263,7 +1280,7 @@ function searchPaths(route) {
     const back = extendBest(G, keys[f], out[f][0], pointAhead(rest, 40), 110);
     out[f] = back.reverse().concat(out[f].slice(1));
   }
-  // Ende: liegt das Ziel um die Ecke (z. B. Hotel in der Querstraße), das kurze Stück bis dorthin noch dazu
+  // Ende: liegt das Ziel noch ein Stück weiter (z. B. Hotel in der Querstraße ohne Namen im Ziel), das kurze Stück bis dorthin dazu
   if (fixedGoal != null) {
     const seg = out[l], end = seg[seg.length - 1];
     // Zielpunkt auf der Straße, die im Zielnamen steht („Sensengasse / Zahnklinik“, „Hotel … – Riemergasse“), sonst die nächste Straße
@@ -1282,16 +1299,8 @@ function searchPaths(route) {
       const viaNamed = nk0 && routeSearch(G, [nk0], [en], 8, gn, [SOFT_KEYS.has(nk0)], bans);
       let tail = viaNamed ? viaNamed[0] : netPath(G, en, gn, 4000);
       if (tail && pathLength(tail) > 3 * dist(end, G.co[gn]) + 400) tail = null;
-      // auf der genannten Zielstraße darf das Stück länger sein (die Straße gehört dann zur Route), sonst nur ein kurzes Stück
-      if (tail && tail.length > 1 && pathLength(tail) < (onNamed ? 3000 : 600)) {
-        // Zielstraße („Sensengasse / Zahnklinik“) ist eine andere als die letzte Skript-Straße: als eigene letzte Straße führen,
-        // damit man an der Ecke stehen bleibt und sie selbst antippt
-        const nk = onNamed && streetKey(onNamed);
-        if (nk && nk !== keys[l] && !route._extra && l === keys.length - 1) {
-          route._extra = onNamed; route.steps = route.steps.concat(onNamed); out.push(tail);
-          if (!POOL.has(nk)) POOL.set(nk, onNamed);
-        } else out[l] = seg.concat(tail.slice(1));
-      }
+      // auf der genannten Zielstraße darf das Stück länger sein, sonst nur ein kurzes Stück
+      if (tail && tail.length > 1 && pathLength(tail) < (onNamed ? 3000 : 600)) out[l] = seg.concat(tail.slice(1));
     }
     return out;
   }
@@ -1538,10 +1547,10 @@ function showPointsInner(withGoal) {
     pin('start', sp, away).addTo(pointLayer);
   }
   if (withGoal && r.goal) {
-    const all = segs.flat().reverse();
+    const all = segs.flat().reverse(), g = goalPoint(r), gp = [g[0], g[1], r.goal[2], r.goal[3], r.goal[4]];
     // Schild in Fahrtrichtung hinter das Ziel, damit der Weg dorthin frei bleibt
-    const away = all.length > 1 ? angle(along(all, 40), [r.goal[0], r.goal[1]]) : null;
-    pin('goal', r.goal, away).addTo(pointLayer);
+    const away = all.length > 1 ? angle(along(all, 40), [g[0], g[1]]) : null;
+    pin('goal', gp, away).addTo(pointLayer);
   }
 }
 let drawGen = 0, endActiveCam = null;
@@ -1776,6 +1785,9 @@ async function cameraTo(r) {
   await go(target, close, 1.4);                      // 3) auf den Start reinzoomen
 }
 function pick(r) { state.route = r; reset(); renderList(); cameraTo(r); }
+const ICON_REDO = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 12a8 8 0 1 1-2.6-5.9"/><path d="M20 4v5h-5"/></svg>';
+// Route ganz von vorne (Fortschritt, Ergebnis, Kamera zum Start)
+function redoRoute() { reset(); renderList(); cameraTo(state.route); }
 function reset() { state.paused = false; state.playing = false; state.res = []; state.miss = {}; state.how = {}; state.finished = false; stopAnim(); state.opts = null; const sc = document.getElementById('score'); if (sc) sc.textContent = ''; state.step = 0; state.errors = 0; state.done = false; state.choices = null; state.answered = null; routeLayer.clearLayers(); flashLayer.clearLayers(); showPoints(false); render(); }
 function nextRoute(random) {
   let r;
@@ -1801,6 +1813,8 @@ function header() {
   tl.append(top, line, names);
   const row = el('div', 'h-top'), left = el('div', 'h-left'), nav = el('div', 'h-nav');
   left.append(el('h2', 'h-title', 'Route ' + r.n), badges);
+  const redo = el('button', 'rbtn'); redo.type = 'button'; redo.title = 'Nochmal von vorne'; redo.setAttribute('aria-label', 'Route nochmal von vorne');
+  redo.innerHTML = ICON_REDO; redo.onclick = redoRoute; nav.append(redo);
   [[-1, 'Vorige Route', 'M6 15l6-6 6 6'], [1, 'Nächste Route', 'M6 9l6 6 6-6']].forEach(([d, label, path]) => {
     const b = el('button', 'rbtn'); b.type = 'button'; b.title = label + ' (Pfeiltaste ' + (d < 0 ? '↑' : '↓') + ')'; b.setAttribute('aria-label', label);
     b.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="${path}"/></svg>`;
@@ -1902,9 +1916,16 @@ function lernenBody(box) {
   play.onclick = e => { e.stopPropagation(); if (state.playing) pauseRoute(); else playRoute(!!state.paused); };
   bar.append(play);
   if (STREETS) {
-    const all = el('button', 'btn', 'Anzeigen'); all.title = 'Ganze Route anzeigen';
-    all.onclick = e => { e.stopPropagation(); state.playing = false; drawAll(); state.step = r.steps.length; fitRoute(); render(); };
-    const hide = el('button', 'btn', 'Zurücksetzen'); hide.title = 'Route ausblenden und von vorne beginnen';
+    // ist schon alles aufgedeckt, wird „Anzeigen“ zum Redo-Knopf (von vorne)
+    const all = el('button', 'btn'), done = !state.playing && state.step >= r.steps.length;
+    if (done) {
+      all.innerHTML = ICON_REDO; all.title = 'Nochmal von vorne'; all.setAttribute('aria-label', 'Route nochmal von vorne');
+      all.onclick = e => { e.stopPropagation(); redoRoute(); };
+    } else {
+      all.textContent = 'Anzeigen'; all.title = 'Ganze Route anzeigen';
+      all.onclick = e => { e.stopPropagation(); state.playing = false; drawAll(); state.step = r.steps.length; fitRoute(); render(); };
+    }
+    const hide = el('button', 'btn', 'Ausblenden'); hide.title = 'Linie ausblenden';
     hide.disabled = state.step === 0 && !state.playing;
     hide.onclick = e => { e.stopPropagation(); clearRoute(); };
     bar.append(all, hide);
@@ -2108,9 +2129,12 @@ function okPulse(latlng) {
 }
 // am Ziel angekommen: kleines Konfetti am Zielpunkt, danach die Ergebnis-Karte darüber
 const CONFETTI = ['#f7c831', '#1d3fbf', '#ff6a00', '#2bb673', '#141414', '#ffffff'];
+// angezeigter Zielpunkt: am Ende der Linie auf der Straße (der Adresspunkt liegt oft mitten im Gebäude);
+// nur wenn die Linie weit vor dem Ziel endet (z. B. Flughafen), bleibt der eigentliche Punkt
 function goalPoint(r) {
-  const paths = (routePaths(r) || []).filter(Boolean), last = paths.length ? paths[paths.length - 1] : null;
-  return r.goal ? [r.goal[0], r.goal[1]] : last ? last[last.length - 1] : null;
+  const paths = (routePaths(r) || []).filter(Boolean), last = paths.length ? paths[paths.length - 1] : null, end = last && last[last.length - 1];
+  if (!r.goal) return end;
+  return end && dist(end, r.goal) < 150 ? end : [r.goal[0], r.goal[1]];
 }
 function celebrate() {
   const r = state.route, gen = drawGen;
@@ -2149,7 +2173,7 @@ function resultCard(pt) {
   L.DomEvent.disableClickPropagation(e); L.DomEvent.disableScrollPropagation(e);
   e.querySelector('.rs-next').onclick = () => swipeRoute(1);
   e.querySelector('.rs-close').onclick = () => resultLayer.clearLayers();
-  e.querySelector('.rs-redo').onclick = () => { reset(); renderList(); cameraTo(state.route); };
+  e.querySelector('.rs-redo').onclick = redoRoute;
   // Karte so schieben, dass die Ergebnis-Karte ganz zu sehen ist
   const box = e.querySelector('.resultcard').getBoundingClientRect(), mb = map.getContainer().getBoundingClientRect();
   const dy = Math.min(0, box.top - mb.top - 90), dx = box.left < mb.left + 16 ? box.left - mb.left - 16 : box.right > mb.right - 80 ? box.right - mb.right + 80 : 0;
