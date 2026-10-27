@@ -39,6 +39,12 @@ button, input, select { font: inherit; color: inherit; }
 /* --- Karte --- */
 .mapwrap { position: relative; border-radius: var(--r); overflow: hidden; background: #e7e5df; min-height: 0; box-shadow: 0 20px 50px rgba(0,0,0,.18); }
 #map { position: absolute; inset: 0; background: #e7e5df; }
+#map { -webkit-touch-callout: none; -webkit-user-select: none; user-select: none; }
+.svpop .leaflet-popup-content-wrapper { padding: 0; border-radius: 999px; background: #141414; box-shadow: 0 6px 18px rgba(0,0,0,.3); }
+.svpop .leaflet-popup-content { margin: 0; }
+.svpop .leaflet-popup-tip { background: #141414; }
+.svbtn { display: inline-flex; align-items: center; gap: 6px; padding: 9px 16px 9px 12px; color: var(--acc) !important; font: 500 .95rem var(--font); text-decoration: none; white-space: nowrap; }
+.svbtn svg { width: 18px; height: 18px; }
 .leaflet-container { background: #e7e5df; font-family: var(--font); }
 .maphead { position: absolute; left: 30px; top: 26px; z-index: 1002; color: #141414; pointer-events: none; max-width: 40%; }
 .brand { display: flex; align-items: center; gap: 10px; font-weight: 500; font-size: 1.5rem; letter-spacing: -.01em; }
@@ -375,7 +381,7 @@ ol.steps li.dest .chip { background: var(--acc); color: var(--acc-ink); padding:
       </div>
       <div class="sec"><h3>Routen <small id="count"></small></h3><button id="shuffle" class="pillbtn" type="button">Zufällig</button></div>
       <div id="routes"></div>
-      <div class="foot"><span>Stand 26.10.2026 22:40 · Routen: WKO-Fragenkatalog 2026 · Daten: Stadt Wien, basemap.at, OpenStreetMap</span><button id="reload" type="button">Straßennetz neu laden</button></div>
+      <div class="foot"><span>Stand 27.10.2026 19:49 · Routen: WKO-Fragenkatalog 2026 · Daten: Stadt Wien, basemap.at, OpenStreetMap</span><button id="reload" type="button">Straßennetz neu laden</button></div>
     </div>
   </aside>
 </div>
@@ -2504,6 +2510,8 @@ function plazaHit(e, want, seg, h, label = state.route.steps[state.step]) {
   const p = [e.latlng.lat, e.latlng.lng]; return seg.some(q => dist(q, p) < 120);
 }
 function onMapClick(e) {
+  if (Date.now() < svNoClick) return; // Klick, der nur das lange Drücken beendet
+  if (svPop) { map.closePopup(svPop); svPop = null; }
   if (quest) { questTap(e); return; }
   if (!STREETS || state.playing || state.busy) return;
   const lern = state.mode === 'lernen' && state.open;
@@ -2539,6 +2547,43 @@ function onMapClick(e) {
 }
 function prettyKey(k) { return POOL.get(k) || k; }
 map.on('click', onMapClick);
+
+// Street View: lange drücken (Handy) bzw. Maus gedrückt halten oder Rechtsklick (Computer) zeigt an der Stelle
+// einen Knopf, der Google Street View in einem neuen Tab bzw. in der Google-Maps-App öffnet.
+// Ein Knopf statt direkt öffnen, weil Browser ein Fenster aus einem Zeitgeber heraus oft blockieren.
+let svPop = null, svNoClick = 0, svTimer = null, svStart = null;
+const SV_HOLD = 550;
+function streetView(latlng) {
+  const url = `https://www.google.com/maps/@?api=1&map_action=pano&viewpoint=${latlng.lat.toFixed(6)},${latlng.lng.toFixed(6)}`;
+  const a = el('a', 'svbtn'); a.href = url; a.target = '_blank'; a.rel = 'noopener';
+  a.innerHTML = '<svg viewBox="0 0 24 24"><circle cx="12" cy="5" r="2.6" fill="currentColor"/><path d="M8.6 10.2h6.8l-1.2 6.3h-1.6l-.5 4h-1.8l-.5-4H9.8z" fill="currentColor"/></svg>Street View ↗';
+  a.onclick = () => setTimeout(() => { if (svPop) { map.closePopup(svPop); svPop = null; } }, 50);
+  if (svPop) map.closePopup(svPop);
+  svPop = L.popup({ className: 'svpop', closeButton: false, autoClose: false, closeOnClick: false, autoPan: false, offset: [0, -4] })
+    .setLatLng(latlng).setContent(a).openOn(map);
+}
+{
+  const box = map.getContainer();
+  const cancel = () => { clearTimeout(svTimer); svTimer = null; svStart = null; };
+  box.addEventListener('pointerdown', e => {
+    cancel();
+    if (!e.isPrimary || (e.pointerType === 'mouse' && e.button !== 0) || e.target.closest('.leaflet-control, .leaflet-popup')) return;
+    svStart = [e.clientX, e.clientY];
+    svTimer = setTimeout(() => {
+      svTimer = null; svNoClick = Infinity; // bis zum Loslassen keinen Klick werten
+      if (navigator.vibrate) navigator.vibrate(15);
+      streetView(map.mouseEventToLatLng(e));
+    }, SV_HOLD);
+  });
+  box.addEventListener('pointermove', e => { if (svStart && Math.hypot(e.clientX - svStart[0], e.clientY - svStart[1]) > 8) cancel(); });
+  const up = () => { cancel(); if (svNoClick === Infinity) svNoClick = Date.now() + 400; };
+  box.addEventListener('pointerup', up); box.addEventListener('pointercancel', up);
+  box.addEventListener('touchstart', e => { if (e.touches.length > 1) cancel(); }, { passive: true });
+  map.on('movestart zoomstart', () => { if (!ownCam) cancel(); });
+  // Rechtsklick; das Kontextmenü des Browsers (bzw. das lange Drücken auf dem Handy) unterdrücken
+  map.on('contextmenu', e => { if (e.originalEvent.pointerType !== 'touch' && svNoClick !== Infinity) streetView(e.latlng); });
+  box.addEventListener('contextmenu', e => e.preventDefault());
+}
 
 function progress() { const d = el('div', 'prog'); const f = el('i'); f.style.width = (100 * state.step / state.route.steps.length) + '%'; d.append(f); return d; }
 function finish(p) {
