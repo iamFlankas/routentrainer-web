@@ -61,14 +61,14 @@ button, input, select { font: inherit; color: inherit; }
 .tab.on { background: #fff; color: #141414; border-color: #fff; }
 .tab.on::after { content: ""; position: absolute; bottom: -9px; left: 50%; width: 5px; height: 5px; margin-left: -2.5px; border-radius: 50%; background: #fff; }
 .mapctl { position: absolute; right: 22px; bottom: 34px; z-index: 1002; display: flex; flex-direction: column; gap: 10px; }
-#quest { position: absolute; left: 50%; top: 92px; transform: translateX(-50%); z-index: 1002; width: min(420px, calc(100% - 32px)); box-sizing: border-box; padding: 14px 18px 12px; border-radius: 22px; background: color-mix(in srgb, var(--acc) 78%, transparent); -webkit-backdrop-filter: blur(8px) saturate(1.2); backdrop-filter: blur(8px) saturate(1.2); color: #141414; display: grid; gap: 4px; text-align: center; box-shadow: 0 10px 28px rgba(0,0,0,.22); animation: ffin .3s ease-out; }
+#quest { position: absolute; left: 50%; top: 92px; transform: translateX(-50%); z-index: 1002; width: min(460px, calc(100% - 32px)); box-sizing: border-box; padding: 9px 10px 9px 16px; border-radius: 18px; background: color-mix(in srgb, var(--acc) 72%, transparent); -webkit-backdrop-filter: blur(6px) saturate(1.2); backdrop-filter: blur(6px) saturate(1.2); color: #141414; display: grid; grid-template-columns: 1fr auto; column-gap: 12px; row-gap: 1px; align-items: center; text-align: left; box-shadow: 0 6px 18px rgba(0,0,0,.18); animation: ffin .3s ease-out; pointer-events: none; }
 #quest[hidden] { display: none; }
 body.questing .maphead p { visibility: hidden; }
-#quest small { color: rgba(20,20,20,.62); font-size: .8rem; font-weight: 500; letter-spacing: .02em; }
-#quest b { font-weight: 600; font-size: 1.15rem; line-height: 1.25; }
-#quest .qmsg { font-size: .88rem; opacity: .85; }
+#quest small { grid-column: 1; color: rgba(20,20,20,.62); font-size: .74rem; font-weight: 500; letter-spacing: .02em; }
+#quest b { grid-column: 1; font-weight: 600; font-size: 1rem; line-height: 1.2; }
+#quest .qmsg { grid-column: 1; font-size: .8rem; opacity: .85; line-height: 1.3; }
 #quest.bad .qmsg { color: #a3241a; opacity: 1; font-weight: 500; }
-#quest .qskip { justify-self: center; margin-top: 8px; border: 0; border-radius: 999px; padding: 7px 18px; background: #141414; color: var(--acc); font: inherit; font-size: .85rem; font-weight: 500; cursor: pointer; box-shadow: 0 3px 10px rgba(0,0,0,.18); transition: transform .12s; }
+#quest .qskip { grid-column: 2; grid-row: 1 / span 3; pointer-events: auto; border: 0; border-radius: 999px; padding: 7px 14px; background: #141414; color: var(--acc); font: inherit; font-size: .8rem; font-weight: 500; cursor: pointer; box-shadow: 0 3px 10px rgba(0,0,0,.18); transition: transform .12s; }
 #quest .qskip:hover { background: #2a2a2a; }
 #quest .qskip:active { transform: scale(.95); }
 #ffwd { position: absolute; left: 50%; bottom: 82px; transform: translateX(-50%); z-index: 1002; display: inline-flex; align-items: center; gap: 7px; padding: 10px 18px 10px 14px; border: 0; border-radius: 999px; background: #141414; color: var(--acc); font: 500 .95rem var(--font); cursor: pointer; box-shadow: 0 6px 18px rgba(0,0,0,.3); animation: ffin .25s ease-out; }
@@ -384,7 +384,7 @@ ol.steps li.dest .chip { background: var(--acc); color: var(--acc-ink); padding:
       </div>
       <div class="sec"><h3>Routen <small id="count"></small></h3><button id="shuffle" class="pillbtn" type="button">Zufällig</button></div>
       <div id="routes"></div>
-      <div class="foot"><span>Stand 28.10.2026 18:53 · Routen: WKO-Fragenkatalog 2026 · Daten: Stadt Wien, basemap.at, OpenStreetMap</span><button id="reload" type="button">Straßennetz neu laden</button></div>
+      <div class="foot"><span>Stand 29.10.2026 10:33 · Routen: WKO-Fragenkatalog 2026 · Daten: Stadt Wien, basemap.at, OpenStreetMap</span><button id="reload" type="button">Straßennetz neu laden</button></div>
     </div>
   </aside>
 </div>
@@ -1981,7 +1981,23 @@ function renderList() {
     list.append(b);
   });
 }
-async function cameraTo(r) {
+// direkt hineinzoomen (ohne flyTo-Bogen, der erst hinaus- und dann wieder hineinzoomt)
+function zoomDirect(center, zoom, dur, seq) {
+  return new Promise(res => {
+    const z0 = map.getZoom(), p0 = map.project(map.getCenter(), 0), p1 = map.project(center, 0), S = Math.pow(2, zoom - z0);
+    const t0 = performance.now(), ease = t => t < .5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
+    const step = now => {
+      if (seq !== camSeq) return res();
+      const t = Math.min(1, (now - t0) / (dur * 1000)), e = ease(t), z = z0 + (zoom - z0) * e;
+      // Anteil des Wegs so, dass sich die Karte am Bildschirm gleichmäßig verschiebt
+      const u = Math.abs(S - 1) < 1e-3 ? e : (1 - Math.pow(2, z0 - z)) / (1 - 1 / S);
+      map.setView(map.unproject(p0.add(p1.subtract(p0).multiplyBy(u)), 0), z, { animate: false });
+      if (t < 1) requestAnimationFrame(step); else res();
+    };
+    requestAnimationFrame(step);
+  });
+}
+async function cameraTo(r, direct = false) {
   const seq = ++camSeq;
   const b = routeBounds(r);
   const paths = routePaths(r), first = paths && paths.find(Boolean);
@@ -1998,6 +2014,7 @@ async function cameraTo(r) {
     map.once('moveend', fin); setTimeout(fin, dur * 1000 + 500);
     if (sameC) map.setZoom(zoom, { animate: true }); else map.flyTo(center, zoom, { duration: dur, easeLinearity: 0.25 });
   });
+  if (direct) { sfx('flug', 1.3); await zoomDirect(target, close, 1.3, seq); return; }
   const here = map.getCenter();
   if (map.distance(here, target) < 150) { if (Math.abs(map.getZoom() - close) > 0.5) sfx('flug', 0.9); await go(target, close, 0.7); return; }
   sfx('flug', 3.3);                                  // ein langes „Swoosh“ über alle drei Bewegungen
@@ -2039,17 +2056,23 @@ function bezirkAt(j, p) {
   }) || null;
 }
 const bezName = f => f ? `${f.properties.BEZNR}. Bezirk (${f.properties.NAMEK})` : '';
+// Rand fürs Hineinzoomen: oben Platz für die Karte, damit sie nichts vom Bezirk verdeckt
+function questPad(p) {
+  const box = $('#quest'), was = box.hidden; box.hidden = false;
+  const top = box.getBoundingClientRect().bottom - map.getContainer().getBoundingClientRect().top; box.hidden = was;
+  return { paddingTopLeft: [p, Math.max(p, Math.min(top + 12, map.getSize().y / 2))], paddingBottomRight: [p, p] };
+}
 function startQuest(r) {
   if (!FILTER.startsuche || !r.start || state.mode === 'auswahl' || (state.mode === 'lernen' && !state.open)) return false;
   quest = { r, miss: 0, stage: 1 };
   pointLayer.clearLayers(); questLayer.clearLayers();
   camSeq++; sfx('flug', 1.1);
-  map.flyToBounds(WIEN, { duration: reduced() ? 0 : 1.0, padding: [10, 10] });
   const box = $('#quest');
   box.querySelector('small').textContent = 'Wo startet die Route?';
   box.querySelector('b').textContent = r.from;
   box.querySelector('.qmsg').textContent = 'Tipp auf den Bezirk, in dem die Route startet.';
   box.classList.remove('bad'); box.hidden = false; document.body.classList.add('questing');
+  map.flyToBounds(WIEN, { duration: reduced() ? 0 : 1.0, ...questPad(10) });
   bezirke(); // schon mal laden
   return true;
 }
@@ -2081,7 +2104,8 @@ function questZoom(bz) {
   flashBezirk(bz, 2000, s);
   const b = bz ? L.geoJSON(bz).getBounds() : L.latLng(s).toBounds(QUEST_TOL * 2);
   camSeq++; sfx('flug', 1.1);
-  map.flyToBounds(b, { duration: reduced() ? 0 : 1.1, padding: [40, 40] });
+  const cz = map._getBoundsCenterZoom(b, questPad(40));
+  if (reduced()) map.setView(cz.center, cz.zoom); else zoomDirect(cz.center, cz.zoom, 1.1, camSeq);
   const box = $('#quest'); box.classList.remove('bad');
   box.querySelector('small').textContent = bz ? bezName(bz) : 'Fast!';
   box.querySelector('.qmsg').textContent = 'Und jetzt genauer: Tipp auf die Gegend, in der die Route startet.';
@@ -2102,7 +2126,7 @@ function flashBezirk(f, ms = 2200, center, radius = QUEST_TOL) {
 }
 function questDone() {
   const r = quest.r; endQuest();
-  showPoints(false); cameraTo(r);
+  showPoints(false); cameraTo(r, true);
 }
 function missPulse(latlng) {
   const m = L.circleMarker(latlng, { radius: 9, color: css('--bad'), weight: 3, fillColor: css('--bad'), fillOpacity: 0.35, interactive: false }).addTo(questLayer);
