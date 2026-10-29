@@ -311,6 +311,10 @@ ol.steps li.dest .chip { background: var(--acc); color: var(--acc-ink); padding:
 .pin { display: inline-flex; align-items: center; gap: 5px; padding: 3px 9px 3px 3px; border-radius: 999px; box-shadow: 0 2px 8px rgba(0,0,0,.3); white-space: nowrap; font: 600 10px/1 var(--font); letter-spacing: .08em; }
 .pin.start { background: #fff; color: #141414; }
 .pin.goal { background: #141414; color: #fff; }
+.pinredo { display: inline-flex; align-items: center; gap: 4px; margin: -1px -6px -1px 4px; padding: 5px 9px 5px 7px; border-radius: 999px; background: var(--acc); color: #141414; font: 600 11px/1 var(--font); letter-spacing: 0; transition: transform .12s; }
+.pinredo svg { width: 12px; height: 12px; }
+.pinredo:hover { background: #ffd84d; }
+.pinredo:active { transform: scale(.94); }
 .ico { display: inline-flex; align-items: center; justify-content: center; height: 20px; min-width: 20px; border-radius: 999px; }
 .ico.taxi { background: var(--acc); color: var(--acc-ink); padding: 0 5px; font: 700 9px/1 var(--font); letter-spacing: .06em; }
 .ico.hotel { background: #1d5fbf; color: #fff; }
@@ -384,7 +388,7 @@ ol.steps li.dest .chip { background: var(--acc); color: var(--acc-ink); padding:
       </div>
       <div class="sec"><h3>Routen <small id="count"></small></h3><button id="shuffle" class="pillbtn" type="button">Zufällig</button></div>
       <div id="routes"></div>
-      <div class="foot"><span>Stand 29.10.2026 10:33 · Routen: WKO-Fragenkatalog 2026 · Daten: Stadt Wien, basemap.at, OpenStreetMap</span><button id="reload" type="button">Straßennetz neu laden</button></div>
+      <div class="foot"><span>Stand 29.10.2026 11:00 · Routen: WKO-Fragenkatalog 2026 · Daten: Stadt Wien, basemap.at, OpenStreetMap</span><button id="reload" type="button">Straßennetz neu laden</button></div>
     </div>
   </aside>
 </div>
@@ -420,7 +424,7 @@ const ROUTES = [
   {"n":25,"kat":901,"chap":1,"from":"Wiener Privatklinik","to":"Klinik Landstraße (Haupteingang)","via":"Lerchenfelder Straße","hinweis":"","steps":["Pelikangasse","Lazarettgasse","Spitalgasse","Lange Gasse","Lerchenfelder Straße","Museumstraße","Museumsplatz","Getreidemarkt","Rechte Wienzeile","Karlsplatz","Lothringerstraße","Schwarzenbergplatz","Rennweg","Ungargasse","Juchgasse"],"start":[48.217044,16.346847,"Wiener Privatklinik","klinik"],"goal":[48.195885,16.391265,"Klinik Landstraße (Haupteingang)","klinik"]},
   {"n":26,"kat":902,"chap":1,"from":"AKH (Haupteingang)","to":"Bahnhof Hütteldorf","via":"Ottakringer Straße","hinweis":"","steps":["Währinger Gürtel (innerer)","Fuchsthallergasse","Währinger Gürtel (äußerer)","Hernalser Gürtel","Ottakringer Straße","Johann-Nepomuk-Berger-Platz","Ottakringer Straße","Weinheimergasse","Huttengasse","Gutraterplatz","Wernhardtstraße","Joachimsthalerplatz","Flötzersteig","Linzer Straße","Bahnhofstraße","Keißlergasse"],"start":[48.220044,16.347912,"AKH (Haupteingang)","klinik"],"goal":[48.197873,16.261428,"Bahnhof Hütteldorf","bahn"]},
   {"n":27,"kat":903,"chap":1,"from":"Josef-Holaubek-Platz – Taxistandplatz","to":"Kunsthaus Wien","via":"Dampfschiffstraße","hinweis":"","steps":["Josef-Holaubek-Platz","Nordbergbrücke","Spittelauer Lände","Roßauer Lände","Franz-Josefs-Kai","Schwedenplatz","Franz-Josefs-Kai","Julius-Raab-Platz","Uraniastraße","Radetzkybrücke","Obere Weißgerberstraße","Dampfschiffstraße","Weißgerberlände","Krieglergasse","Untere Weißgerberstraße"],"start":[48.233062,16.357893,"Josef-Holaubek-Platz – Taxistandplatz","taxi"],"goal":[48.211134,16.393276,"Kunsthaus Wien","ort"]},
-  {"n":28,"kat":1701,"chap":1,"from":"Hernalser Hauptstraße / Wattgasse – Taxistandplatz","to":"Obkirchergasse – Taxistandplatz","via":"Hans-Richter-Gasse","hinweis":"","steps":["Hernalser Hauptstraße","Wattgasse","Lidlgasse","Gersthofer Straße","Türkenschanzplatz","Max-Emanuel-Straße","Peter-Jordan-Straße","Linnèplatz","Hans-Richter-Gasse","Hartäckerstraße","Cottagegasse","Krottenbachstraße","Obkirchergasse","Sonnbergplatz","Obkirchergasse"],"start":[48.226453,16.307856,"Hernalser Hauptstraße – Taxistandplatz Hernalser Hauptstraße 230","taxi"],"goal":[48.245585,16.342488,"Obkirchergasse – Taxistandplatz Obkirchergasse 38-44","taxi"]},
+  {"n":28,"kat":1701,"chap":1,"from":"Hernalser Hauptstraße / Wattgasse – Taxistandplatz","to":"Obkirchergasse – Taxistandplatz","via":"Hans-Richter-Gasse","hinweis":"","steps":["Hernalser Hauptstraße","Wattgasse","Lidlgasse","Gersthofer Straße","Türkenschanzplatz","Max-Emanuel-Straße","Peter-Jordan-Straße","Linnèplatz","Hans-Richter-Gasse","Hartäckerstraße","Cottagegasse","Krottenbachstraße","Obkirchergasse","Sonnbergplatz","Obkirchergasse"],"start":[48.221278,16.322469,"Hernalser Hauptstraße – Taxistandplatz Hernalser Hauptstraße 130–132","taxi"],"goal":[48.245585,16.342488,"Obkirchergasse – Taxistandplatz Obkirchergasse 38-44","taxi"]},
   {"n":29,"kat":1702,"chap":1,"from":"Krankenhaus Göttlicher Heiland","to":"Alt Ottakring – Taxistandplatz","via":"Wilhelminenstraße","hinweis":"","steps":["Dornbacher Straße","Güpferlingstraße","Sandleitengasse","Wilhelminenstraße","Heigerleinstraße","Arnethgasse","Weinheimergasse"],"start":[48.228214,16.30405,"Krankenhaus Göttlicher Heiland","klinik"],"goal":[48.21401,16.310562,"Alt Ottakring – Taxistandplatz Weinheimergasse ggü. 5","taxi"]},
   {"n":30,"kat":1703,"chap":1,"from":"Neuwaldegger Straße / Höhenstraße","to":"Grinzing – Taxistandplatz","via":"Rathstraße","hinweis":"","steps":["Höhenstraße","Keylwerthgasse","Hameaustraße","Neustift am Walde","Rathstraße","Agnesgasse","Sieveringer Straße","Daringergasse","Grinzinger Allee","Himmelstraße"],"start":[48.240619,16.2796,"Neuwaldegger Straße / Höhenstraße","ort"],"goal":[48.255747,16.342644,"Grinzing – Taxistandplatz Himmelstraße 2","taxi"]},
   {"n":31,"kat":1704,"chap":1,"from":"Neuwaldegger Straße","to":"St. Anna Kinderspital (Haupteingang)","via":"Elterleinplatz","hinweis":"","steps":["Neuwaldegger Straße","Dornbacher Straße","Hernalser Hauptstraße","Elterleinplatz","Hernalser Hauptstraße","Kinderspitalgasse","Hebragasse","Zimmermannplatz","Mariannengasse","Mauthnergasse","Kinderspitalgasse"],"start":[48.23944,16.272245,"Neuwaldegger Straße","ort"],"goal":[48.215942,16.344341,"St. Anna Kinderspital (Haupteingang)","klinik"]},
@@ -1730,16 +1734,17 @@ const ICONS = {
   flug: '<span class="ico flug"><svg viewBox="0 0 20 20" width="14" height="14"><path d="M9 2.5c0-.8.4-1.5 1-1.5s1 .7 1 1.5V7l7 4.2v1.8l-7-2.2v4.4l2 1.6V18l-3-1-3 1v-1.2l2-1.6v-4.4L2 13v-1.8L9 7z" fill="currentColor"/></svg></span>',
   ort: '<span class="ico ort"><svg viewBox="0 0 20 20" width="14" height="14"><path d="M2 8 10 3l8 5H2zM4 9.5h2.2v6H4zM8.9 9.5h2.2v6H8.9zM13.8 9.5H16v6h-2.2zM2.5 16.5h15V18h-15z" fill="currentColor"/></svg></span>',
 };
-function pin(kind, pt, away) {
+function pin(kind, pt, away, redo = false) {
   const type = pt[3] || 'ort';
   const lm = pt[4] && LANDMARKS[pt[4]] ? `<span class="ico ort lm"><svg viewBox="0 0 24 24" width="20" height="20"><path d="${LANDMARKS[pt[4]]}" fill="currentColor" fill-rule="evenodd"/></svg></span>` : null;
   // away: Richtung (Bildschirm-Winkel in Grad), in die das Schild rückt
   const ang = away == null ? -90 : away, rad = ang * Math.PI / 180, dist = 40;
   const ox = Math.round(Math.cos(rad) * dist), oy = Math.round(Math.sin(rad) * dist);
-  const html = `<span class="pinwrap"><span class="pinstem" style="width:${dist - 12}px;transform:rotate(${ang}deg)"></span><span class="pindot ${kind}"></span><span class="pin ${kind}" style="left:${ox}px;top:${oy}px">${lm || ICONS[type] || ICONS.ort}<b>${kind === 'start' ? 'START' : 'ZIEL'}</b></span></span>`;
+  const html = `<span class="pinwrap"><span class="pinstem" style="width:${dist - 12}px;transform:rotate(${ang}deg)"></span><span class="pindot ${kind}"></span><span class="pin ${kind}" style="left:${ox}px;top:${oy}px">${lm || ICONS[type] || ICONS.ort}<b>${kind === 'start' ? 'START' : 'ZIEL'}</b>${redo ? `<span class="pinredo" role="button" title="Route nochmal selbst antippen">${ICON_REDO}Selbst fahren</span>` : ''}</span></span>`;
   return L.marker([pt[0], pt[1]], { icon: L.divIcon({ className: 'arrow pinmarker', html, iconSize: [0, 0], iconAnchor: [0, 0] }), interactive: true, keyboard: false })
     .bindTooltip(pt[2], { direction: 'top', offset: [0, -14] })
-    .on('click', () => {
+    .on('click', e => {
+      if (e.originalEvent && e.originalEvent.target.closest('.pinredo')) { redoRoute(); return; }
       if (kind === 'goal' && state.finished && state.step >= state.route.steps.length) { resultCard(goalPoint(state.route)); return; }
       camSeq++; map.flyTo([pt[0], pt[1]], 18, { duration: reduced() ? 0 : 0.9 });
     });
@@ -1765,7 +1770,8 @@ function showPointsInner(withGoal) {
     const all = segs.flat().reverse(), g = goalPoint(r), gp = [g[0], g[1], r.goal[2], r.goal[3], r.goal[4]];
     // Schild in Fahrtrichtung hinter das Ziel, damit der Weg dorthin frei bleibt
     const away = all.length > 1 ? angle(along(all, 40), [g[0], g[1]]) : null;
-    pin('goal', gp, away).addTo(pointLayer);
+    // im Lernen nach Anzeigen/Abspielen: Knopf am Ziel, um die Route gleich selbst zu fahren
+    pin('goal', gp, away, state.mode === 'lernen').addTo(pointLayer);
   }
 }
 let drawGen = 0, endActiveCam = null;
@@ -1986,15 +1992,18 @@ function zoomDirect(center, zoom, dur, seq) {
   return new Promise(res => {
     const z0 = map.getZoom(), p0 = map.project(map.getCenter(), 0), p1 = map.project(center, 0), S = Math.pow(2, zoom - z0);
     const t0 = performance.now(), ease = t => t < .5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
+    // wie Leaflets flyTo intern (_move mit flyTo: true): die Kacheln werden nur skaliert und erst am Ende
+    // neu geladen – sonst zeigt die Karte während des Zooms nur die Hintergrundfarbe
+    map._stop(); map._moveStart(true, false);
     const step = now => {
-      if (seq !== camSeq) return res();
+      if (seq !== camSeq) { map._moveEnd(true); return res(); }
       const t = Math.min(1, (now - t0) / (dur * 1000)), e = ease(t), z = z0 + (zoom - z0) * e;
       // Anteil des Wegs so, dass sich die Karte am Bildschirm gleichmäßig verschiebt
       const u = Math.abs(S - 1) < 1e-3 ? e : (1 - Math.pow(2, z0 - z)) / (1 - 1 / S);
-      map.setView(map.unproject(p0.add(p1.subtract(p0).multiplyBy(u)), 0), z, { animate: false });
-      if (t < 1) requestAnimationFrame(step); else res();
+      if (t < 1) { map._flyToFrame = requestAnimationFrame(step); map._move(map.unproject(p0.add(p1.subtract(p0).multiplyBy(u)), 0), z, { flyTo: true }); }
+      else { map._move(center, zoom)._moveEnd(true); res(); }
     };
-    requestAnimationFrame(step);
+    map._flyToFrame = requestAnimationFrame(step);
   });
 }
 async function cameraTo(r, direct = false) {
@@ -2072,7 +2081,7 @@ function startQuest(r) {
   box.querySelector('b').textContent = r.from;
   box.querySelector('.qmsg').textContent = 'Tipp auf den Bezirk, in dem die Route startet.';
   box.classList.remove('bad'); box.hidden = false; document.body.classList.add('questing');
-  map.flyToBounds(WIEN, { duration: reduced() ? 0 : 1.0, ...questPad(10) });
+  map.flyToBounds(WIEN, { duration: reduced() ? 0 : 1.0, padding: [10, 10] }); // ganz Wien groß, die Karte darf den Rand verdecken
   bezirke(); // schon mal laden
   return true;
 }
@@ -2712,7 +2721,13 @@ $('#zarrow').onclick = () => {
   map.flyTo(curHead.getLatLng(), Math.max(map.getZoom(), 16), { duration: reduced() ? 0 : 0.7 });
   updateFollowBtn();
 };
-$('#quest .qskip').onclick = () => { if (quest) questDone(); };
+// Überspringen: in der 1. Stufe nur die Bezirkswahl (weiter zur Gegend), in der 2. direkt zum Start
+$('#quest .qskip').onclick = async () => {
+  const q = quest; if (!q) return;
+  if (q.stage === 2) { questDone(); return; }
+  const j = await bezirke(); if (quest !== q || q.stage !== 1) return;
+  questZoom(bezirkAt(j, [q.r.start[0], q.r.start[1]]));
+};
 $('#ffwd').onclick = () => { if (ffwdFn) ffwdFn(); };
 $('#zfit').onclick = () => { camSeq++; if (shown()) fitRoute(); else map.flyTo([48.2085, 16.3725], 13, { duration: reduced() ? 0 : 0.8 }); };
 // Darstellung: hell oder dunkel (im Dunklen wird die Karte gefiltert). Ohne gespeicherte Wahl startet sie wie das System,
