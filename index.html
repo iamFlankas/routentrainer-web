@@ -355,13 +355,18 @@ ol.steps li.dest .chip { background: var(--acc); color: var(--acc-ink); padding:
 }
 /* --- Karteikarten (Modus „karten“): statt der Karte ein Kartenstapel, links die Kategorien --- */
 #cards { display: none; }
-body.karten #cards { display: flex; position: absolute; inset: 0; z-index: 1001; flex-direction: column; align-items: center; padding: 168px 24px 28px; background: #343437; overflow: hidden; }
+body.karten #cards { display: flex; position: absolute; inset: 0; z-index: 1001; flex-direction: column; align-items: center; padding: 168px 24px 28px; background: rgba(46,46,49,.8); overflow: hidden; }
+/* dahinter schimmert die Karte durch: dunkel eingefärbt, ohne Linien/Schilder, nicht bedienbar */
+body.karten #map { pointer-events: none; }
+body.karten #map .leaflet-tile-pane { filter: invert(1) hue-rotate(180deg) grayscale(.7) brightness(.85) contrast(.9); }
+body.karten #map .leaflet-overlay-pane, body.karten #map .leaflet-marker-pane, body.karten #map .leaflet-shadow-pane, body.karten #map .leaflet-tooltip-pane,
+body.karten #map .leaflet-popup-pane, body.karten #map .leaflet-control-container { display: none; }
 /* auf dem dunklen Grund: Überschrift, Zähler und Hinweise hell */
 body.karten .maphead { color: #f2f1ed; text-shadow: none; }
 body.karten .fc-pos, body.karten .fc-keys { color: rgba(242,241,237,.6); }
 body.karten .fc-prog { background: rgba(255,255,255,.14); }
 body.karten .fc-ok { color: #6fd08d; } body.karten .fc-bad { color: #ff8a80; }
-body.karten #map, body.karten .mapctl, body.karten .geo-pill, body.karten #quest, body.karten #ffwd, body.karten #chapflash,
+body.karten .mapctl, body.karten .geo-pill, body.karten #quest, body.karten #ffwd, body.karten #chapflash,
 body.karten #head, body.karten #score, body.karten .scroll > .sec, body.karten #routes, body.karten .chapdd { display: none !important; }
 body.karten .maphead p { visibility: visible; }
 .fc-top { width: min(560px, 100%); display: grid; gap: 8px; }
@@ -471,7 +476,7 @@ body.karten .maphead p { visibility: visible; }
       </div>
       <div class="sec"><h3>Routen <small id="count"></small></h3><button id="shuffle" class="pillbtn" type="button">Zufällig</button></div>
       <div id="routes"></div>
-      <div class="foot"><span>Stand 30.10.2026 16:48 · Routen: WKO-Fragenkatalog 2026 · Daten: Stadt Wien, basemap.at, OpenStreetMap</span><button id="reload" type="button">Straßennetz neu laden</button></div>
+      <div class="foot"><span>Stand 30.10.2026 16:52 · Routen: WKO-Fragenkatalog 2026 · Daten: Stadt Wien, basemap.at, OpenStreetMap</span><button id="reload" type="button">Straßennetz neu laden</button></div>
     </div>
   </aside>
 </div>
@@ -3025,7 +3030,7 @@ document.addEventListener('keydown', e => {
 });
 
 // Leiste links: Kategorien wählen, Lernstand, Stapel neu mischen
-function renderKarten(p) { p.append(el('div', 'kpanel')); renderKartenPanel(); drawKarten(); }
+function renderKarten(p) { p.append(el('div', 'kpanel')); renderKartenPanel(); drawKarten(); setTimeout(() => map.invalidateSize(), 0); }
 function renderKartenPanel() {
   const p = $('#play .kpanel'); if (!p) return; p.innerHTML = '';
   const tot = KARTEN_ALL.length, kn = KARTEN_ALL.filter(c => known(c.id)).length;
