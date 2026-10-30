@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Routentrainer Wien</title>
+<title>TaxiLernen Wien</title>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&display=swap">
@@ -48,7 +48,7 @@ button, input, select { font: inherit; color: inherit; }
 .leaflet-container { background: #e7e5df; font-family: var(--font); }
 .maphead { position: absolute; left: 30px; top: 26px; z-index: 1002; color: #141414; pointer-events: none; max-width: 40%; }
 .brand { display: flex; align-items: center; gap: 10px; font-weight: 500; font-size: 1.5rem; letter-spacing: -.01em; }
-.logo { font: 700 .62rem/1 var(--font); letter-spacing: .1em; background: var(--acc); color: var(--acc-ink); padding: 5px 6px; border-radius: 6px; }
+.logo { font: 700 .95rem/1 var(--font); letter-spacing: .1em; background: var(--acc); color: var(--acc-ink); padding: 8px 11px; border-radius: 9px; white-space: nowrap; }
 .maphead h1 { font-weight: 500; font-size: 1.75rem; letter-spacing: -.02em; margin: 30px 0 4px; }
 .maphead p { margin: 0; font-size: .95rem; opacity: .9; }
 .maphead { text-shadow: 0 0 2px #fff, 0 0 6px #fff, 0 0 12px rgba(255,255,255,.9); }
@@ -442,7 +442,7 @@ body.karten .maphead p { visibility: visible; }
   <main class="mapwrap">
     <div id="map"></div>
     <header class="maphead">
-      <div class="brand"><span class="logo">TAXI</span>Routentrainer</div>
+      <div class="brand"><span class="logo">TAXI LERNEN</span></div>
       <h1 id="modeTitle">Lernen</h1>
       <p id="modeSub"></p>
     </header>
@@ -476,7 +476,7 @@ body.karten .maphead p { visibility: visible; }
       </div>
       <div class="sec"><h3>Routen <small id="count"></small></h3><button id="shuffle" class="pillbtn" type="button">Zufällig</button></div>
       <div id="routes"></div>
-      <div class="foot"><span>Stand 30.10.2026 17:11 · Routen: WKO-Fragenkatalog 2026 · Daten: Stadt Wien, basemap.at, OpenStreetMap</span><button id="reload" type="button">Straßennetz neu laden</button></div>
+      <div class="foot"><span>Stand 30.10.2026 17:51 · Routen: WKO-Fragenkatalog 2026 · Daten: Stadt Wien, basemap.at, OpenStreetMap</span><button id="reload" type="button">Straßennetz neu laden</button></div>
     </div>
   </aside>
 </div>
