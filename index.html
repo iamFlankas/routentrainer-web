@@ -495,7 +495,7 @@ body.karten #theme svg { width: 22px; height: 22px; }
       </div>
       <div class="sec"><h3>Routen <small id="count"></small></h3><button id="shuffle" class="pillbtn" type="button">Zufällig</button></div>
       <div id="routes"></div>
-      <div class="foot"><span>Stand 30.10.2026 19:25 · Routen: WKO-Fragenkatalog 2026 · Daten: Stadt Wien, basemap.at, OpenStreetMap</span><button id="reload" type="button">Straßennetz neu laden</button></div>
+      <div class="foot"><span>Stand 30.10.2026 19:58 · Routen: WKO-Fragenkatalog 2026 · Daten: Stadt Wien, basemap.at, OpenStreetMap</span><button id="reload" type="button">Straßennetz neu laden</button></div>
     </div>
   </aside>
 </div>
@@ -2980,8 +2980,9 @@ function kFly(dir) {
 
 // beim Ein- und Ausschalten von „Gemischt“: die obersten Karten des neuen Stapels (mit Namen) fächern nach links und
 // rechts auf und schieben sich zweimal ineinander; dabei wechselt ihre Reihenfolge. Die echte oberste Karte mischt mit
-// und landet zuletzt oben – so gibt es am Ende keinen Schnitt zwischen Animation und Karte.
-function kShuffleAnim() {
+// und landet zuletzt oben – so gibt es am Ende keinen Schnitt zwischen Animation und Karte. Die bisher oberste Karte
+// (prev, so wie sie gerade lag, auch umgedreht) liegt am Anfang noch vorne und verschwindet im Stapel.
+function kShuffleAnim(prev) {
   const stage = $('#cards .fc-stage'), fc = $('#cards .fc');
   if (!stage || !fc || reduced() || !fc.animate) return;
   const more = krun.ids.slice(krun.i + 1, krun.i + 6), pool = KARTEN_ALL.filter(c => !krun.ids.includes(c.id) || more.includes(c.id));
@@ -2990,12 +2991,24 @@ function kShuffleAnim() {
     const c = KARTEN_BY_ID.get(id), g = el('div', 'fc-ghost'), f = el('div', 'fc-face fc-front');
     f.append(el('small', '', KARTEN[c.kat].name), el('b', '', c.name)); g.append(f); stage.insertBefore(g, fc); return g;
   });
-  const cards = [...ghosts, fc], N = cards.length, mid = shuffle(cards.map((_, i) => i));
+  let old = null;
+  if (prev && KARTEN_BY_ID.has(prev.id)) {
+    const c = KARTEN_BY_ID.get(prev.id); old = el('div', 'fc-ghost');
+    let f;
+    if (prev.flip) { const b = bezirkText(c.adr); f = el('div', 'fc-face fc-back'); f.style.transform = 'none'; f.append(el('small', '', c.name), el('b', '', b.str), el('span', 'fc-bez', b.bez)); }
+    else { f = el('div', 'fc-face fc-front'); f.append(el('small', '', KARTEN[c.kat].name), el('b', '', c.name), el('span', 'fc-tip', 'Tippen zum Umdrehen')); }
+    old.append(f); stage.insertBefore(old, fc);
+  }
+  // Reihenfolge (z-index): Anfang – alte Karte oben, Mitte – zufällig, Ende – neue Karte oben, alte gleich darunter
+  // die neue Karte kommt zuletzt (längste Verzögerung), damit nach ihr keine andere mehr über ihr landet
+  const cards = [...ghosts].concat(old ? [old] : [], [fc]), N = cards.length, mid = shuffle(cards.map((_, i) => i));
+  const z0 = cards.map((_, i) => i + 1);
+  if (old) { z0[N - 2] = N; z0[N - 1] = N - 1; }
   const home = 'translate(0, 0) rotate(0deg)';
   cards.forEach((card, i) => {
     const side = i % 2 ? 1 : -1, x1 = side * (24 + i * 4), x2 = -side * (20 + i * 4), r1 = side * (4 + i * 1.5), r2 = -side * (3 + i * 1.5);
     card.animate([
-      { transform: home, zIndex: i + 1 },
+      { transform: home, zIndex: z0[i] },
       { transform: `translate(${x1}%, ${-6 - i * 2}px) rotate(${r1}deg)`, zIndex: mid[i] + 1, offset: 0.25 },
       { transform: home, zIndex: mid[i] + 1, offset: 0.5 },
       { transform: `translate(${x2}%, ${-4 - i * 2}px) rotate(${r2}deg)`, zIndex: i + 1, offset: 0.75 },
@@ -3003,7 +3016,7 @@ function kShuffleAnim() {
     ], { duration: 1100, delay: i * 40, easing: 'cubic-bezier(.45,0,.25,1)', fill: 'backwards' });
   });
   sfx('mischen');
-  setTimeout(() => ghosts.forEach(g => g.remove()), 1100 + N * 40 + 50);
+  setTimeout(() => cards.forEach(g => { if (g !== fc) g.remove(); }), 1100 + N * 40 + 50);
 }
 
 // Hausnummer weglassen (vom Nutzer gewünscht): „Schottenring 7-9“ -> „Schottenring“, „Rennweg 99 / Rinnböckstraße 1“ ->
@@ -3105,8 +3118,10 @@ function renderKartenPanel() {
     b.onclick = () => {
       kset[key] = !kset[key];
       if (kset[key]) kset[key === 'mischen' ? 'falsch' : 'mischen'] = false;
+      // bisher oberste Karte merken: sie liegt zu Beginn der Misch-Animation noch vorne
+      const prev = krun && krun.i < krun.ids.length ? { id: krun.ids[krun.i], flip: kflip } : null;
       kSave(KSET_KEY, kset); kNewDeck(); drawKarten(); renderKartenPanel();
-      if (key === 'mischen') kShuffleAnim();
+      if (key === 'mischen') kShuffleAnim(prev);
     };
     return b;
   };
