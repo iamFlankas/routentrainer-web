@@ -377,7 +377,8 @@ body.karten #theme svg { width: 22px; height: 22px; }
 .fc-cnt { display: flex; justify-content: space-between; font-weight: 600; font-size: .95rem; }
 .fc-ok { color: var(--good); } .fc-bad { color: var(--bad); } .fc-pos { color: var(--muted); font-weight: 500; }
 .fc-stage { position: relative; flex: 1; width: min(560px, 100%); min-height: 220px; max-height: 380px; margin: 18px 0; display: grid; }
-.fc, .fc-next, .fc-end { grid-area: 1 / 1; }
+.fc, .fc-next, .fc-end, .fc-ghost { grid-area: 1 / 1; }
+.fc-ghost { position: relative; pointer-events: none; }
 .fc { position: relative; perspective: 1400px; cursor: pointer; touch-action: pan-y; user-select: none; -webkit-user-select: none; outline: none; z-index: 1; }
 .fc-next { border-radius: 26px; background: var(--card); transform: translateY(10px) scale(.96); opacity: .55; box-shadow: 0 6px 18px rgba(0,0,0,.08); }
 .fc-inner { position: absolute; inset: 0; transform-style: preserve-3d; transition: transform .5s cubic-bezier(.3,.7,.2,1); }
@@ -414,7 +415,9 @@ body.karten #theme svg { width: 22px; height: 22px; }
 .k-left { display: flex; align-items: center; gap: 10px; }
 .k-div { width: 1.5px; height: 20px; margin-right: 2px; border-radius: 1px; background: color-mix(in srgb, var(--on-panel) 30%, transparent); }
 .k-sec .k-tog, .k-sec .pillbtn { padding: 6px 12px; font-size: .8rem; }
-.k-sec .k-cnt { font-size: .7rem; }
+.k-sec .k-led { display: inline-block; width: 7px; height: 7px; margin-left: 7px; border-radius: 50%; vertical-align: 1px; background: #141414; transition: background .2s, box-shadow .2s; }
+.k-tog.on .k-led { background: var(--acc); box-shadow: 0 0 6px var(--acc); }
+.k-cnt { font-size: .7rem; }
 .k-info { margin: 0; font-size: .92rem; line-height: 1.45; color: var(--on-panel-muted); }
 .k-tog { border: 0; border-radius: 999px; padding: 9px 16px; background: var(--card); font-size: .88rem; cursor: pointer; }
 .k-tog { color: var(--fg); }
@@ -437,7 +440,10 @@ body.karten #theme svg { width: 22px; height: 22px; }
 .k-name { position: relative; font-weight: 500; } .k-n { position: relative; color: var(--dark-muted); font-size: .78rem; }
 .k-bar { position: relative; grid-column: 2 / span 2; height: 4px; border-radius: 999px; background: rgba(255,255,255,.12); overflow: hidden; }
 .k-bar i { display: block; height: 100%; background: var(--acc); }
-.k-reset { justify-self: start; font-size: .82rem; }
+.k-reset { font-size: .82rem; }
+.k-foot { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.k-link { border: 0; background: none; padding: 4px 0; font: inherit; font-size: .85rem; font-weight: 500; color: #fff; text-decoration: underline; text-underline-offset: 3px; cursor: pointer; text-shadow: 0 1px 2px rgba(0,0,0,.25); }
+.k-link:hover { text-decoration-thickness: 2px; }
 .k-src { margin: 0; font-size: .75rem; color: var(--on-panel-muted); }
 @media (max-width: 760px) {
   body.karten .mapwrap { height: 70vh; height: 70dvh; }
@@ -489,7 +495,7 @@ body.karten #theme svg { width: 22px; height: 22px; }
       </div>
       <div class="sec"><h3>Routen <small id="count"></small></h3><button id="shuffle" class="pillbtn" type="button">Zufällig</button></div>
       <div id="routes"></div>
-      <div class="foot"><span>Stand 30.10.2026 18:43 · Routen: WKO-Fragenkatalog 2026 · Daten: Stadt Wien, basemap.at, OpenStreetMap</span><button id="reload" type="button">Straßennetz neu laden</button></div>
+      <div class="foot"><span>Stand 30.10.2026 19:25 · Routen: WKO-Fragenkatalog 2026 · Daten: Stadt Wien, basemap.at, OpenStreetMap</span><button id="reload" type="button">Straßennetz neu laden</button></div>
     </div>
   </aside>
 </div>
@@ -1185,8 +1191,17 @@ function stopDrive() {
 }
 SFX.flug = (c, dur = 1.2) => swoosh(c, dur);
 SFX.fahrt = (c, dur = 1) => drive(c, dur);
+// Karten mischen: zwei kurze Folgen von Klicks (gefiltertes Rauschen), passend zum Ineinanderschieben der Karten
+SFX.mischen = c => {
+  [0.32, 0.88].forEach(t0 => { for (let k = 0; k < 12; k++) {
+    const n = noise(c), f = c.createBiquadFilter(), g = c.createGain(), t = c.currentTime + t0 + k * 0.021;
+    f.type = 'bandpass'; f.frequency.value = 2500 + Math.random() * 2000; f.Q.value = 1.2;
+    g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(0.06, t + 0.003); g.gain.exponentialRampToValueAtTime(0.0001, t + 0.02);
+    n.connect(f).connect(g).connect(c.destination); n.start(t, Math.random()); n.stop(t + 0.03);
+  } });
+};
 // jeder Klang einzeln abschaltbar (Einstellungen → Sounds)
-const SFX_KEY = { ok: 'tonRichtig', skip: 'tonFalsch', wrong: 'tonFalsch', goal: 'tonZiel', flug: 'tonFlug', fahrt: 'tonFahrt' };
+const SFX_KEY = { ok: 'tonRichtig', skip: 'tonFalsch', wrong: 'tonFalsch', goal: 'tonZiel', flug: 'tonFlug', fahrt: 'tonFahrt', mischen: 'tonFlug' };
 function sfx(name, dur) { if (!FILTER[SFX_KEY[name]]) return; const c = audioCtx(); if (c) try { SFX[name](c, dur); } catch (e) {} }
 const VOICES = {}; Object.entries(typeof VOICE_FILES !== 'undefined' ? VOICE_FILES : {}).forEach(([k, v]) => { VOICES[k] = new Set(v); });
 const SPRECHER = [['jonas', 'Jonas'], ['judith', 'Judith']], SPRECHER_KEY = 'taxi-stimme-v1';
@@ -2963,6 +2978,34 @@ function kFly(dir) {
   setTimeout(() => { drawKarten(); renderKartenPanel(); }, 230);
 }
 
+// beim Ein- und Ausschalten von „Gemischt“: die obersten Karten des neuen Stapels (mit Namen) fächern nach links und
+// rechts auf und schieben sich zweimal ineinander; dabei wechselt ihre Reihenfolge. Die echte oberste Karte mischt mit
+// und landet zuletzt oben – so gibt es am Ende keinen Schnitt zwischen Animation und Karte.
+function kShuffleAnim() {
+  const stage = $('#cards .fc-stage'), fc = $('#cards .fc');
+  if (!stage || !fc || reduced() || !fc.animate) return;
+  const more = krun.ids.slice(krun.i + 1, krun.i + 6), pool = KARTEN_ALL.filter(c => !krun.ids.includes(c.id) || more.includes(c.id));
+  while (more.length < 5 && pool.length) more.push(pool[Math.floor(Math.random() * pool.length)].id);
+  const ghosts = more.map(id => {
+    const c = KARTEN_BY_ID.get(id), g = el('div', 'fc-ghost'), f = el('div', 'fc-face fc-front');
+    f.append(el('small', '', KARTEN[c.kat].name), el('b', '', c.name)); g.append(f); stage.insertBefore(g, fc); return g;
+  });
+  const cards = [...ghosts, fc], N = cards.length, mid = shuffle(cards.map((_, i) => i));
+  const home = 'translate(0, 0) rotate(0deg)';
+  cards.forEach((card, i) => {
+    const side = i % 2 ? 1 : -1, x1 = side * (24 + i * 4), x2 = -side * (20 + i * 4), r1 = side * (4 + i * 1.5), r2 = -side * (3 + i * 1.5);
+    card.animate([
+      { transform: home, zIndex: i + 1 },
+      { transform: `translate(${x1}%, ${-6 - i * 2}px) rotate(${r1}deg)`, zIndex: mid[i] + 1, offset: 0.25 },
+      { transform: home, zIndex: mid[i] + 1, offset: 0.5 },
+      { transform: `translate(${x2}%, ${-4 - i * 2}px) rotate(${r2}deg)`, zIndex: i + 1, offset: 0.75 },
+      { transform: home, zIndex: i + 1 },
+    ], { duration: 1100, delay: i * 40, easing: 'cubic-bezier(.45,0,.25,1)', fill: 'backwards' });
+  });
+  sfx('mischen');
+  setTimeout(() => ghosts.forEach(g => g.remove()), 1100 + N * 40 + 50);
+}
+
 // Hausnummer weglassen (vom Nutzer gewünscht): „Schottenring 7-9“ -> „Schottenring“, „Rennweg 99 / Rinnböckstraße 1“ ->
 // „Rennweg / Rinnböckstraße“; Nummern, die zum Namen gehören („7. Haidequerstraße“, „Objekt 1“), bleiben
 const ohneNr = s => s.replace(/(?<!Objekt)\s+\d+[a-zA-Z]?(?:\s*[-\/]\s*\d+[a-zA-Z]?)*(?:\s+und\s+\d+)?(?=\s*(?:$|\/|\(|\)|bzw\.))/g, '').replace(/\s+bzw\.\s+/, ' bzw. ');
@@ -3063,19 +3106,21 @@ function renderKartenPanel() {
       kset[key] = !kset[key];
       if (kset[key]) kset[key === 'mischen' ? 'falsch' : 'mischen'] = false;
       kSave(KSET_KEY, kset); kNewDeck(); drawKarten(); renderKartenPanel();
+      if (key === 'mischen') kShuffleAnim();
     };
     return b;
   };
-  opts.append(tog('mischen', 'Gemischt'));
+  // „Licht“ rechts im Knopf: gelb = gemischt an, schwarz = aus
+  const mx = tog('mischen', 'Gemischt'); mx.append(el('span', 'k-led')); opts.append(mx);
   // „Falsch“ erst, wenn eine Karte falsch beantwortet wurde
   const nf = kWrongIds().length;
   if (nf || kset.falsch) { const f = tog('falsch', 'Falsch '); f.append(el('span', 'k-cnt', String(nf))); opts.append(f); }
   const sec = el('div', 'k-sec'); sec.append(el('h3', '', 'Kategorien'));
-  const allOn = kset.kat.length === KARTEN.length;
-  const ab = el('button', 'pillbtn', allOn ? 'Keine' : 'Alle'); ab.type = 'button';
-  ab.onclick = () => { kset.kat = allOn ? [] : KARTEN.map((_, i) => i); kSave(KSET_KEY, kset); kNewDeck(); drawKarten(); renderKartenPanel(); };
+  // Textlinks statt Knöpfen: „Alle auswählen“ oben, solange eine fehlt; „Alle abwählen“ unten, solange eine gewählt ist
+  const setKat = kat => { kset.kat = kat; kSave(KSET_KEY, kset); kNewDeck(); drawKarten(); renderKartenPanel(); };
+  const link = (label, fn) => { const b = el('button', 'k-link', label); b.type = 'button'; b.onclick = fn; return b; };
   // links „Kategorien“ und Alle/Keine, rechts nach einem Strich Gemischt/Falsch
-  const left = el('div', 'k-left'); left.append(sec.firstChild, ab); opts.prepend(el('span', 'k-div')); sec.append(left, opts); p.append(sec);
+  const left = el('div', 'k-left'); left.append(sec.firstChild); if (kset.kat.length < KARTEN.length) left.append(link('Alle auswählen', () => setKat(KARTEN.map((_, i) => i)))); opts.prepend(el('span', 'k-div')); sec.append(left, opts); p.append(sec);
   const list = el('div', 'k-kats');
   KARTEN.forEach((k, i) => {
     const ids = k.karten.map(([name]) => k.name + '|' + name), kk = ids.filter(known).length, on = kset.kat.includes(i);
@@ -3088,7 +3133,8 @@ function renderKartenPanel() {
   p.append(list);
   const rs = el('button', 'btn k-reset', 'Lernstand der Karteikarten löschen'); rs.type = 'button';
   rs.onclick = () => { if (!confirm('Lernstand aller Karteikarten wirklich löschen?')) return; kstat = {}; kSave(KSTAT_KEY, kstat); kNewDeck(); drawKarten(); renderKartenPanel(); };
-  p.append(rs, el('p', 'k-src', 'Quelle: WKO-Fragenkatalog 2026, Ortskunde – Adressen'));
+  const foot = el('div', 'k-foot'); foot.append(rs); if (kset.kat.length) foot.append(link('Alle abwählen', () => setKat([])));
+  p.append(foot, el('p', 'k-src', 'Quelle: WKO-Fragenkatalog 2026, Ortskunde – Adressen'));
 }
 
 </script>
