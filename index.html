@@ -282,8 +282,8 @@ ol.steps li.dest .chip { background: var(--acc); color: var(--acc-ink); padding:
 .okpulse svg { width: 18px; height: 18px; }
 @keyframes okpop { 0% { transform: scale(.3); opacity: 0; box-shadow: 0 0 0 0 rgba(43,182,115,.55); } 25% { transform: scale(1.08); opacity: 1; } 40% { transform: scale(1); } 75% { opacity: 1; box-shadow: 0 0 0 16px rgba(43,182,115,0); } 100% { transform: scale(.85); opacity: 0; box-shadow: 0 0 0 16px rgba(43,182,115,0); } }
 /* Ziel erreicht: Ergebnis-Karte über dem Ziel */
-.resultcard { position: absolute; left: 0; bottom: 64px; transform: translateX(-50%); display: flex; align-items: center; gap: 18px; padding: 14px 14px 14px 20px; border-radius: 24px; background: var(--acc); color: #141414; box-shadow: 0 14px 34px rgba(0,0,0,.28); white-space: nowrap; font-family: var(--font); cursor: default; animation: rcin .45s cubic-bezier(.2,.8,.2,1); }
-.resultcard::after { content: ""; position: absolute; left: 50%; bottom: -7px; width: 14px; height: 14px; margin-left: -7px; background: var(--acc); transform: rotate(45deg); border-radius: 3px; }
+.resultcard { position: absolute; left: 0; bottom: 64px; transform: translateX(-50%); display: flex; align-items: center; gap: 18px; padding: 14px 14px 14px 20px; border-radius: 24px; background: color-mix(in srgb, var(--acc) 78%, transparent); -webkit-backdrop-filter: blur(8px) saturate(1.2); backdrop-filter: blur(8px) saturate(1.2); color: #141414; box-shadow: 0 10px 28px rgba(0,0,0,.22); white-space: nowrap; font-family: var(--font); cursor: default; animation: rcin .45s cubic-bezier(.2,.8,.2,1); }
+.resultcard::after { content: ""; position: absolute; left: 50%; bottom: -7px; width: 14px; height: 14px; margin-left: -7px; background: color-mix(in srgb, var(--acc) 78%, transparent); transform: rotate(45deg); border-radius: 3px; clip-path: polygon(100% 0, 100% 100%, 0 100%); } /* nur die untere Spitze, sonst doppelt getönt */
 .rs-text { display: flex; flex-direction: column; gap: 6px; }
 .rs-k { font-size: .78rem; font-weight: 500; color: rgba(20,20,20,.65); margin-bottom: -4px; }
 .rs-h { font-size: 1.05rem; font-weight: 600; white-space: normal; max-width: 250px; line-height: 1.2; }
@@ -394,7 +394,7 @@ ol.steps li.dest .chip { background: var(--acc); color: var(--acc-ink); padding:
       </div>
       <div class="sec"><h3>Routen <small id="count"></small></h3><button id="shuffle" class="pillbtn" type="button">Zufällig</button></div>
       <div id="routes"></div>
-      <div class="foot"><span>Stand 29.10.2026 11:42 · Routen: WKO-Fragenkatalog 2026 · Daten: Stadt Wien, basemap.at, OpenStreetMap</span><button id="reload" type="button">Straßennetz neu laden</button></div>
+      <div class="foot"><span>Stand 30.10.2026 09:10 · Routen: WKO-Fragenkatalog 2026 · Daten: Stadt Wien, basemap.at, OpenStreetMap</span><button id="reload" type="button">Straßennetz neu laden</button></div>
     </div>
   </aside>
 </div>
@@ -1048,8 +1048,7 @@ const SFX = {
   skip: c => { tone(c, 392, 0, 0.12, { type: 'triangle', vol: 0.14 }); tone(c, 294, 0.1, 0.18, { type: 'triangle', vol: 0.14 }); },
   goal: c => {
     [523, 659, 784, 1047].forEach((f, i) => tone(c, f, i * 0.09, 0.32, { type: 'triangle', vol: 0.13 }));
-    [1047, 1319, 1568].forEach(f => tone(c, f, 0.4, 0.7, { vol: 0.07 }));
-    for (let i = 0; i < 6; i++) tone(c, 2000 + Math.random() * 1800, 0.45 + i * 0.07, 0.12, { vol: 0.03 });
+    [1047, 1319, 1568].forEach(f => tone(c, f, 0.4, 0.7, { vol: 0.07 })); // ohne „Funkeln“ danach – vom Nutzer so gewünscht
   },
 };
 // Rauschen (für Swoosh und Fahrgeräusch): einmal erzeugt, dann als Schleife abgespielt
