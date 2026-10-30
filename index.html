@@ -353,6 +353,73 @@ ol.steps li.dest .chip { background: var(--acc); color: var(--acc-ink); padding:
   .h-title { font-size: 1.6rem; }
   .opts { grid-template-columns: 1fr; }
 }
+/* --- Karteikarten (Modus „karten“): statt der Karte ein Kartenstapel, links die Kategorien --- */
+#cards { display: none; }
+body.karten #cards { display: flex; position: absolute; inset: 0; z-index: 1001; flex-direction: column; align-items: center; padding: 168px 24px 28px; background: var(--soft); overflow: hidden; }
+body.karten #map, body.karten .mapctl, body.karten .geo-pill, body.karten #quest, body.karten #ffwd, body.karten #chapflash,
+body.karten #head, body.karten #score, body.karten .scroll > .sec, body.karten #routes, body.karten .chapdd { display: none !important; }
+body.karten .maphead p { visibility: visible; }
+.fc-top { width: min(560px, 100%); display: grid; gap: 8px; }
+.fc-prog { height: 6px; border-radius: 999px; background: color-mix(in srgb, var(--fg) 10%, transparent); overflow: hidden; }
+.fc-prog i { display: block; height: 100%; background: var(--acc); border-radius: inherit; transition: width .3s; }
+.fc-cnt { display: flex; justify-content: space-between; font-weight: 600; font-size: .95rem; }
+.fc-ok { color: var(--good); } .fc-bad { color: var(--bad); } .fc-pos { color: var(--muted); font-weight: 500; }
+.fc-stage { position: relative; flex: 1; width: min(560px, 100%); min-height: 220px; max-height: 380px; margin: 18px 0; display: grid; }
+.fc, .fc-next, .fc-end { grid-area: 1 / 1; }
+.fc { position: relative; perspective: 1400px; cursor: pointer; touch-action: pan-y; user-select: none; -webkit-user-select: none; outline: none; z-index: 1; }
+.fc-next { border-radius: 26px; background: var(--card); transform: translateY(10px) scale(.96); opacity: .55; box-shadow: 0 6px 18px rgba(0,0,0,.08); }
+.fc-inner { position: absolute; inset: 0; transform-style: preserve-3d; transition: transform .5s cubic-bezier(.3,.7,.2,1); }
+.fc.flipped .fc-inner { transform: rotateY(180deg); }
+.fc-face { position: absolute; inset: 0; backface-visibility: hidden; -webkit-backface-visibility: hidden; border-radius: 26px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; padding: 28px; text-align: center; box-shadow: 0 16px 40px rgba(0,0,0,.14); }
+.fc-front { background: var(--card); color: var(--fg); }
+.fc-back { background: var(--acc); color: #141414; transform: rotateY(180deg); }
+.fc-face small { font-size: .85rem; font-weight: 500; letter-spacing: .03em; opacity: .6; }
+.fc-face b { font-size: clamp(1.4rem, 3.4vw, 2.1rem); font-weight: 650; line-height: 1.2; text-wrap: balance; }
+.fc-back b { font-size: clamp(1.6rem, 4vw, 2.5rem); }
+.fc-bez { font-size: 1.05rem; font-weight: 500; }
+.fc-tip { position: absolute; bottom: 16px; font-size: .78rem; opacity: .45; }
+.fc:focus-visible .fc-face { box-shadow: 0 0 0 3px var(--acc), 0 16px 40px rgba(0,0,0,.14); }
+.fc-stamp { position: absolute; top: 18px; z-index: 2; padding: 6px 14px; border-radius: 10px; font-weight: 700; font-size: 1.05rem; letter-spacing: .04em; text-transform: uppercase; border: 3px solid; opacity: 0; pointer-events: none; }
+.fc-stamp.ok { left: 18px; color: var(--good); border-color: var(--good); transform: rotate(-10deg); background: var(--card); }
+.fc-stamp.bad { right: 18px; color: var(--bad); border-color: var(--bad); transform: rotate(10deg); background: var(--card); }
+.fc-btns { display: flex; align-items: center; gap: 22px; }
+.fc-btn { width: 64px; height: 64px; border-radius: 50%; border: 0; display: grid; place-items: center; cursor: pointer; background: var(--card); box-shadow: 0 6px 18px rgba(0,0,0,.12); transition: transform .12s; }
+.fc-btn svg { width: 28px; height: 28px; }
+.fc-btn.ok { color: var(--good); } .fc-btn.bad { color: var(--bad); }
+.fc-btn.undo { width: 46px; height: 46px; color: var(--muted); } .fc-btn.undo svg { width: 20px; height: 20px; }
+.fc-btn:active { transform: scale(.92); } .fc-btn:disabled { opacity: .35; cursor: default; }
+.fc-keys { margin: 14px 0 0; font-size: .8rem; color: var(--muted); }
+.fc-end { align-self: center; justify-self: center; display: grid; gap: 8px; justify-items: center; text-align: center; padding: 28px; border-radius: 26px; background: var(--card); box-shadow: 0 16px 40px rgba(0,0,0,.12); width: 100%; }
+.fc-end small { color: var(--muted); font-weight: 500; }
+.fc-end b { font-size: 1.8rem; font-weight: 650; }
+.fc-end span { color: var(--muted); }
+.fc-endbtns { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; margin-top: 10px; }
+.fc-undo { border: 0; background: none; color: var(--muted); font: inherit; font-size: .85rem; cursor: pointer; margin-top: 4px; }
+.kpanel { display: grid; gap: 14px; }
+.k-head { background: var(--card); border-radius: 22px; padding: 18px; display: grid; gap: 6px; }
+.k-head .hint { color: var(--muted); }
+.k-opts { display: flex; flex-wrap: wrap; gap: 8px; }
+.k-tog { border: 0; border-radius: 999px; padding: 8px 14px; background: var(--card); font-size: .88rem; cursor: pointer; }
+.k-tog.on { background: var(--fg); color: var(--card); }
+.k-sec { display: flex; align-items: center; justify-content: space-between; }
+.k-sec h3 { margin: 0; font-size: 1rem; }
+.k-kats { display: grid; gap: 6px; }
+.k-kat { display: grid; grid-template-columns: auto 1fr auto; grid-template-rows: auto auto; column-gap: 12px; row-gap: 6px; align-items: center; text-align: left; border: 0; border-radius: 16px; padding: 11px 14px; background: color-mix(in srgb, var(--card) 55%, transparent); cursor: pointer; font-size: .95rem; color: var(--fg); }
+.k-kat.on { background: var(--card); }
+.k-check { grid-row: 1 / span 2; width: 20px; height: 20px; border-radius: 6px; border: 2px solid var(--muted); }
+.k-kat.on .k-check { background: var(--fg); border-color: var(--fg); box-shadow: inset 0 0 0 3px var(--card); }
+.k-name { font-weight: 500; } .k-n { color: var(--muted); font-size: .82rem; }
+.k-bar { grid-column: 2 / span 2; height: 4px; border-radius: 999px; background: var(--soft); overflow: hidden; }
+.k-bar i { display: block; height: 100%; background: var(--good); }
+.k-reset { justify-self: start; font-size: .82rem; }
+.k-src { margin: 0; font-size: .75rem; color: var(--on-panel-muted); }
+@media (max-width: 760px) {
+  body.karten .mapwrap { height: 70vh; height: 70dvh; }
+  body.karten #cards { padding: 112px 16px 100px; } /* unten Platz für die Modus-Knöpfe */
+  .fc-stage { margin: 12px 0; min-height: 180px; }
+  .fc-btn { width: 56px; height: 56px; }
+  .fc-keys { display: none; }
+}
 @media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
 </style>
 </head>
@@ -367,7 +434,7 @@ ol.steps li.dest .chip { background: var(--acc); color: var(--acc-ink); padding:
     </header>
     <nav class="tabs" aria-label="Modus">
       <button class="gbtn tab on" data-mode="lernen" type="button" title="Lernen" aria-label="Lernen"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 5.5c3-1.2 6-1.2 9 .8 3-2 6-2 9-.8V19c-3-1.2-6-1.2-9 .8-3-2-6-2-9-.8z"/><path d="M12 6.3v13.5"/></svg></button>
-      <button class="gbtn tab" data-mode="reihe" type="button" title="Reihe" aria-label="Reihe"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M10 6h10M10 12h10M10 18h10"/><path d="M4 5l1.5-1v4M3.8 14.2c.3-.8 2.3-.9 2.3.3 0 1-2.3 1.5-2.3 2.5h2.4"/></svg></button>
+      <button class="gbtn tab" data-mode="karten" type="button" title="Karteikarten" aria-label="Karteikarten"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="7" width="14" height="13" rx="3"/><path d="M7 4h11a3 3 0 0 1 3 3v9"/><path d="M7 12.5h6M7 15.5h4"/></svg></button>
       <button class="gbtn tab" data-mode="auswahl" type="button" title="Auswahl" aria-label="Auswahl"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="3.5" width="17" height="17" rx="5"/><path d="M8 12.2l2.7 2.7L16.3 9"/></svg></button>
       <button class="gbtn tab" data-mode="fahren" type="button" title="Nachfahren" aria-label="Nachfahren"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="18" r="2.2"/><path d="M8.2 18H15a3.5 3.5 0 0 0 0-7H9a3.5 3.5 0 0 1 0-7h6.5"/><path d="M18 1.8c-1.7 0-3 1.3-3 2.9 0 2.2 3 4.8 3 4.8s3-2.6 3-4.8c0-1.6-1.3-2.9-3-2.9z"/></svg></button>
     </nav>
@@ -377,6 +444,7 @@ ol.steps li.dest .chip { background: var(--acc); color: var(--acc-ink); padding:
       <button class="gbtn" id="zarrow" type="button" title="Zum Pfeil" aria-label="Kamera zum Pfeil" hidden><svg viewBox="0 0 24 24" fill="var(--route)" stroke="var(--route)" stroke-width="1.9" stroke-linejoin="round"><path d="M4.5 11.2L19.5 4.5l-6.7 15-1.9-6.4z"/></svg></button>
       <button class="gbtn" id="zfit" type="button" title="Ganze Route zeigen" aria-label="Ganze Route zeigen"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="3.2"/><path d="M12 2.5v3M12 18.5v3M2.5 12h3M18.5 12h3"/><circle cx="12" cy="12" r="7.2"/></svg></button>
     </div>
+    <section id="cards" aria-label="Karteikarten"></section>
     <div id="quest" role="status" hidden><small>Wo startet die Route?</small><b></b><span class="qmsg"></span><button class="qskip" type="button">Überspringen</button></div>
     <button id="ffwd" type="button" title="Vorspulen: der Pfeil fährt schneller ans Ende der Straße" aria-label="Vorspulen" hidden><svg viewBox="0 0 24 24" fill="currentColor"><path d="M3 6.2v11.6L11.5 12zM12 6.2v11.6L20.5 12z"/></svg><span>Vorspulen</span></button>
     <div class="geo-pill"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M8.5 15.5l2-7 5 3-7 4z"/></svg><span id="geo"></span></div>
@@ -394,7 +462,7 @@ ol.steps li.dest .chip { background: var(--acc); color: var(--acc-ink); padding:
       </div>
       <div class="sec"><h3>Routen <small id="count"></small></h3><button id="shuffle" class="pillbtn" type="button">Zufällig</button></div>
       <div id="routes"></div>
-      <div class="foot"><span>Stand 30.10.2026 09:10 · Routen: WKO-Fragenkatalog 2026 · Daten: Stadt Wien, basemap.at, OpenStreetMap</span><button id="reload" type="button">Straßennetz neu laden</button></div>
+      <div class="foot"><span>Stand 30.10.2026 09:34 · Routen: WKO-Fragenkatalog 2026 · Daten: Stadt Wien, basemap.at, OpenStreetMap</span><button id="reload" type="button">Straßennetz neu laden</button></div>
     </div>
   </aside>
 </div>
@@ -534,6 +602,8 @@ const ROUTES = [
   {"n":129,"kat":2206,"chap":7,"from":"Seestadt Aspern – Taxistandplatz","to":"Rennbahnweg – Taxistandplatz","via":"Mittelfeldweg","hinweis":"","steps":["Maria-Tusch-Straße","Sonnenallee","Johann-Kutschera-Gasse","Ostbahnbegleitstraße","Hausfeldstraße","Mittelfeldweg","Ziegelhofstraße","Breitenleer Straße","Ludwig-Reindl-Gasse"],"start":[48.224903,16.501982,"Seestadt Aspern – Taxistandplatz Maria-Tusch-Straße 18","taxi"],"goal":[48.25372,16.462713,"Rennbahnweg – Taxistandplatz","taxi"]},
   {"n":130,"kat":2207,"chap":7,"from":"Schüttauplatz – Taxistandplatz","to":"Klinik Donaustadt","via":"Kaisermühlenstraße","hinweis":"","steps":["Schüttauplatz","Moissigasse","Am Kaisermühlendamm (Sonderspur)","Kaisermühlenstraße","Stadlauer Straße","Am Bahnhof","Stadlauer Straße","Langobardenstraße"],"start":[48.226784,16.423826,"Schüttauplatz – Taxistandplatz Schüttauplatz 5","taxi"],"goal":[48.21799,16.46396,"Klinik Donaustadt","klinik"]},
 ];
+// Karteikarten: Adressen aus dem Fragenkatalog (Ort -> Adresse), je Kategorie
+const KARTEN = [{"name":"Regierung & Ministerien","karten":[["Parlament (Nationalrat und Bundesrat)","1., Dr.-Karl-Renner-Ring 3"],["Bundespräsident (Präsidentschaftskanzlei)","1., Ballhausplatz (Hofburg)"],["Bundeskanzleramt","1., Ballhausplatz 2"],["Bundesministerium für Inneres","1., Herrengasse 7"],["Bundesministerium für Europäische und Internationale Angelegenheiten","1., Minoritenplatz 8"],["Bundesministerium für Europa, Integration und Familie","1., Ballhausplatz 2"],["Bundesministerium für Bildung","1., Minoritenplatz 5"],["Bundesministerium für Frauen, Wissenschaft und Forschung","1., Minoritenplatz 3"],["Bundesministerium für Arbeit, Soziales, Gesundheit, Pflege und Konsumentenschutz","1., Stubenring 1"],["Bundesministerium für Finanzen","1., Johannesgasse 5"],["Bundesministerium für Innovation, Mobilität und Infrastruktur","3., Radetzkystraße 2"],["Bundesministerium für Wohnen, Kunst, Kultur, Medien und Sport","3., Radetzkystraße 2"],["Bundesministerium für Land- und Forstwirtschaft, Klima- und Umweltschutz, Regionen und Wasserwirtschaft","1., Stubenring 1"],["Bundesministerium für Wirtschaft, Energie und Tourismus","1., Stubenring 1"],["Bundesministerium für Justiz","7., Museumstraße 7"],["Bundesministerium für Landesverteidigung","9., Roßauer Lände 1"],["Landtag, Landesregierung und Gemeindeverwaltung für Wien / Landeshauptmann und Bürgermeister","1., Rathausplatz (Rathaus)"]]},{"name":"Gerichte","karten":[["Verfassungsgerichtshof","1., Freyung 8"],["Verwaltungsgerichtshof","1., Judenplatz 11"],["Oberlandesgericht Wien","1., Schmerlingplatz 11"],["Landesgericht für Zivilrechtssachen","1., Schmerlingplatz 10-11"],["Justizanstalt Wien Josefstadt","8., Wickenburggasse 18-20"],["Justiz-Zentrum Wien Mitte (Handelsgericht Wien, Bezirksgericht für Handelssachen und Bezirksgericht Innere Stadt)","3., Marxergasse 1a"],["Arbeits- und Sozialgericht Wien","9., Althanstraße 39-45"],["Polizeianhaltezentrum Wien","8., Hernalser Gürtel 6-12"],["Rechnungshof","3., Dampfschiffstraße 2"]]},{"name":"Polizei","karten":[["Bundespolizeidirektion Wien – Sicherheitsdirektion","1., Schottenring 7-9"],["BFA Bundesamt für Fremdenwesen und Asyl","8., Hernalser Gürtel 6-12"],["Verkehrsamt (Führerschein/Taxireferat)","3., Dietrichgasse 27"],["Stadtpolizeikommando Innere Stadt","1., Deutschmeisterplatz 3"],["Stadtpolizeikommando Landstraße","3., Juchgasse 19"],["Stadtpolizeikommando Margareten (für die Bezirke 4, 5 und 6)","5., Viktor-Christ-Gasse 19"],["Stadtpolizeikommando Josefstadt (für die Bezirke 7, 8 und 9)","8., Fuhrmannsgasse 5"],["Stadtpolizeikommando Favoriten","10., Van-der-Nüll-Gasse 11"],["Stadtpolizeikommando Simmering","11., Enkplatz 3"],["Stadtpolizeikommando Meidling (für die Bezirke 12 und 13)","12., Hohenbergstraße 1"],["Stadtpolizeikommando Fünfhaus (für die Bezirke 14 und 15)","15., Tannengasse 6"],["Stadtpolizeikommando Ottakring (für die Bezirke 16 und 17)","16., Wattgasse 15"],["Stadtpolizeikommando Döbling (für die Bezirke 18 und 19)","19., Hohe Warte 32"],["Stadtpolizeikommando Brigittenau (für die Bezirke 2 und 20)","20., Pappenheimgasse 33"],["Stadtpolizeikommando Floridsdorf","21., Hermann-Bahr-Straße 3"],["Stadtpolizeikommando Donaustadt","22., Wagramer Straße 89"],["Stadtpolizeikommando Liesing","23., Lehmanngasse 3a"]]},{"name":"Post & Verkehr","karten":[["Hauptpostamt","1., Fleischmarkt 19"],["Post-Verteilerzentrum","23., Halban-Kurz-Straße"],["Hauptbahnhof Wien","10., Am Hauptbahnhof 1"],["Franz-Josefs-Bahnhof","9., Julius-Tandler-Platz 3"],["Westbahnhof","15., Europaplatz / Felberstraße"],["City-Air-Terminal / CAT (City Airport Train)","3., Gigergasse / Marxergasse"],["Bahnhof Wien-Nord","2., Praterstern"],["Bahnhof Wien-Mitte","3., Landstraßer Hauptstraße"],["Bahnhof Hütteldorf","14., Keißlergasse 5"],["Bahnhof Meidling","12., Eichenstraße 25"],["Vienna International Busbahnhof (VIB)","3., Erdbergstraße 200a / U3"],["Autobusbahnhof Südtiroler Platz","10., Südtiroler Platz / Wiedner Gürtel / U1"],["Autobusbahnhof Floridsdorf","21., Floridsdorf / Schloßhofer Straße / U6"],["Autobusbahnhof Kagran","22., Dr.-Adolf-Schärf-Platz / U1"],["Autobusbahnhof Simmering","11., Simmeringer Platz / U3"],["International Fernbus Terminal für Wien (beim Stadion-Center)","2., Engerthstraße 269"],["DDSG-Schifffahrtszentrum (Wien-Reichsbrücke)","2., Handelskai 265"],["Dampfschiffstation Schwedenbrücke (Wien-Rundfahrten)","1., Franz-Josefs-Kai / Schwedenbrücke"],["Wiener Hafen (Zollfreizone)","2., Seitenhafenstraße 15"],["Freudenauer Hafen","2., Freudenauer Hafenstraße 8-10"],["Alberner Hafen","11., Alberner Hafen Zufahrtsstraße"],["Kuchelauer Hafen","19., Kuchelauer Hafenstraße"],["Kfz-Verwahrstelle der MA 48","11., Jedletzbergerstraße 1"],["Landesfahrzeugprüfstelle","11., 7. Haidequerstraße 5"]]},{"name":"Medien & Kammern","karten":[["ORF Funkhaus Wien","4., Argentinierstraße 30a"],["ORF Fernsehen / ORF Rundfunk / Ö3","13., Hugo-Portisch-Gasse 1"],["ORF-Landesstudio Wien","19., Heiligenstädter Lände 27c"],["„Kronen Zeitung“","19., Muthgasse 2"],["„Kurier“ – Redaktion","19., Leopold-Ungar-Platz 1"],["Druckzentrum „Media-Print“","23., Richard-Strauss-Straße 16"],["Österreichische Staatsdruckerei","23., Tenschertstraße 7"],["APA – Austria Presse Agentur","6., Laimgrubengasse 10"],["ATV / PULS 4 (Media Quarter Marx)","3., Maria-Jacobi-Gasse 1"],["Arbeiterkammer Wien","4., Prinz-Eugen-Straße 20-22"],["Wirtschaftskammer Österreich","4., Wiedner Hauptstraße 63"],["Wirtschaftskammer Wien / Fachgruppe Wien für Personenbeförderungsgewerbe","2., Straße der Wiener Wirtschaft 1"]]},{"name":"Bezirksämter","karten":[["Magistratisches Bezirksamt 1. und 8. Bezirk","1., Wipplingerstraße 8"],["Magistratisches Bezirksamt 2. Bezirk","2., Karmelitergasse 9"],["Magistratisches Bezirksamt 3. Bezirk","3., Karl-Borromäus-Platz 3"],["Magistratisches Bezirksamt 4. und 5. Bezirk","5., Rechte Wienzeile 105"],["Magistratisches Bezirksamt 6. und 7. Bezirk","7., Hermanngasse 24-26"],["Magistratisches Bezirksamt 9. Bezirk","9., Wilhelm-Exner-Gasse 5"],["Magistratisches Bezirksamt 10. Bezirk","10., Laxenburger Straße 43-45"],["Magistratisches Bezirksamt 11. Bezirk","11., Enkplatz 2"],["Magistratisches Bezirksamt 12. Bezirk","12., Schönbrunner Straße 259"],["Magistratisches Bezirksamt 13. und 14. Bezirk","13., Hietzinger Kai 1-3"],["Magistratisches Bezirksamt 15. Bezirk","15., Gasgasse 8-10"],["Magistratisches Bezirksamt 16. Bezirk","16., Richard-Wagner-Platz 19"],["Magistratisches Bezirksamt 17. Bezirk","17., Elterleinplatz 14"],["Magistratisches Bezirksamt 18. Bezirk","18., Martinstraße 100"],["Magistratisches Bezirksamt 19. Bezirk","19., Pfarrwiesengasse 23c"],["Magistratisches Bezirksamt 20. Bezirk","20., Brigittaplatz 10"],["Magistratisches Bezirksamt 21. Bezirk","21., Am Spitz 1"],["Magistratisches Bezirksamt 22. Bezirk","22., Schrödingerplatz 1"],["Magistratisches Bezirksamt 23. Bezirk","23., Perchtoldsdorfer Straße 2"],["Fundservice Wien","5., Siebenbrunnenfeldgasse 3"]]},{"name":"Hotels","karten":[["Hotel Imperial","1., Kärntner Ring 16"],["Palais Coburg Residenz","1., Coburgbastei 4"],["Anantara Palais Hansen Vienna","1., Schottenring 24"],["Hotel Sacher Wien","1., Philharmonikerstraße 4"],["Vienna Marriott Hotel","1., Parkring 12a"],["Mandarin Oriental Vienna","1., Riemergasse 7"],["Adagio Vienna City","1., Uraniastraße 2 / Julius-Raab-Platz"],["Hotel Am Konzerthaus","3., Am Heumarkt 35-37"],["Hotel Am Parkring","1., Parkring 12"],["Hotel Am Stephansplatz","1., Stephansplatz 9"],["Austria Trend Hotel Ananas","5., Rechte Wienzeile 93-95"],["Arcotel Wimberger Wien","7., Neubaugürtel 34-36"],["Hotel Bosei","10., Gutheil-Schoder-Gasse 7b"],["Hotel City Central","2., Taborstraße 8"],["Hotel Doppio","3., Rennweg 99 / Rinnböckstraße 1"],["Hotel Erzherzog Rainer","4., Wiedner Hauptstraße 27-29"],["Eurostars Embassy","3., Landstraßer Hauptstraße 120"],["Flemings Hotel Wien-Stadthalle","7., Neubaugürtel 26-28"],["Hideouts Hotels Villa","19., Hasenauerstraße 12"],["Hotel Holiday Deluxe Inn Vienna City","5., Margaretenstraße 53"],["InterCityHotel Wien","7., Mariahilfer Straße 122 / Kaiserstraße 1-3"],["Hotel Johann Strauss","4., Favoritenstraße 12"],["Hotel Josefshof am Rathaus","8., Josefsgasse 4-8"],["K+K Hotel Maria Theresia","7., Kirchberggasse 6-8"],["Lindner Hotel Am Belvedere","3., Rennweg 12"],["Mercure Grand Hotel Biedermeier","3., Landstraßer Hauptstraße 28"],["Mercure Wien City","2., Hollandstraße 3"],["Mercure Wien Westbahnhof","15., Felberstraße 4"],["Hotel Nestroy Wien","2., Rotensterngasse 12"],["NH Wien City","7., Mariahilfer Straße 32-34"],["NH Danube City","22., Wagramer Straße 21"],["NH Wien Belvedere","3., Rennweg 12a"],["Novotel Wien City","2., Aspernbrückengasse 1"],["Park Inn by Radisson Uno City Vienna","22., Wagramer Straße 16-18"],["Plaza Premium Wien – RTK Round Table Konferenzhotels","10., Hertha-Firnberg-Straße 5"],["Hotel Regina","9., Rooseveltplatz 15"],["Schloss Wilhelminenberg","16., Savoyenstraße 2"],["Hotel Secession an der Oper","6., Getreidemarkt 5"],["Hotel Simm’s","11., Simmeringer Hauptstraße 55"],["Starlight Suiten Hotel Wien Heumarkt","3., Am Heumarkt 15"],["Starlight Suiten Hotel Wien Renngasse","1., Renngasse 13"],["Starlight Suiten Hotel Wien Salzgries","1., Salzgries 12"],["Hotel Stefanie","2., Taborstraße 12"],["Strudlhof Hotel & Palais","9., Pasteurgasse 1"],["Vienna Sporthotel","3., Baumgasse 83"],["Ibis Styles Wien City","19., Döblinger Hauptstraße 2"],["Ibis Wien City","5., Schönbrunner Straße 92"],["Ibis Wien Mariahilf","6., Mariahilfer Gürtel 22-24"],["Ibis Wien Messe","2., Lassallestraße 7a"],["Spark by Hilton Vienna Messe Prater","2., Messestraße 2"],["Hotel Post","1., Fleischmarkt 24"],["25hours Hotel beim MuseumsQuartier","7., Lerchenfelder Straße 1-3"],["Adina Apartment Hotel Vienna Belvedere","10., Canettistraße 3"],["Almanac Palais Vienna","1., Parkring 14-16"],["Hotel Ambassador","1., Kärntner Straße 22 / Neuer Markt 5"],["Hyatt Regency Vienna","10., Arsenalstraße 10"],["Hotel Daniel Vienna","3., Landstraßer Gürtel 5"],["Flemings Selection Hotel Wien-City","8., Josefstädter Straße 10-12"],["Hotel Grand Ferdinand","1., Schubertring 10-12"],["Grand Hotel","1., Kärntner Ring 9"],["Hilton Vienna Park","3., Am Stadtpark 1"],["Hilton Vienna Plaza","1., Schottenring 11"],["Hilton Vienna Danube Waterfront","2., Handelskai 269"],["Ibercity Wien Schönbrunn","12., Schönbrunner Schloßstraße 38-40"],["Imperial Riding School","3., Ungargasse 60"],["InterContinental Wien","3., Johannesgasse 28"],["Le Méridien Wien","1., Robert-Stolz-Platz 1"],["Meliá Vienna","22., Donau-City-Straße 7"],["Mercure Wien Zentrum","1., Fleischmarkt 1a"],["Moons Vienna","4., Wiedner Gürtel 16"],["Park Hyatt Vienna","1., Am Hof 2"],["Radisson Blu Das Triest Hotel Vienna","4., Wiedner Hauptstraße 12"],["Radisson Red Vienna","2., Obere Donaustraße 61"],["Renaissance Wien Hotel","15., Ullmannstraße 71 / Linke Wienzeile"],["Rosewood Vienna","1., Petersplatz 7"],["SO/ Vienna","2., Praterstraße 1"],["Spark by Hilton Vienna","22., Dr.-Adolf-Schärf-Platz 6"],["Steigenberger Hotel Herrenhof","1., Herrengasse 10"],["The Amauris Vienna","1., Kärntner Ring 8"],["The Ritz-Carlton","1., Schubertring 5-7"],["Hotel Topazz","1., Lichtensteg 3"]]},{"name":"Kaffeehäuser","karten":[["Café Central","1., Herrengasse 14"],["Café Einstein","1., Rathausplatz 8"],["Café Hawelka","1., Dorotheergasse 6"],["Café Landtmann","1., Universitätsring 4"],["Café Mozart","1., Albertinaplatz 2"],["Café Museum","1., Operngasse 7"],["Café Prückel","1., Stubenring 24"],["Café Schwarzenberg","1., Kärntner Ring 17"],["Café Lusthaus","2., Freudenau 254 / Aspernallee"],["Café Drechsler","6., Linke Wienzeile 22"],["Café Ritter","6., Mariahilfer Straße 73"],["Café Sperl","6., Gumpendorfer Straße 11"],["Café Eiles","8., Josefstädter Straße 2"],["Café Hummel","8., Josefstädter Straße 66"],["Kurkonditorei Oberlaa Dommayer","13., Auhofstraße 2"]]},{"name":"Friedhöfe","karten":[["Friedhof Aspern","22., Langobardenstraße 180"],["Friedhof Baumgarten","14., Waidhausenstraße 52"],["Friedhof Döbling","19., Hartäckerstraße 65"],["Friedhof Dornbach","17., Alszeile 28"],["Feuerhalle Simmering","11., Simmeringer Hauptstraße 337"],["Friedhof Grinzing","19., An den langen Lüssen 33"],["Friedhof Groß-Jedlersdorf","21., Strebersdorfer Straße 2"],["Friedhof Heiligenstadt","19., Wildgrubgasse 20"],["Friedhof Hernals","17., Leopold-Kunschak-Platz 7"],["Friedhof Hietzing","13., Maxingstraße 15"],["Friedhof Hütteldorf","14., Samptwandnergasse 6"],["Friedhof Inzersdorf","23., Kolbegasse 34"],["Islamischer Friedhof","23., Großmarktstraße 2a"],["Friedhof Meidling","12., Eibesbrunnergasse 1a (Haidackergasse 6)"],["Friedhof Mauer","23., Friedensstraße 6-16"],["Friedhof Neustift","18., Pötzleinsdorfer Höhe 2"],["Friedhof Oberlaa","10., Friedhofstraße 33"],["Friedhof Ottakring","16., Gallitzinstraße 5"],["Friedhof Sievering","19., Nottebohmstraße 51"],["Friedhof Simmering","11., Unter der Kirche 5"],["Stammersdorfer Zentralfriedhof","21., Stammersdorfer Straße 244-260"],["Südwestfriedhof","12., Hervicusgasse 44 bzw. Wundtgasse 1A"],["Zentralfriedhof (Simmering)","11., Simmeringer Hauptstraße 234"]]},{"name":"Krankenhäuser","karten":[["Allgemeines Krankenhaus (AKH)","9., Währinger Gürtel 18"],["AUVA – Traumazentrum Wien Meidling","12., Kundratstraße 37"],["AUVA – Traumazentrum Wien Lorenz Böhler","20., Donaueschingenstraße 13"],["Krankenhaus Barmherzige Schwestern","6., Stumpergasse 13-15"],["Krankenhaus Barmherzige Brüder","2., Johannes-von-Gott-Platz 1"],["Privatklinik Confraternität","8., Skodagasse 32"],["Klinik Donaustadt","22., Langobardenstraße 122"],["Evangelisches Krankenhaus","18., Hans-Sachs-Gasse 10-12"],["Anton-Proksch-Institut (API)","23., Gräfin-Zichy-Straße 6"],["Franziskus Spital Landstraße","3., Landstraßer Hauptstraße 4a"],["Franziskus Spital Margareten","5., Nikolsdorfer Gasse 32"],["Privatklinik Goldenes Kreuz","9., Lazarettgasse 16-18"],["Krankenhaus Göttlicher Heiland","17., Dornbacher Straße 20-30"],["Hanusch-Krankenhaus","14., Heinrich-Collin-Straße 30"],["Sanatorium Liebhartstal","16., Kollburggasse 6-10"],["Sanitätszentrum Ost","21., Brünner Straße 238"],["Herz-Jesu-Krankenhaus","3., Baumgasse 20A"],["Klinik Hietzing","13., Wolkersbergenstraße 1"],["Neurologisches Krankenhaus Rosenhügel","13., Riedelgasse 5"],["Orthopädisches Spital Speising","13., Speisinger Straße 109"],["Rudolfinerhaus","19., Billrothstraße 78"],["Klinik Landstraße","3., Juchgasse 25"],["Sanatorium Hera","9., Löblichgasse 14"],["Privatklinik Döbling","19., Heiligenstädter Straße 55 und 63"],["Klinik Penzing","14., Baumgartner Höhe 1"],["Klinik Favoriten","10., Kundratstraße 3"],["St. Anna Kinderspital","9., Kinderspitalgasse 6"],["St. Josef Krankenhaus","13., Auhofstraße 189"],["Universitätszahnklinik","9., Sensengasse 2a"],["Klinik Floridsdorf","21., Brünner Straße 68"],["Klinik Ottakring","16., Montleartstraße 37"],["Wiener Privatklinik","9., Pelikangasse 15"],["Kuratorium der Wiener Pensionistenwohnhäuser (Zentrale)","9., Seegasse 11"]]},{"name":"Theater & Kultur","karten":[["Burgtheater","1., Universitätsring 2"],["Kammerspiele","1., Rotenturmstraße 20"],["Musikverein","1., Musikvereinsplatz 1"],["Ronacher","1., Seilerstätte 9 / Himmelpfortgasse 25"],["Staatsoper","1., Opernring 2"],["Wiener Kammeroper","1., Fleischmarkt 24"],["Akademietheater","3., Lisztstraße 1"],["Konzerthaus","3., Lothringerstraße 20"],["Raimundtheater","6., Wallgasse 18-20"],["Theater an der Wien","6., Linke Wienzeile 6"],["Volkstheater","7., Arthur-Schnitzler-Platz 1"],["Theater in der Josefstadt","8., Josefstädter Straße 26"],["Volksoper","9., Währinger Straße 78"],["Stadthalle","15., Roland-Rainer-Platz 1 / Hütteldorfer Straße"],["CasaNova Vienna","1., Dorotheergasse 6-8"],["Eden Bar","1., Liliengasse 2"],["Globe Wien – Marx Halle","3., Karl-Farkas-Gasse 19"],["Kabarett Niedermair","8., Lenaugasse 1A"],["Kabarett Vindobona","20., Wallensteinplatz 6"],["Kulisse","17., Rosensteingasse 39"],["Metropol","17., Hernalser Hauptstraße 55"],["Orpheum","22., Steigenteschgasse 94b"],["Rabenhof Theater","3., Rabengasse 3"],["Sargfabrik","14., Goldschlagstraße 169"],["Simpl","1., Wollzeile 36"],["Stadtsaal","6., Mariahilfer Straße 81"],["Theater Akzent","4., Theresianumgasse 18"],["Theater am Spittelberg","7., Spittelberggasse 10"]]},{"name":"Universitäten","karten":[["Universität Wien","1., Universitätsring 1"],["Universität für angewandte Kunst","1., Oskar-Kokoschka-Platz 2"],["Akademie der bildenden Künste","1., Schillerplatz 3"],["Universität für Musik und darstellende Kunst","3., Anton-von-Webern-Platz 1"],["Tech Gate Vienna","22., Donau-City-Straße 9"],["Technische Universität","4., Karlsplatz 13"],["Wirtschaftsuniversität („WU“)","2., Welthandelsplatz 1"],["Universität für Bodenkultur („BOKU“)","18., Gregor-Mendel-Straße 33"],["Veterinärmedizinische Universität","21., Veterinärplatz 1"],["Pädagogische Hochschule Wien","10., Grenzackerstraße 18"]]},{"name":"Museen","karten":[["Albertina","1., Albertinaplatz 1"],["Museum für angewandte Kunst („MAK“)","1., Stubenring 5"],["Kunsthistorisches Museum","1., Burgring 5 / Maria-Theresien-Platz"],["Naturhistorisches Museum","1., Burgring 7 / Maria-Theresien-Platz"],["Secession","1., Friedrichstraße 12"],["Weltmuseum Wien","1., Neue Burg (Heldenplatz)"],["Sisi Museum Hofburg Wien","1., Hofburg / Michaelerkuppel"],["Kaisergruft (Kapuzinergruft)","1., Tegetthoffstraße 2 / Neuer Markt"],["Heeresgeschichtliches Museum","3., Arsenal, Objekt 1"],["Kunst Haus Wien","3., Untere Weißgerberstraße 13"],["Wien Museum","4., Karlsplatz 8"],["MuseumsQuartier","7., Museumsplatz 1"],["Technisches Museum","14., Mariahilfer Straße 212"]]},{"name":"Sehenswürdigkeiten","karten":[["Hofburgkapelle","1., Hofburg (Schweizerhof)"],["Schatzkammer","1., Hofburg (Schweizerhof)"],["Kongresszentrum Hofburg","1., Hofburg (Heldenplatz)"],["Nationalbibliothek","1., Josefsplatz"],["Spanische Hofreitschule","1., Michaelerplatz 1"],["Prinz-Eugen-Denkmal","1., Heldenplatz"],["Erzherzog-Karl-Denkmal","1., Heldenplatz"],["Ankeruhr","1., Hoher Markt 10-11"],["Stephansdom","1., Stephansplatz 3"],["Riesenrad","2., Riesenradplatz"],["Schloss Belvedere","3., Prinz-Eugen-Straße 27"],["Hundertwasserhaus","3., Löwengasse / Kegelgasse 36"],["Haus des Meeres","6., Fritz-Grünbaum-Platz 1"],["Sigmund-Freud-Museum","9., Berggasse 19"],["Schloss Schönbrunn (Haupteingang)","13., Schönbrunner Schloßstraße 47"],["Tiergarten Schönbrunn","13., Maxingstraße 13b"],["Gloriette (Schönbrunn)","12., Hohenbergstraße (Parkeingang)"],["Austria Center Vienna","22., Bruno-Kreisky-Platz 1"],["Donauturm","22., Donauturmplatz 1"],["UNO-City","22., Wagramer Straße 5"],["Roßauer Kaserne","9., Türkenstraße 22"],["Karlskirche","4., Kreuzherrengasse 1"],["Votivkirche","9., Rooseveltplatz"],["Peterskirche","1., Petersplatz 1"]]}];
 // frühere App-Nummer (1–160) -> heutige Nummer, für den gespeicherten Lernstand
 const ALT_NR = {"1":1,"2":2,"3":3,"4":4,"5":5,"6":6,"7":7,"8":8,"9":9,"10":10,"11":11,"12":12,"13":13,"14":14,"15":15,"16":16,"17":17,"18":18,"19":19,"20":20,"22":97,"24":52,"26":31,"29":21,"30":49,"31":32,"33":23,"34":24,"35":95,"36":42,"38":28,"39":30,"40":34,"41":35,"43":36,"44":37,"47":104,"48":108,"49":43,"50":26,"51":58,"52":61,"54":45,"56":46,"57":48,"59":68,"60":76,"61":89,"63":47,"64":51,"65":41,"66":29,"67":84,"68":88,"69":53,"72":103,"73":106,"75":54,"76":56,"77":59,"78":60,"79":62,"80":64,"82":69,"84":82,"85":55,"87":50,"88":66,"90":70,"93":77,"94":77,"95":74,"96":71,"97":72,"98":73,"99":75,"101":94,"102":80,"103":81,"104":83,"105":85,"106":87,"107":91,"108":101,"109":105,"111":98,"112":100,"115":79,"116":25,"117":27,"118":90,"120":86,"125":96,"126":99,"128":33,"130":111,"132":112,"134":93,"136":110,"137":117,"142":124,"144":122,"146":123,"147":102,"148":107,"149":78,"150":114,"152":121,"155":125,"156":127,"157":126,"158":128,"159":130};
 // vorhandene Aufnahmen der Straßennamen je Stimme in audio/<stimme>/ (stimmen.py)
@@ -2213,7 +2283,7 @@ function missPulse(latlng) {
 const ICON_REDO = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 12a8 8 0 1 1-2.6-5.9"/><path d="M20 4v5h-5"/></svg>';
 // Route ganz von vorne (Fortschritt, Ergebnis, Kamera zum Start)
 function redoRoute() { reset(); renderList(); cameraTo(state.route); }
-function reset() { state.paused = false; state.playing = false; state.res = []; state.miss = {}; state.how = {}; state.finished = false; stopAnim(); state.opts = null; const sc = document.getElementById('score'); if (sc) sc.textContent = ''; state.step = 0; state.errors = 0; state.done = false; state.choices = null; state.answered = null; routeLayer.clearLayers(); flashLayer.clearLayers(); showPoints(false); render(); }
+function reset() { state.paused = false; state.playing = false; state.res = []; state.miss = {}; state.how = {}; state.finished = false; stopAnim(); const sc = document.getElementById('score'); if (sc) sc.textContent = ''; state.step = 0; state.errors = 0; state.done = false; state.choices = null; state.answered = null; routeLayer.clearLayers(); flashLayer.clearLayers(); showPoints(false); render(); }
 function nextRoute(random) {
   let r;
   const V = inChap();
@@ -2257,7 +2327,7 @@ function chip(label, cls = '') {
 }
 const MODES = {
   lernen: ['Lernen', 'Route ablaufen lassen oder Straße für Straße antippen'],
-  reihe: ['Reihe', 'Welche Straße kommt als Nächstes?'],
+  karten: ['Karteikarten', 'Vorne der Ort, hinten die Adresse'],
   auswahl: ['Auswahl', 'Welche Variante stimmt mit dem Fragenkatalog überein?'],
   fahren: ['Nachfahren', 'Wie bei der mündlichen Prüfung: Straßen auf der Karte antippen'],
 };
@@ -2278,7 +2348,8 @@ function render() {
   $('#modeTitle').textContent = MODES[state.mode][0]; $('#modeSub').textContent = MODES[state.mode][1];
   document.querySelectorAll('.tab').forEach(t => t.classList.toggle('on', t.dataset.mode === state.mode));
   const p = $('#play'); p.innerHTML = '';
-  ({ lernen: renderLernen, reihe: renderReihe, auswahl: renderAuswahl, fahren: renderFahren })[state.mode](p);
+  document.body.classList.toggle('karten', state.mode === 'karten');
+  ({ lernen: renderLernen, karten: renderKarten, auswahl: renderAuswahl, fahren: renderFahren })[state.mode](p);
 }
 
 // Lernen
@@ -2287,7 +2358,7 @@ function geoNotice(p) {
   const box = el('div', 'notice');
   if (geoState === 'failed') {
     box.append(el('strong', '', 'Ohne Linien auf der Karte'));
-    box.append(el('span', '', 'Das Straßennetz konnte nicht geladen werden (' + geoError + '). Lernen, Reihe und Auswahl gehen trotzdem. Für Linien und „Nachfahren": Internet prüfen und die Datei am besten in Google Chrome öffnen – Safari blockiert solche Abrufe aus lokalen Dateien oft.'));
+    box.append(el('span', '', 'Das Straßennetz konnte nicht geladen werden (' + geoError + '). Lernen, Auswahl und Karteikarten gehen trotzdem. Für Linien und „Nachfahren": Internet prüfen und die Datei am besten in Google Chrome öffnen – Safari blockiert solche Abrufe aus lokalen Dateien oft.'));
     const b = el('button', 'btn', 'Nochmal laden'); b.onclick = () => loadStreets(); box.append(b);
   } else box.append(el('span', '', 'Straßennetz wird geladen … die Linien erscheinen gleich.'));
   p.append(box);
@@ -2414,43 +2485,6 @@ function playRoute(resume) {
   // nah an die Stelle, an der es losgeht, dann Straße für Straße
   if (startPt && !reduced()) { camSeq++; camMove(() => map.flyTo(startPt, Math.max(17, Math.min(18, Math.round(map.getZoom()))), { duration: 0.8 }), 0.8).then(() => { if (gen === drawGen) setTimeout(tick, 250); }); }
   else setTimeout(tick, 500);
-}
-
-// Reihenfolge
-function optionsFor(i) {
-  const keys = state.route.steps.map(streetKey), correct = keys[i];
-  let cand = [...POOL.keys()].filter(k => k !== correct && k !== keys[i - 1]);
-  if (STREETS && i > 0 && STREETS[keys[i - 1]]) {
-    // Nachbarstraßen der vorigen Straße als Ablenkung: erst grob über die Umrisse, dann genauer
-    const bbGap = (x, y) => { const dy = Math.max(0, x[0] - y[2], y[0] - x[2]) * 110540, dx = Math.max(0, x[1] - y[3], y[1] - x[3]) * 74000; return Math.hypot(dx, dy); };
-    const fb = STREET_BB[keys[i - 1]], thin = k => STREETS[k].map(w => w.filter((_, j) => j % 3 === 0 || j === w.length - 1));
-    const from = thin(keys[i - 1]);
-    cand = cand.filter(k => STREETS[k] && !HWY_KEYS.has(k)).map(k => [k, bbGap(fb, STREET_BB[k])]).filter(x => x[1] < 300).sort((a, b) => a[1] - b[1]).slice(0, 25)
-      .map(([k]) => [k, nearestPair(from, thin(k)).d]).sort((a, b) => a[1] - b[1]).slice(0, 7).map(x => x[0]);
-    if (cand.length < 3) cand = [...POOL.keys()].filter(k => k !== correct && k !== keys[i - 1]);
-  }
-  const picks = shuffle(cand).slice(0, 3);
-  // alle Antworten gleich beschriften (ohne Zusätze wie „Sonderspur“), sonst verrät sich die richtige
-  return shuffle([correct, ...picks]).map(k => ({ key: k, label: POOL.get(k), ok: k === correct }));
-}
-function renderReihe(p) {
-  const r = state.route;
-  p.append(el('p', 'hint', state.step === 0 ? `Start: ${r.from}. Welche Straße kommt zuerst?` : 'Welche Straße kommt als Nächstes?'));
-  const done = el('div', 'chain');
-  r.steps.slice(0, state.step).forEach(s => done.append(chip(s, 'ok')));
-  p.append(done);
-  if (state.step >= r.steps.length) return finish(p);
-  if (!state.opts || state.opts.step !== state.step) state.opts = { step: state.step, list: optionsFor(state.step) };
-  const grid = el('div', 'opts');
-  state.opts.list.forEach(o => {
-    const b = el('button', 'opt'); b.type = 'button'; b.append(chip(o.label));
-    b.onclick = () => {
-      if (o.ok) { state.res[state.step] = state.miss[state.step] ? 'bad' : 'ok'; sfx('ok'); sayStreet(o.label, 220); drawSeg(state.step, { animate: 700, label: stepName(state.route.steps[state.step]) }); state.step++; if (state.step >= state.route.steps.length) celebrate(); render(); }
-      else { sfx('wrong'); state.errors++; state.miss[state.step] = true; b.classList.add('no'); b.disabled = true; $('#score').textContent = state.errors + ' Fehler'; }
-    };
-    grid.append(b);
-  });
-  p.append(grid, progress());
 }
 
 // Auswahl (schriftlich)
@@ -2780,7 +2814,7 @@ function nextBar() {
 }
 
 document.addEventListener('keydown', e => {
-  if (!shown() || (e.target instanceof Element && e.target.closest('input, textarea, select, button'))) return;
+  if (!shown() || state.mode === 'karten' || (e.target instanceof Element && e.target.closest('input, textarea, select, button'))) return;
   if (e.key === 'ArrowDown') { e.preventDefault(); swipeRoute(1); }
   if (e.key === 'ArrowUp') { e.preventDefault(); swipeRoute(-1); }
   if (state.mode !== 'lernen' || !STREETS || state.playing) return;
@@ -2825,6 +2859,187 @@ $('#theme').onclick = () => { theme = theme === 'dark' ? 'light' : 'dark'; try {
 applyTheme();
 $('#reload').onclick = async () => { await idbDel(IDB_KEY); STREETS = null; render(); loadStreets(); };
 renderList(); render(); loadStreets();
+
+// --- Karteikarten: Adressen aus dem Fragenkatalog (vorne der Ort, hinten die Adresse), ohne Karte ---
+// Tippen/Leertaste dreht die Karte um, nach rechts wischen bzw. → = gewusst, nach links bzw. ← = nicht gewusst,
+// Rücktaste bzw. ↶ = letzte Karte zurück. Lernstand je Karte und der laufende Stapel bleiben gespeichert.
+const BEZIRKE = ['Innere Stadt', 'Leopoldstadt', 'Landstraße', 'Wieden', 'Margareten', 'Mariahilf', 'Neubau', 'Josefstadt', 'Alsergrund',
+  'Favoriten', 'Simmering', 'Meidling', 'Hietzing', 'Penzing', 'Rudolfsheim-Fünfhaus', 'Ottakring', 'Hernals', 'Währing', 'Döbling',
+  'Brigittenau', 'Floridsdorf', 'Donaustadt', 'Liesing'];
+const KARTEN_ALL = KARTEN.flatMap((k, ki) => k.karten.map(([name, adr]) => ({ id: k.name + '|' + name, kat: ki, name, adr })));
+const KARTEN_BY_ID = new Map(KARTEN_ALL.map(c => [c.id, c]));
+const KSTAT_KEY = 'taxi-karten-v1', KSET_KEY = 'taxi-karten-auswahl-v1', KRUN_KEY = 'taxi-karten-stapel-v1';
+const kLoad = (k, d) => { try { const v = JSON.parse(localStorage.getItem(k)); return v == null ? d : v; } catch (e) { return d; } };
+const kSave = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} };
+// Lernstand je Karte: [wie oft gewusst, wie oft nicht, zuletzt gewusst?]
+let kstat = kLoad(KSTAT_KEY, {});
+// Auswahl: welche Kategorien, nur noch nicht gewusste, gemischt
+let kset = Object.assign({ kat: KARTEN.map((_, i) => i), offen: false, mischen: true }, kLoad(KSET_KEY, {}));
+// laufender Stapel: Karten-IDs, Position, Ergebnisse (id -> true/false) in der Reihenfolge der Antworten
+let krun = kLoad(KRUN_KEY, null);
+let kflip = false, kdrag = null;
+const known = id => kstat[id] && kstat[id][2];
+
+function kDeck(ids) {
+  const list = kset.mischen ? shuffle(ids.slice()) : ids.slice();
+  krun = { ids: list, i: 0, hist: [] }; kflip = false; kSave(KRUN_KEY, krun);
+}
+function kNewDeck() {
+  let ids = KARTEN_ALL.filter(c => kset.kat.includes(c.kat)).map(c => c.id);
+  if (kset.offen) ids = ids.filter(id => !known(id));
+  kDeck(ids);
+}
+function kValid() {
+  if (!krun || !Array.isArray(krun.ids) || !Array.isArray(krun.hist)) return false;
+  krun.ids = krun.ids.filter(id => KARTEN_BY_ID.has(id));
+  krun.hist = krun.hist.filter(h => KARTEN_BY_ID.has(h[0]));
+  krun.i = Math.min(krun.i, krun.ids.length);
+  return true;
+}
+const kRight = () => krun.hist.filter(h => h[1]).length, kWrong = () => krun.hist.filter(h => !h[1]).map(h => h[0]);
+
+function kAnswer(ok) {
+  if (!krun || krun.i >= krun.ids.length) return;
+  const id = krun.ids[krun.i], s = kstat[id] || [0, 0, false];
+  s[ok ? 0 : 1]++; s[2] = ok; kstat[id] = s; kSave(KSTAT_KEY, kstat);
+  krun.hist.push([id, ok]); krun.i++; kflip = false; kSave(KRUN_KEY, krun);
+  sfx(ok ? 'ok' : 'wrong');
+  if (krun.i >= krun.ids.length) sfx('goal');
+  kFly(ok ? 1 : -1);
+}
+function kUndo() {
+  if (!krun || !krun.hist.length) return;
+  const [id, ok] = krun.hist.pop(), s = kstat[id];
+  if (s) { s[ok ? 0 : 1] = Math.max(0, s[ok ? 0 : 1] - 1); s[2] = false; }
+  kSave(KSTAT_KEY, kstat); krun.i = Math.max(0, krun.i - 1); kflip = false; kSave(KRUN_KEY, krun);
+  drawKarten(); renderKartenPanel();
+}
+function kFlip() { if (!krun || krun.i >= krun.ids.length) return; kflip = !kflip; const f = $('#cards .fc'); if (f) f.classList.toggle('flipped', kflip); }
+// Karte fliegt zur Seite hinaus, dann kommt die nächste
+function kFly(dir) {
+  const f = $('#cards .fc');
+  if (!f || reduced()) { drawKarten(); renderKartenPanel(); return; }
+  f.style.transition = 'transform .28s ease-in, opacity .28s ease-in';
+  f.style.transform = `translateX(${dir * 120}%) rotate(${dir * 14}deg)`; f.style.opacity = '0';
+  setTimeout(() => { drawKarten(); renderKartenPanel(); }, 230);
+}
+
+function bezirkText(adr) {
+  const m = adr.match(/^(\d{1,2})\.,\s*(.*)$/);
+  return m ? { bez: `${m[1]}. Bezirk · ${BEZIRKE[+m[1] - 1] || ''}`, str: m[2] } : { bez: '', str: adr };
+}
+// Kartenstapel in der Fläche der Karte
+function drawKarten() {
+  const box = $('#cards'); box.innerHTML = '';
+  if (!kValid()) kNewDeck();
+  const n = krun.ids.length, done = krun.i >= n, right = kRight(), wrong = kWrong();
+  const top = el('div', 'fc-top');
+  const prog = el('div', 'fc-prog'), bar = el('i'); bar.style.width = (n ? 100 * krun.i / n : 0) + '%'; prog.append(bar);
+  const cnt = el('div', 'fc-cnt');
+  cnt.append(el('span', 'fc-ok', `✓ ${right}`), el('span', 'fc-pos', n ? `${Math.min(krun.i + 1, n)} / ${n}` : '0 / 0'), el('span', 'fc-bad', `✕ ${wrong.length}`));
+  top.append(prog, cnt); box.append(top);
+  const stage = el('div', 'fc-stage'); box.append(stage);
+  if (!n) {
+    const e = el('div', 'fc-end'); e.append(el('b', '', 'Keine Karten'), el('span', '', kset.offen ? 'In dieser Auswahl hast du alle schon gewusst. Schalte „Nur noch nicht gewusste“ aus oder wähle andere Kategorien.' : 'Wähle links mindestens eine Kategorie.'));
+    stage.append(e); return;
+  }
+  if (done) {
+    const e = el('div', 'fc-end');
+    const pct = Math.round(100 * right / n);
+    e.append(el('small', '', 'Stapel fertig'), el('b', '', `${right} von ${n} gewusst`), el('span', '', pct === 100 ? 'Alles gewusst – stark!' : `${pct} %`));
+    const row = el('div', 'fc-endbtns');
+    if (wrong.length) { const b = el('button', 'btn primary', `Falsche wiederholen (${wrong.length})`); b.type = 'button'; b.onclick = () => { kDeck(wrong); drawKarten(); renderKartenPanel(); }; row.append(b); }
+    const all = el('button', 'btn', 'Ganzen Stapel nochmal'); all.type = 'button'; all.onclick = () => { kNewDeck(); drawKarten(); renderKartenPanel(); };
+    row.append(all); e.append(row);
+    if (krun.hist.length) { const u = el('button', 'fc-undo', '↶ Letzte Karte zurück'); u.type = 'button'; u.onclick = kUndo; e.append(u); }
+    stage.append(e); return;
+  }
+  const c = KARTEN_BY_ID.get(krun.ids[krun.i]), b = bezirkText(c.adr);
+  const fc = el('div', 'fc' + (kflip ? ' flipped' : '')); fc.tabIndex = 0; fc.setAttribute('role', 'button'); fc.setAttribute('aria-label', 'Karte umdrehen');
+  const inner = el('div', 'fc-inner');
+  const front = el('div', 'fc-face fc-front'); front.append(el('small', '', KARTEN[c.kat].name), el('b', '', c.name), el('span', 'fc-tip', 'Tippen zum Umdrehen'));
+  const back = el('div', 'fc-face fc-back'); back.append(el('small', '', c.name), el('b', '', b.str), el('span', 'fc-bez', b.bez));
+  inner.append(front, back); fc.append(inner, el('span', 'fc-stamp ok', 'Gewusst'), el('span', 'fc-stamp bad', 'Nochmal'));
+  stage.append(fc);
+  // nächste Karte schon darunter andeuten
+  if (krun.i + 1 < n) stage.prepend(el('div', 'fc-next'));
+  const btns = el('div', 'fc-btns');
+  const no = el('button', 'fc-btn bad'); no.type = 'button'; no.title = 'Nicht gewusst (←)'; no.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M7 7l10 10M17 7L7 17"/></svg>'; no.onclick = () => kAnswer(false);
+  const un = el('button', 'fc-btn undo'); un.type = 'button'; un.title = 'Letzte Karte zurück (Rücktaste)'; un.disabled = !krun.hist.length; un.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 14L4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/></svg>'; un.onclick = kUndo;
+  const yes = el('button', 'fc-btn ok'); yes.type = 'button'; yes.title = 'Gewusst (→)'; yes.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>'; yes.onclick = () => kAnswer(true);
+  btns.append(no, un, yes); box.append(btns);
+  box.append(el('p', 'fc-keys', 'Leertaste: umdrehen · Pfeil rechts: gewusst · Pfeil links: nicht gewusst · Rücktaste: zurück'));
+  kDragInit(fc);
+}
+// Wischen: Karte folgt dem Finger, ab ~90 px zählt es als Antwort, sonst ist es ein Tipp zum Umdrehen
+function kDragInit(fc) {
+  fc.addEventListener('pointerdown', e => {
+    if (e.button !== 0 && e.pointerType === 'mouse') return;
+    kdrag = { x: e.clientX, y: e.clientY, dx: 0, moved: false, id: e.pointerId }; fc.setPointerCapture(e.pointerId); fc.style.transition = 'none';
+  });
+  fc.addEventListener('pointermove', e => {
+    if (!kdrag || e.pointerId !== kdrag.id) return;
+    kdrag.dx = e.clientX - kdrag.x; if (Math.abs(kdrag.dx) > 6) kdrag.moved = true;
+    fc.style.transform = `translateX(${kdrag.dx}px) rotate(${kdrag.dx / 22}deg)`;
+    const k = Math.min(1, Math.abs(kdrag.dx) / 90);
+    fc.querySelector('.fc-stamp.ok').style.opacity = kdrag.dx > 0 ? k : 0;
+    fc.querySelector('.fc-stamp.bad').style.opacity = kdrag.dx < 0 ? k : 0;
+  });
+  const end = e => {
+    if (!kdrag || e.pointerId !== kdrag.id) return;
+    const { dx, moved } = kdrag; kdrag = null;
+    if (Math.abs(dx) > 90) { kAnswer(dx > 0); return; }
+    fc.style.transition = 'transform .25s cubic-bezier(.2,.8,.2,1)'; fc.style.transform = '';
+    fc.querySelectorAll('.fc-stamp').forEach(s => { s.style.opacity = 0; });
+    if (!moved && e.type === 'pointerup') kFlip();
+  };
+  fc.addEventListener('pointerup', end); fc.addEventListener('pointercancel', end);
+  fc.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); kFlip(); } });
+}
+document.addEventListener('keydown', e => {
+  if (state.mode !== 'karten' || e.metaKey || e.ctrlKey || e.altKey || (e.target instanceof Element && e.target.closest('input, textarea, select'))) return;
+  if (e.key === ' ' || e.key === 'ArrowUp' || e.key === 'ArrowDown') { e.preventDefault(); if (document.activeElement && document.activeElement.blur) document.activeElement.blur(); kFlip(); }
+  else if (e.key === 'ArrowRight') { e.preventDefault(); kAnswer(true); }
+  else if (e.key === 'ArrowLeft') { e.preventDefault(); kAnswer(false); }
+  else if (e.key === 'Backspace') { e.preventDefault(); kUndo(); }
+});
+
+// Leiste links: Kategorien wählen, Lernstand, Stapel neu mischen
+function renderKarten(p) { p.append(el('div', 'kpanel')); renderKartenPanel(); drawKarten(); }
+function renderKartenPanel() {
+  const p = $('#play .kpanel'); if (!p) return; p.innerHTML = '';
+  const tot = KARTEN_ALL.length, kn = KARTEN_ALL.filter(c => known(c.id)).length;
+  const head = el('div', 'k-head');
+  head.append(el('h2', 'h-title', 'Adressen lernen'), el('p', 'hint', `${kn} von ${tot} Adressen gewusst`));
+  const pb = el('div', 'prog'), pf = el('i'); pf.style.width = (100 * kn / tot) + '%'; pb.append(pf); head.append(pb);
+  p.append(head);
+  const opts = el('div', 'k-opts');
+  const tog = (key, label) => {
+    const b = el('button', 'k-tog' + (kset[key] ? ' on' : ''), label); b.type = 'button'; b.setAttribute('aria-pressed', !!kset[key]);
+    b.onclick = () => { kset[key] = !kset[key]; kSave(KSET_KEY, kset); kNewDeck(); drawKarten(); renderKartenPanel(); };
+    return b;
+  };
+  opts.append(tog('mischen', 'Gemischt'), tog('offen', 'Nur noch nicht gewusste'));
+  p.append(opts);
+  const sec = el('div', 'k-sec'); sec.append(el('h3', '', 'Kategorien'));
+  const allOn = kset.kat.length === KARTEN.length;
+  const ab = el('button', 'pillbtn', allOn ? 'Keine' : 'Alle'); ab.type = 'button';
+  ab.onclick = () => { kset.kat = allOn ? [] : KARTEN.map((_, i) => i); kSave(KSET_KEY, kset); kNewDeck(); drawKarten(); renderKartenPanel(); };
+  sec.append(ab); p.append(sec);
+  const list = el('div', 'k-kats');
+  KARTEN.forEach((k, i) => {
+    const ids = k.karten.map(([name]) => k.name + '|' + name), kk = ids.filter(known).length, on = kset.kat.includes(i);
+    const b = el('button', 'k-kat' + (on ? ' on' : '')); b.type = 'button'; b.setAttribute('aria-pressed', on);
+    const dots = el('span', 'k-bar'), f = el('i'); f.style.width = (100 * kk / ids.length) + '%'; dots.append(f);
+    b.append(el('span', 'k-check'), el('span', 'k-name', k.name), el('span', 'k-n', `${kk}/${ids.length}`), dots);
+    b.onclick = () => { kset.kat = on ? kset.kat.filter(x => x !== i) : kset.kat.concat(i).sort((a, b2) => a - b2); kSave(KSET_KEY, kset); kNewDeck(); drawKarten(); renderKartenPanel(); };
+    list.append(b);
+  });
+  p.append(list);
+  const rs = el('button', 'btn k-reset', 'Lernstand der Karteikarten löschen'); rs.type = 'button';
+  rs.onclick = () => { if (!confirm('Lernstand aller Karteikarten wirklich löschen?')) return; kstat = {}; kSave(KSTAT_KEY, kstat); kNewDeck(); drawKarten(); renderKartenPanel(); };
+  p.append(rs, el('p', 'k-src', 'Quelle: WKO-Fragenkatalog 2026, Ortskunde – Adressen'));
+}
 
 </script>
 </body>
