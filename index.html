@@ -405,7 +405,10 @@ body.karten .maphead p { visibility: visible; }
 .k-head .hint { color: var(--muted); }
 .k-opts { display: flex; flex-wrap: wrap; gap: 8px; }
 .k-tog { border: 0; border-radius: 999px; padding: 8px 14px; background: var(--card); font-size: .88rem; cursor: pointer; }
+.k-tog { color: var(--fg); }
 .k-tog.on { background: var(--fg); color: var(--card); }
+.k-cnt { display: inline-block; min-width: 1.5em; margin-left: 4px; padding: 0 6px; border-radius: 999px; background: #e5484d; color: #fff; font-size: .78rem; font-weight: 600; text-align: center; }
+.k-head .h-title { color: var(--fg); }
 .k-sec { display: flex; align-items: center; justify-content: space-between; }
 .k-sec h3 { margin: 0; font-size: 1rem; }
 .k-kats { display: grid; gap: 6px; }
@@ -467,7 +470,7 @@ body.karten .maphead p { visibility: visible; }
       </div>
       <div class="sec"><h3>Routen <small id="count"></small></h3><button id="shuffle" class="pillbtn" type="button">Zufällig</button></div>
       <div id="routes"></div>
-      <div class="foot"><span>Stand 30.10.2026 10:11 · Routen: WKO-Fragenkatalog 2026 · Daten: Stadt Wien, basemap.at, OpenStreetMap</span><button id="reload" type="button">Straßennetz neu laden</button></div>
+      <div class="foot"><span>Stand 30.10.2026 16:43 · Routen: WKO-Fragenkatalog 2026 · Daten: Stadt Wien, basemap.at, OpenStreetMap</span><button id="reload" type="button">Straßennetz neu laden</button></div>
     </div>
   </aside>
 </div>
@@ -2870,7 +2873,7 @@ renderList(); render(); loadStreets();
 
 // --- Karteikarten: Adressen aus dem Fragenkatalog (vorne der Ort, hinten die Adresse), ohne Karte ---
 // Tippen/Leertaste dreht die Karte um, nach rechts wischen bzw. → = gewusst, nach links bzw. ← = nicht gewusst,
-// Rücktaste bzw. ↶ = letzte Karte zurück. Lernstand je Karte und der laufende Stapel bleiben gespeichert.
+// ↓ bzw. ↶ = letzte Karte zurück. Lernstand je Karte und der laufende Stapel bleiben gespeichert.
 const BEZIRKE = ['Innere Stadt', 'Leopoldstadt', 'Landstraße', 'Wieden', 'Margareten', 'Mariahilf', 'Neubau', 'Josefstadt', 'Alsergrund',
   'Favoriten', 'Simmering', 'Meidling', 'Hietzing', 'Penzing', 'Rudolfsheim-Fünfhaus', 'Ottakring', 'Hernals', 'Währing', 'Döbling',
   'Brigittenau', 'Floridsdorf', 'Donaustadt', 'Liesing'];
@@ -2881,12 +2884,17 @@ const kLoad = (k, d) => { try { const v = JSON.parse(localStorage.getItem(k)); r
 const kSave = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} };
 // Lernstand je Karte: [wie oft gewusst, wie oft nicht, zuletzt gewusst?]
 let kstat = kLoad(KSTAT_KEY, {});
-// Auswahl: welche Kategorien, nur noch nicht gewusste, gemischt
-let kset = Object.assign({ kat: KARTEN.map((_, i) => i), offen: false, mischen: true }, kLoad(KSET_KEY, {}));
+// Auswahl: welche Kategorien, gemischt oder nur die falschen (nie beides zugleich)
+let kset = Object.assign({ kat: KARTEN.map((_, i) => i), falsch: false, mischen: true }, kLoad(KSET_KEY, {}));
+delete kset.offen;
+if (kset.falsch && kset.mischen) kset.mischen = false;
 // laufender Stapel: Karten-IDs, Position, Ergebnisse (id -> true/false) in der Reihenfolge der Antworten
 let krun = kLoad(KRUN_KEY, null);
 let kflip = false, kdrag = null;
 const known = id => kstat[id] && kstat[id][2];
+// falsch: zuletzt nicht gewusst
+const wrong = id => !!kstat[id] && !kstat[id][2] && kstat[id][1] > 0;
+const kWrongIds = () => KARTEN_ALL.filter(c => kset.kat.includes(c.kat) && wrong(c.id)).map(c => c.id);
 
 function kDeck(ids) {
   const list = kset.mischen ? shuffle(ids.slice()) : ids.slice();
@@ -2894,7 +2902,7 @@ function kDeck(ids) {
 }
 function kNewDeck() {
   let ids = KARTEN_ALL.filter(c => kset.kat.includes(c.kat)).map(c => c.id);
-  if (kset.offen) ids = ids.filter(id => !known(id));
+  if (kset.falsch) ids = ids.filter(wrong);
   kDeck(ids);
 }
 function kValid() {
@@ -2951,7 +2959,7 @@ function drawKarten() {
   top.append(prog, cnt); box.append(top);
   const stage = el('div', 'fc-stage'); box.append(stage);
   if (!n) {
-    const e = el('div', 'fc-end'); e.append(el('b', '', 'Keine Karten'), el('span', '', kset.offen ? 'In dieser Auswahl hast du alle schon gewusst. Schalte „Nur noch nicht gewusste“ aus oder wähle andere Kategorien.' : 'Wähle links mindestens eine Kategorie.'));
+    const e = el('div', 'fc-end'); e.append(el('b', '', 'Keine Karten'), el('span', '', kset.falsch ? 'In dieser Auswahl ist keine Karte mehr falsch. Schalte „Falsch“ aus oder wähle andere Kategorien.' : 'Wähle links mindestens eine Kategorie.'));
     stage.append(e); return;
   }
   if (done) {
@@ -2976,10 +2984,10 @@ function drawKarten() {
   if (krun.i + 1 < n) stage.prepend(el('div', 'fc-next'));
   const btns = el('div', 'fc-btns');
   const no = el('button', 'fc-btn bad'); no.type = 'button'; no.title = 'Nicht gewusst (←)'; no.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M7 7l10 10M17 7L7 17"/></svg>'; no.onclick = () => kAnswer(false);
-  const un = el('button', 'fc-btn undo'); un.type = 'button'; un.title = 'Letzte Karte zurück (Rücktaste)'; un.disabled = !krun.hist.length; un.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 14L4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/></svg>'; un.onclick = kUndo;
+  const un = el('button', 'fc-btn undo'); un.type = 'button'; un.title = 'Letzte Karte zurück (Pfeil nach unten)'; un.disabled = !krun.hist.length; un.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 14L4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/></svg>'; un.onclick = kUndo;
   const yes = el('button', 'fc-btn ok'); yes.type = 'button'; yes.title = 'Gewusst (→)'; yes.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>'; yes.onclick = () => kAnswer(true);
   btns.append(no, un, yes); box.append(btns);
-  box.append(el('p', 'fc-keys', 'Leertaste: umdrehen · Pfeil rechts: gewusst · Pfeil links: nicht gewusst · Rücktaste: zurück'));
+  box.append(el('p', 'fc-keys', 'Leertaste: umdrehen · Pfeil rechts: gewusst · Pfeil links: nicht gewusst · Pfeil runter: zurück'));
   kDragInit(fc);
 }
 // Wischen: Karte folgt dem Finger, ab ~90 px zählt es als Antwort, sonst ist es ein Tipp zum Umdrehen
@@ -3009,10 +3017,10 @@ function kDragInit(fc) {
 }
 document.addEventListener('keydown', e => {
   if (state.mode !== 'karten' || e.metaKey || e.ctrlKey || e.altKey || (e.target instanceof Element && e.target.closest('input, textarea, select'))) return;
-  if (e.key === ' ' || e.key === 'ArrowUp' || e.key === 'ArrowDown') { e.preventDefault(); if (document.activeElement && document.activeElement.blur) document.activeElement.blur(); kFlip(); }
+  if (e.key === ' ' || e.key === 'ArrowUp') { e.preventDefault(); if (document.activeElement && document.activeElement.blur) document.activeElement.blur(); kFlip(); }
   else if (e.key === 'ArrowRight') { e.preventDefault(); kAnswer(true); }
   else if (e.key === 'ArrowLeft') { e.preventDefault(); kAnswer(false); }
-  else if (e.key === 'Backspace') { e.preventDefault(); kUndo(); }
+  else if (e.key === 'ArrowDown') { e.preventDefault(); kUndo(); }
 });
 
 // Leiste links: Kategorien wählen, Lernstand, Stapel neu mischen
@@ -3027,10 +3035,17 @@ function renderKartenPanel() {
   const opts = el('div', 'k-opts');
   const tog = (key, label) => {
     const b = el('button', 'k-tog' + (kset[key] ? ' on' : ''), label); b.type = 'button'; b.setAttribute('aria-pressed', !!kset[key]);
-    b.onclick = () => { kset[key] = !kset[key]; kSave(KSET_KEY, kset); kNewDeck(); drawKarten(); renderKartenPanel(); };
+    b.onclick = () => {
+      kset[key] = !kset[key];
+      if (kset[key]) kset[key === 'mischen' ? 'falsch' : 'mischen'] = false;
+      kSave(KSET_KEY, kset); kNewDeck(); drawKarten(); renderKartenPanel();
+    };
     return b;
   };
-  opts.append(tog('mischen', 'Gemischt'), tog('offen', 'Nur noch nicht gewusste'));
+  opts.append(tog('mischen', 'Gemischt'));
+  // „Falsch“ erst, wenn eine Karte falsch beantwortet wurde
+  const nf = kWrongIds().length;
+  if (nf || kset.falsch) { const f = tog('falsch', 'Falsch '); f.append(el('span', 'k-cnt', String(nf))); opts.append(f); }
   p.append(opts);
   const sec = el('div', 'k-sec'); sec.append(el('h3', '', 'Kategorien'));
   const allOn = kset.kat.length === KARTEN.length;
