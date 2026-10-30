@@ -355,7 +355,7 @@ ol.steps li.dest .chip { background: var(--acc); color: var(--acc-ink); padding:
 }
 /* --- Karteikarten (Modus „karten“): statt der Karte ein Kartenstapel, links die Kategorien --- */
 #cards { display: none; }
-body.karten #cards { display: flex; position: absolute; inset: 0; z-index: 1001; flex-direction: column; align-items: center; padding: 168px 24px 28px; background: rgba(46,46,49,.8); overflow: hidden; }
+body.karten #cards { display: flex; position: absolute; inset: 0; z-index: 1001; flex-direction: column; align-items: center; padding: 168px 24px 28px; background: rgba(46,46,49,.9); overflow: hidden; }
 /* dahinter schimmert die Karte durch: dunkel eingefärbt, ohne Linien/Schilder, nicht bedienbar */
 body.karten #map { pointer-events: none; }
 body.karten #map .leaflet-tile-pane { filter: invert(1) hue-rotate(180deg) grayscale(.7) brightness(.85) contrast(.9); }
@@ -476,7 +476,7 @@ body.karten .maphead p { visibility: visible; }
       </div>
       <div class="sec"><h3>Routen <small id="count"></small></h3><button id="shuffle" class="pillbtn" type="button">Zufällig</button></div>
       <div id="routes"></div>
-      <div class="foot"><span>Stand 30.10.2026 16:52 · Routen: WKO-Fragenkatalog 2026 · Daten: Stadt Wien, basemap.at, OpenStreetMap</span><button id="reload" type="button">Straßennetz neu laden</button></div>
+      <div class="foot"><span>Stand 30.10.2026 17:11 · Routen: WKO-Fragenkatalog 2026 · Daten: Stadt Wien, basemap.at, OpenStreetMap</span><button id="reload" type="button">Straßennetz neu laden</button></div>
     </div>
   </aside>
 </div>
