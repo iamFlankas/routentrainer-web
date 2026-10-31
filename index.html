@@ -485,8 +485,9 @@ body.karten #theme svg { width: 22px; height: 22px; }
 .k-bar i { display: block; height: 100%; background: var(--acc); }
 .k-reset { font-size: .82rem; }
 .k-foot { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
-.k-link { border: 0; background: none; padding: 4px 0; font: inherit; font-size: .85rem; font-weight: 500; color: #fff; text-decoration: underline; text-underline-offset: 3px; cursor: pointer; text-shadow: 0 1px 2px rgba(0,0,0,.25); }
-.k-link:hover { text-decoration-thickness: 2px; }
+/* Alle auswählen/abwählen: umrandete Pille (ohne Füllung), damit sie sich von Mischen/Falsch (gefüllt) unterscheidet */
+.k-link { border: 1.5px solid rgba(20,20,20,.55); background: none; border-radius: 999px; padding: 5px 12px; font: inherit; font-size: .8rem; font-weight: 500; color: #141414; cursor: pointer; transition: background .15s, border-color .15s; }
+.k-link:hover { background: rgba(0,0,0,.07); border-color: #141414; }
 .k-src { margin: 0; font-size: .75rem; color: var(--on-panel-muted); }
 @media (max-width: 760px) {
   body.karten .mapwrap { height: 80vh; height: 80dvh; }
@@ -552,7 +553,7 @@ body.karten #theme svg { width: 22px; height: 22px; }
       </div>
       <div class="sec"><h3>Routen <small id="count"></small></h3><button id="shuffle" class="pillbtn" type="button">Zufällig</button></div>
       <div id="routes"></div>
-      <div class="foot"><span>Stand 31.10.2026 22:57 · Routen: WKO-Fragenkatalog 2026 · Daten: Stadt Wien, basemap.at, OpenStreetMap</span><span class="foot-btns"><button id="melden" type="button">Fehler melden</button><button id="reload" type="button">Straßennetz neu laden</button></span></div>
+      <div class="foot"><span>Stand 31.10.2026 23:02 · Routen: WKO-Fragenkatalog 2026 · Daten: Stadt Wien, basemap.at, OpenStreetMap</span><span class="foot-btns"><button id="melden" type="button">Fehler melden</button><button id="reload" type="button">Straßennetz neu laden</button></span></div>
     </div>
   </aside>
 </div>
@@ -3427,11 +3428,12 @@ function renderKartenPanel() {
   }
   if (nf || kset.falsch) { const f = tog('falsch', 'Falsch '); f.append(el('span', 'k-cnt', String(nf))); opts.append(f); }
   const sec = el('div', 'k-sec'); sec.append(el('h3', '', 'Kategorien'));
-  // Textlinks statt Knöpfen: „Alle auswählen“ oben, solange eine fehlt; „Alle abwählen“ unten, solange eine gewählt ist
+  // ein Textlink oben neben „Kategorien“, der umschaltet: „Alle auswählen“, solange eine fehlt, sonst „Alle abwählen“
   const setKat = kat => { kset.kat = kat; kSave(KSET_KEY, kset); kNewDeck(); drawKarten(); renderKartenPanel(); };
   const link = (label, fn) => { const b = el('button', 'k-link', label); b.type = 'button'; b.onclick = fn; return b; };
-  // links „Kategorien“ und Alle auswählen, rechts nach einem Strich Mischen/Alle/Falsch
-  const left = el('div', 'k-left'); left.append(sec.firstChild); if (kset.kat.length < KARTEN.length) left.append(link('Alle auswählen', () => setKat(KARTEN.map((_, i) => i)))); opts.prepend(el('span', 'k-div')); sec.append(left, opts); p.append(sec);
+  // links „Kategorien“ und der Link, rechts nach einem Strich Mischen/Alle/Falsch
+  const alle = kset.kat.length === KARTEN.length;
+  const left = el('div', 'k-left'); left.append(sec.firstChild, alle ? link('Alle abwählen', () => setKat([])) : link('Alle auswählen', () => setKat(KARTEN.map((_, i) => i)))); opts.prepend(el('span', 'k-div')); sec.append(left, opts); p.append(sec);
   const list = el('div', 'k-kats');
   KARTEN.forEach((k, i) => {
     const ids = k.karten.map(([name]) => k.name + '|' + name), kk = ids.filter(known).length, on = kset.kat.includes(i);
@@ -3444,7 +3446,7 @@ function renderKartenPanel() {
   p.append(list);
   const rs = el('button', 'btn k-reset', 'Lernstand der Karteikarten löschen'); rs.type = 'button';
   rs.onclick = () => { if (!confirm('Lernstand aller Karteikarten wirklich löschen?')) return; kstat = {}; kSave(KSTAT_KEY, kstat); kNewDeck(); drawKarten(); renderKartenPanel(); };
-  const foot = el('div', 'k-foot'); foot.append(rs); if (kset.kat.length) foot.append(link('Alle abwählen', () => setKat([])));
+  const foot = el('div', 'k-foot'); foot.append(rs);
   p.append(foot, el('p', 'k-src', 'Quelle: WKO-Fragenkatalog 2026, Ortskunde'));
 }
 
