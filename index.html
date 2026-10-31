@@ -438,13 +438,17 @@ body.karten #theme svg { width: 22px; height: 22px; }
 .seq-fehler .ok { color: var(--good); font-weight: 600; } .seq-fehler .bad { color: var(--bad); font-weight: 600; }
 .seq-again { border: 0; border-radius: 999px; padding: 6px 14px; font: inherit; font-weight: 600; font-size: .88rem; cursor: pointer; color: var(--fg); background: color-mix(in srgb, var(--fg) 10%, transparent); transition: background .15s, transform .12s; }
 .seq-again:hover { background: color-mix(in srgb, var(--fg) 16%, transparent); } .seq-again:active { transform: scale(.95); }
-/* Lösung gezeigt: Karte gelb, Pillen dunkel auf gelb */
+/* fertig gelegt bzw. Lösung gezeigt: Karte gelb, Pillen schwarz mit weißer Schrift; die Nummer ist grün bei selbst
+   richtig gelegten, hell bei per Lösung gezeigten */
 .fc-seq .fc-face { transition: background .35s, color .35s; }
 .fc-seq .fc-face.loesung { background: var(--acc); color: #141414; }
-.loesung .seq-chip, .loesung .seq-again { color: #141414; background: rgba(0,0,0,.09); }
-.loesung .seq-chip.ok { color: #1d6b35; background: rgba(29,107,53,.16); }
-.loesung .seq-again:hover { background: rgba(0,0,0,.15); }
+.loesung .seq-chip, .loesung .seq-chip.ok, .loesung .seq-chip.shown { color: #fff; background: #141414; }
+.loesung .seq-chip .seq-nr { background: rgba(255,255,255,.18); }
+.loesung .seq-chip.ok .seq-nr { background: #2f9e55; }
+.loesung .seq-again { color: #141414; background: rgba(0,0,0,.1); }
+.loesung .seq-again:hover { background: rgba(0,0,0,.16); }
 .loesung .seq-fehler { color: rgba(20,20,20,.7); }
+.loesung .seq-fehler .ok { color: #1d6b35; } .loesung .seq-fehler .bad { color: #a8231b; }
 .fc-seqbtn { min-width: 150px; height: 46px; background: var(--card); color: var(--fg); font-weight: 600; box-shadow: 0 6px 18px rgba(0,0,0,.12); }
 .fc-seqbtn.primary { background: var(--acc); color: #141414; }
 .kpanel { display: grid; gap: 14px; }
@@ -548,7 +552,7 @@ body.karten #theme svg { width: 22px; height: 22px; }
       </div>
       <div class="sec"><h3>Routen <small id="count"></small></h3><button id="shuffle" class="pillbtn" type="button">Zufällig</button></div>
       <div id="routes"></div>
-      <div class="foot"><span>Stand 31.10.2026 21:19 · Routen: WKO-Fragenkatalog 2026 · Daten: Stadt Wien, basemap.at, OpenStreetMap</span><span class="foot-btns"><button id="melden" type="button">Fehler melden</button><button id="reload" type="button">Straßennetz neu laden</button></span></div>
+      <div class="foot"><span>Stand 31.10.2026 21:22 · Routen: WKO-Fragenkatalog 2026 · Daten: Stadt Wien, basemap.at, OpenStreetMap</span><span class="foot-btns"><button id="melden" type="button">Fehler melden</button><button id="reload" type="button">Straßennetz neu laden</button></span></div>
     </div>
   </aside>
 </div>
@@ -3320,8 +3324,8 @@ function kSeqCard(fc, c) {
     // fertig, aber nicht fehlerfrei: dieselbe Karte gleich nochmal legen
     if (st.fehler) { const b = el('button', 'seq-again', '↻ Nochmal üben'); b.type = 'button'; b.onclick = kSeqNochmal; info.append(b); }
   }
-  // nach „Lösung zeigen“ wird die Karte gelb wie die Rückseite der normalen Karten
-  if (st.shown) face.classList.add('loesung');
+  // fertig (selbst gelegt oder „Lösung zeigen“): die Karte wird gelb wie die Rückseite der normalen Karten
+  if (st.n >= c.adr.length) face.classList.add('loesung');
   const inner = el('div', 'seq-in'); inner.append(...face.childNodes, done, pool, info); face.append(inner); fc.append(face);
 }
 // alles ohne Scrollen auf die Karte: ist der Inhalt zu hoch (kleines Handy, niedriges Fenster), wird er verkleinert
