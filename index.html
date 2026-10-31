@@ -422,7 +422,9 @@ body.karten #theme svg { width: 22px; height: 22px; }
 .seq-in { margin: auto 0; width: 100%; display: flex; flex-direction: column; align-items: center; gap: 14px; }
 .fc-seq .fc-face b { font-size: clamp(1.25rem, 2.8vw, 1.7rem); }
 .fc-seq .fc-bez { font-size: .9rem; margin-top: -10px; }
-.seq-pool { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; }
+.seq-done, .seq-pool { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; width: 100%; }
+.seq-done:empty, .seq-pool:empty { display: none; }
+.seq-done:not(:empty) + .seq-pool { padding-top: 14px; border-top: 1px solid color-mix(in srgb, var(--fg) 12%, transparent); }
 .seq-chip { display: inline-flex; align-items: center; gap: 8px; padding: 11px 18px; border-radius: 999px; border: 0; font: inherit; font-weight: 600; font-size: 1.1rem; line-height: 1.2; cursor: pointer; color: var(--fg); background: color-mix(in srgb, var(--fg) 10%, transparent); transition: transform .12s, background .2s, color .2s; }
 .seq-chip:disabled { cursor: default; }
 .seq-chip.ok { background: color-mix(in srgb, var(--good) 20%, transparent); color: var(--good); }
@@ -483,7 +485,8 @@ body.karten #theme svg { width: 22px; height: 22px; }
   .fc-seq .fc-face b { font-size: 1.15rem; line-height: 1.15; }
   .fc-seq .fc-face b.fc-mid { font-size: 1rem; }
   .fc-seq .fc-bez { font-size: .8rem; margin-top: -6px; }
-  .seq-pool { gap: 7px; }
+  .seq-done, .seq-pool { gap: 7px; }
+  .seq-done:not(:empty) + .seq-pool { padding-top: 10px; }
   .seq-chip { padding: 9px 14px; font-size: 1rem; }
   .seq-nr { width: 21px; height: 21px; margin-left: -6px; font-size: .72rem; }
   .fc-seqbtn { height: 42px; }
@@ -535,7 +538,7 @@ body.karten #theme svg { width: 22px; height: 22px; }
       </div>
       <div class="sec"><h3>Routen <small id="count"></small></h3><button id="shuffle" class="pillbtn" type="button">Zufällig</button></div>
       <div id="routes"></div>
-      <div class="foot"><span>Stand 31.10.2026 20:31 · Routen: WKO-Fragenkatalog 2026 · Daten: Stadt Wien, basemap.at, OpenStreetMap</span><span class="foot-btns"><button id="melden" type="button">Fehler melden</button><button id="reload" type="button">Straßennetz neu laden</button></span></div>
+      <div class="foot"><span>Stand 31.10.2026 21:06 · Routen: WKO-Fragenkatalog 2026 · Daten: Stadt Wien, basemap.at, OpenStreetMap</span><span class="foot-btns"><button id="melden" type="button">Fehler melden</button><button id="reload" type="button">Straßennetz neu laden</button></span></div>
     </div>
   </aside>
 </div>
@@ -3166,9 +3169,10 @@ function kBack(c) {
 const adrText = c => isSeq(c) ? c.adr.join(' – ') : c.adr;
 
 // Reihenfolge-Karte: die Straßen liegen gemischt da und werden der Reihe nach angetippt.
-// Sie bleiben dabei an ihrem Platz: richtig angetippt wird die Straße grün und bekommt ihre Nummer, falsch wackelt sie
-// rot und zählt als Fehler. Ohne Fehler geht es von selbst weiter (gewusst), sonst bzw. nach „Lösung zeigen“ mit
-// „Weiter“ (nicht gewusst). pos: Straße (Index in c.adr) -> ihre Stelle in der Reihenfolge; shown: per Lösung gezeigt.
+// Richtig angetippt wird die Straße grün, bekommt ihre Nummer und gleitet nach oben in die Reihe – am Ende stehen
+// alle von Anfang bis Ende nummeriert oben. Falsch wackelt sie rot und zählt als Fehler. Ohne Fehler geht es von selbst
+// weiter (gewusst), sonst bzw. nach „Lösung zeigen“ mit „Weiter“ (nicht gewusst).
+// pos: Straße (Index in c.adr) -> ihre Stelle in der Reihenfolge; gezeigt: per Lösung gezeigt.
 let kseq = null;
 function kSeqState(c) {
   if (!kseq || kseq.id !== c.id || kseq.i !== krun.i) kseq = { id: c.id, i: krun.i, n: 0, fehler: 0, shown: false, pos: {}, gezeigt: {}, order: shuffle(c.adr.map((_, j) => j)) };
@@ -3183,7 +3187,7 @@ function kSeqPick(j) {
   // gleiche Namen (zweimal Favoritenstraße) sind austauschbar
   if (c.adr[j] === c.adr[st.n]) {
     st.pos[j] = st.n++;
-    drawKarten();
+    kSeqRedraw();
     if (st.n >= c.adr.length && !st.fehler) setTimeout(() => { if (kseq === st && krun.i === st.i && !kflying) kAnswer(true); }, 900);
   } else {
     st.fehler++; sfx('wrong');
@@ -3201,7 +3205,19 @@ function kSeqShow() {
     const j = kSeqOffen(st).find(x => c.adr[x] === c.adr[st.n]);
     st.pos[j] = st.n; st.gezeigt[j] = true;
   }
+  kSeqRedraw();
+}
+// neu zeichnen und die Pillen von ihrem alten an den neuen Platz gleiten lassen (FLIP)
+function kSeqRedraw() {
+  const vorher = new Map([...document.querySelectorAll('#cards .seq-chip')].map(b => [b.dataset.j, b.getBoundingClientRect()]));
   drawKarten();
+  if (reduced()) return;
+  const inner = $('#cards .seq-in'), z = inner && +inner.style.zoom || 1;
+  document.querySelectorAll('#cards .seq-chip').forEach(b => {
+    const a = vorher.get(b.dataset.j), r = b.getBoundingClientRect(); if (!a || !b.animate) return;
+    const dx = (a.left - r.left) / z, dy = (a.top - r.top) / z; if (!dx && !dy) return;
+    b.animate([{ transform: `translate(${dx}px, ${dy}px)` }, { transform: 'none' }], { duration: 380, easing: 'cubic-bezier(.3,.7,.2,1)' });
+  });
 }
 const kSeqInfo = (c, st) => st.n >= c.adr.length ? (st.shown ? 'Lösung' : st.fehler ? `${st.fehler} Fehler – nochmal üben` : 'Richtig!')
   : `${KARTEN[c.kat].frage} · ${st.n} von ${c.adr.length}` + (st.fehler ? ` · ${st.fehler} Fehler` : '');
@@ -3265,30 +3281,36 @@ function drawKarten() {
   box.append(fehlerLink('Fehler auf dieser Karte melden', `Karteikarte „${c.name}“`, [`Kategorie: ${KARTEN[c.kat].name}`, `Vorne: ${c.name}${c.zus ? ' (' + c.zus + ')' : ''}`, `Antwort (Katalog): ${adrText(c)}`], 'flink fc-melden'));
   if (seq) kSeqFit(); else kDragInit(fc);
 }
-// Inhalt der Reihenfolge-Karte: oben Name und Bezirk, darunter alle Straßen als große Pillen (gelegte grün mit ihrer
-// Nummer), unten Frage und Stand
+// Inhalt der Reihenfolge-Karte: oben Name und Bezirk, darunter die schon gelegten Straßen der Reihe nach (grün bzw.
+// gelb mit Nummer), nach einem Strich die übrigen gemischt – alle gleich groß; unten Frage und Stand
 function kSeqCard(fc, c) {
   const st = kSeqState(c), face = kFront(c, false);
   // die Frage steht unten in der Zeile mit dem Stand (spart oben eine Zeile)
   face.querySelector('small').remove();
-  const pool = el('div', 'seq-pool');
-  st.order.forEach(j => {
-    const p = st.pos[j], b = el('button', 'seq-chip' + (p == null ? '' : st.gezeigt[j] ? ' shown' : ' ok')); b.type = 'button'; b.dataset.j = j;
-    // Nummer erst, wenn die Straße richtig angetippt ist (vorher keine Zahlen – sie sähen wie die Lösung aus)
-    if (p != null) { b.disabled = true; b.append(el('span', 'seq-nr', String(p + 1))); }
+  const done = el('div', 'seq-done'), pool = el('div', 'seq-pool');
+  // Nummer erst, wenn die Straße richtig angetippt ist (vorher keine Zahlen – sie sähen wie die Lösung aus)
+  st.order.filter(j => st.pos[j] != null).sort((a, b) => st.pos[a] - st.pos[b]).forEach(j => {
+    const b = el('button', 'seq-chip ' + (st.gezeigt[j] ? 'shown' : 'ok')); b.type = 'button'; b.dataset.j = j; b.disabled = true;
+    b.append(el('span', 'seq-nr', String(st.pos[j] + 1)), c.adr[j]); done.append(b);
+  });
+  kSeqOffen(st).forEach(j => {
+    const b = el('button', 'seq-chip'); b.type = 'button'; b.dataset.j = j;
     b.append(c.adr[j]); b.onclick = () => kSeqPick(j); pool.append(b);
   });
   const info = el('span', 'seq-fehler', kSeqInfo(c, st));
   if (st.n >= c.adr.length) info.classList.add(st.fehler ? 'bad' : 'ok');
-  const inner = el('div', 'seq-in'); inner.append(...face.childNodes, pool, info); face.append(inner); fc.append(face);
+  const inner = el('div', 'seq-in'); inner.append(...face.childNodes, done, pool, info); face.append(inner); fc.append(face);
 }
 // alles ohne Scrollen auf die Karte: ist der Inhalt zu hoch (kleines Handy, niedriges Fenster), wird er verkleinert
 function kSeqFit() {
   const face = $('#cards .fc-seq .fc-face'), inner = face && face.firstChild; if (!inner) return;
-  let z = 1; inner.style.zoom = '';
+  // innerhalb einer Karte nur kleiner werden, nie wieder größer – sonst springt die Schrift beim Antippen
+  const st = kseq && krun && kseq.i === krun.i ? kseq : null;
+  let z = st && st.zoom || 1; inner.style.zoom = z < 1 ? z : '';
   while (face.scrollHeight > face.clientHeight && z > 0.5) { z -= 0.04; inner.style.zoom = z; }
+  if (st) st.zoom = z;
 }
-addEventListener('resize', () => { if (state.mode === 'karten') kSeqFit(); });
+addEventListener('resize', () => { if (state.mode === 'karten') { if (kseq) kseq.zoom = 1; kSeqFit(); } });
 // Wischen: Karte folgt dem Finger, ab ~90 px zählt es als Antwort, sonst ist es ein Tipp zum Umdrehen
 function kDragInit(fc) {
   fc.addEventListener('pointerdown', e => {
