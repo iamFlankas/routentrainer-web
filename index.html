@@ -552,7 +552,7 @@ body.karten #theme svg { width: 22px; height: 22px; }
       </div>
       <div class="sec"><h3>Routen <small id="count"></small></h3><button id="shuffle" class="pillbtn" type="button">Zufällig</button></div>
       <div id="routes"></div>
-      <div class="foot"><span>Stand 31.10.2026 21:29 · Routen: WKO-Fragenkatalog 2026 · Daten: Stadt Wien, basemap.at, OpenStreetMap</span><span class="foot-btns"><button id="melden" type="button">Fehler melden</button><button id="reload" type="button">Straßennetz neu laden</button></span></div>
+      <div class="foot"><span>Stand 31.10.2026 22:47 · Routen: WKO-Fragenkatalog 2026 · Daten: Stadt Wien, basemap.at, OpenStreetMap</span><span class="foot-btns"><button id="melden" type="button">Fehler melden</button><button id="reload" type="button">Straßennetz neu laden</button></span></div>
     </div>
   </aside>
 </div>
@@ -3113,7 +3113,7 @@ function kFly(dir) {
   setTimeout(() => { kflying = false; drawKarten(); renderKartenPanel(); }, 230);
 }
 
-// beim Ein- und Ausschalten von „Gemischt“: die obersten Karten des neuen Stapels (mit Namen) fächern nach links und
+// beim Ein- und Ausschalten von „Mischen“: die obersten Karten des neuen Stapels (mit Namen) fächern nach links und
 // rechts auf und schieben sich zweimal ineinander; dabei wechselt ihre Reihenfolge. Die echte oberste Karte mischt mit
 // und landet zuletzt oben – so gibt es am Ende keinen Schnitt zwischen Animation und Karte. Die bisher oberste Karte
 // (prev, so wie sie gerade lag, auch umgedreht) liegt am Anfang noch vorne und verschwindet im Stapel.
@@ -3401,15 +3401,20 @@ function renderKartenPanel() {
     return b;
   };
   // „Licht“ rechts im Knopf: gelb = gemischt an, schwarz = aus
-  const mx = tog('mischen', 'Gemischt'); mx.append(el('span', 'k-led')); opts.append(mx);
-  // „Falsch“ erst, wenn eine Karte falsch beantwortet wurde
+  const mx = tog('mischen', 'Mischen'); mx.append(el('span', 'k-led')); opts.append(mx);
+  // „Falsch“ erst, wenn eine Karte falsch beantwortet wurde; ist es an, führt „Alle“ zurück zum ganzen Stapel
   const nf = kWrongIds().length;
+  if (kset.falsch) {
+    const a = el('button', 'k-tog', 'Alle'); a.type = 'button'; a.title = 'Wieder alle Karten der gewählten Kategorien';
+    a.onclick = () => { kset.falsch = false; kSave(KSET_KEY, kset); kNewDeck(); drawKarten(); renderKartenPanel(); };
+    opts.append(a);
+  }
   if (nf || kset.falsch) { const f = tog('falsch', 'Falsch '); f.append(el('span', 'k-cnt', String(nf))); opts.append(f); }
   const sec = el('div', 'k-sec'); sec.append(el('h3', '', 'Kategorien'));
   // Textlinks statt Knöpfen: „Alle auswählen“ oben, solange eine fehlt; „Alle abwählen“ unten, solange eine gewählt ist
   const setKat = kat => { kset.kat = kat; kSave(KSET_KEY, kset); kNewDeck(); drawKarten(); renderKartenPanel(); };
   const link = (label, fn) => { const b = el('button', 'k-link', label); b.type = 'button'; b.onclick = fn; return b; };
-  // links „Kategorien“ und Alle/Keine, rechts nach einem Strich Gemischt/Falsch
+  // links „Kategorien“ und Alle auswählen, rechts nach einem Strich Mischen/Alle/Falsch
   const left = el('div', 'k-left'); left.append(sec.firstChild); if (kset.kat.length < KARTEN.length) left.append(link('Alle auswählen', () => setKat(KARTEN.map((_, i) => i)))); opts.prepend(el('span', 'k-div')); sec.append(left, opts); p.append(sec);
   const list = el('div', 'k-kats');
   KARTEN.forEach((k, i) => {
