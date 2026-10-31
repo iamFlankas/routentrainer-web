@@ -434,8 +434,10 @@ body.karten #theme svg { width: 22px; height: 22px; }
 .seq-chip:not(:disabled):active { transform: scale(.95); }
 .seq-chip.nein { animation: seqNein .4s; background: color-mix(in srgb, var(--bad) 25%, transparent); }
 @keyframes seqNein { 0%, 100% { transform: translateX(0); } 20%, 60% { transform: translateX(-6px); } 40%, 80% { transform: translateX(6px); } }
-.seq-fehler { font-size: .88rem; color: var(--muted); }
-.seq-fehler.ok { color: var(--good); font-weight: 600; } .seq-fehler.bad { color: var(--bad); font-weight: 600; }
+.seq-fehler { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 6px 12px; font-size: .88rem; color: var(--muted); }
+.seq-fehler .ok { color: var(--good); font-weight: 600; } .seq-fehler .bad { color: var(--bad); font-weight: 600; }
+.seq-again { border: 0; border-radius: 999px; padding: 6px 14px; font: inherit; font-weight: 600; font-size: .88rem; cursor: pointer; color: var(--fg); background: color-mix(in srgb, var(--fg) 10%, transparent); transition: background .15s, transform .12s; }
+.seq-again:hover { background: color-mix(in srgb, var(--fg) 16%, transparent); } .seq-again:active { transform: scale(.95); }
 .fc-seqbtn { min-width: 150px; height: 46px; background: var(--card); color: var(--fg); font-weight: 600; box-shadow: 0 6px 18px rgba(0,0,0,.12); }
 .fc-seqbtn.primary { background: var(--acc); color: #141414; }
 .kpanel { display: grid; gap: 14px; }
@@ -491,6 +493,7 @@ body.karten #theme svg { width: 22px; height: 22px; }
   .seq-nr { width: 21px; height: 21px; margin-left: -6px; font-size: .72rem; }
   .fc-seqbtn { height: 42px; }
   .seq-fehler { font-size: .72rem; line-height: 1.25; }
+  .seq-again { font-size: .8rem; padding: 5px 12px; }
   .fc-btn { width: 56px; height: 56px; }
   .fc-keys { display: none; }
 }
@@ -538,7 +541,7 @@ body.karten #theme svg { width: 22px; height: 22px; }
       </div>
       <div class="sec"><h3>Routen <small id="count"></small></h3><button id="shuffle" class="pillbtn" type="button">Zufällig</button></div>
       <div id="routes"></div>
-      <div class="foot"><span>Stand 31.10.2026 21:06 · Routen: WKO-Fragenkatalog 2026 · Daten: Stadt Wien, basemap.at, OpenStreetMap</span><span class="foot-btns"><button id="melden" type="button">Fehler melden</button><button id="reload" type="button">Straßennetz neu laden</button></span></div>
+      <div class="foot"><span>Stand 31.10.2026 21:10 · Routen: WKO-Fragenkatalog 2026 · Daten: Stadt Wien, basemap.at, OpenStreetMap</span><span class="foot-btns"><button id="melden" type="button">Fehler melden</button><button id="reload" type="button">Straßennetz neu laden</button></span></div>
     </div>
   </aside>
 </div>
@@ -3175,7 +3178,7 @@ const adrText = c => isSeq(c) ? c.adr.join(' – ') : c.adr;
 // pos: Straße (Index in c.adr) -> ihre Stelle in der Reihenfolge; gezeigt: per Lösung gezeigt.
 let kseq = null;
 function kSeqState(c) {
-  if (!kseq || kseq.id !== c.id || kseq.i !== krun.i) kseq = { id: c.id, i: krun.i, n: 0, fehler: 0, shown: false, pos: {}, gezeigt: {}, order: shuffle(c.adr.map((_, j) => j)) };
+  if (!kseq || kseq.id !== c.id || kseq.i !== krun.i) kseq = { id: c.id, i: krun.i, n: 0, fehler: 0, rf: 0, runde: 1, shown: false, pos: {}, gezeigt: {}, order: shuffle(c.adr.map((_, j) => j)) };
   return kseq;
 }
 const kSeqDone = () => kseq && krun && kseq.i === krun.i && kseq.n >= KARTEN_BY_ID.get(kseq.id).adr.length;
@@ -3190,10 +3193,10 @@ function kSeqPick(j) {
     kSeqRedraw();
     if (st.n >= c.adr.length && !st.fehler) setTimeout(() => { if (kseq === st && krun.i === st.i && !kflying) kAnswer(true); }, 900);
   } else {
-    st.fehler++; sfx('wrong');
+    st.fehler++; st.rf++; sfx('wrong');
     const chip = $(`#cards .seq-pool [data-j="${j}"]`);
     if (chip) { chip.classList.remove('nein'); void chip.offsetWidth; chip.classList.add('nein'); }
-    const fl = $('#cards .seq-fehler'); if (fl) fl.textContent = kSeqInfo(c, st); kSeqFit();
+    const fl = $('#cards .seq-fehler span'); if (fl) fl.textContent = kSeqInfo(c, st); kSeqFit();
   }
 }
 // Lösung zeigen: die übrigen Straßen bekommen der Reihe nach ihre Nummer, zählt als nicht gewusst
@@ -3219,8 +3222,15 @@ function kSeqRedraw() {
     b.animate([{ transform: `translate(${dx}px, ${dy}px)` }, { transform: 'none' }], { duration: 380, easing: 'cubic-bezier(.3,.7,.2,1)' });
   });
 }
-const kSeqInfo = (c, st) => st.n >= c.adr.length ? (st.shown ? 'Lösung' : st.fehler ? `${st.fehler} Fehler – nochmal üben` : 'Richtig!')
-  : `${KARTEN[c.kat].frage} · ${st.n} von ${c.adr.length}` + (st.fehler ? ` · ${st.fehler} Fehler` : '');
+// Nochmal üben: dieselbe Karte neu gemischt von vorne; zählt trotzdem als nicht gewusst (die Fehler bleiben)
+function kSeqNochmal() {
+  const c = KARTEN_BY_ID.get(krun.ids[krun.i]); if (!c || !isSeq(c) || kflying || !kSeqDone()) return;
+  Object.assign(kseq, { n: 0, rf: 0, runde: kseq.runde + 1, shown: false, pos: {}, gezeigt: {}, order: shuffle(c.adr.map((_, j) => j)) });
+  kSeqRedraw();
+}
+// Stand unten auf der Karte; rf = Fehler in dieser Runde (nach „Nochmal üben“ zählt die neue Runde)
+const kSeqInfo = (c, st) => st.n >= c.adr.length ? (st.shown ? 'Lösung' : st.rf ? `${st.rf} Fehler` : st.runde > 1 ? 'Jetzt richtig!' : 'Richtig!')
+  : `${KARTEN[c.kat].frage} · ${st.n} von ${c.adr.length}` + (st.rf ? ` · ${st.rf} Fehler` : '');
 function kSeqNext() { if (kSeqDone()) kAnswer(!kseq.fehler); }
 // Kartenstapel in der Fläche der Karte
 function drawKarten() {
@@ -3297,8 +3307,12 @@ function kSeqCard(fc, c) {
     const b = el('button', 'seq-chip'); b.type = 'button'; b.dataset.j = j;
     b.append(c.adr[j]); b.onclick = () => kSeqPick(j); pool.append(b);
   });
-  const info = el('span', 'seq-fehler', kSeqInfo(c, st));
-  if (st.n >= c.adr.length) info.classList.add(st.fehler ? 'bad' : 'ok');
+  const info = el('div', 'seq-fehler'), txt = el('span', '', kSeqInfo(c, st)); info.append(txt);
+  if (st.n >= c.adr.length) {
+    txt.classList.add(st.rf ? 'bad' : st.shown ? '' : 'ok');
+    // fertig, aber nicht fehlerfrei: dieselbe Karte gleich nochmal legen
+    if (st.fehler) { const b = el('button', 'seq-again', '↻ Nochmal üben'); b.type = 'button'; b.onclick = kSeqNochmal; info.append(b); }
+  }
   const inner = el('div', 'seq-in'); inner.append(...face.childNodes, done, pool, info); face.append(inner); fc.append(face);
 }
 // alles ohne Scrollen auf die Karte: ist der Inhalt zu hoch (kleines Handy, niedriges Fenster), wird er verkleinert
