@@ -116,6 +116,7 @@ body.questing .maphead p { visibility: hidden; }
 .rbtn:hover { transform: translateY(-1px); }
 .rbtn:active { transform: scale(.94); }
 .rbtn svg { width: 22px; height: 22px; }
+.rbtn.zu { background: #e5484d; color: #fff; }
 .h-title { font-weight: 500; font-size: 2rem; line-height: 1.05; letter-spacing: -.02em; margin: 0; }
 .h-badges { display: flex; gap: 6px; flex-wrap: wrap; }
 .badge { font-weight: 500; font-size: .85rem; padding: 4px 11px; border-radius: 999px; background: #141414; color: #fff; }
@@ -451,10 +452,10 @@ body.karten #theme svg { width: 22px; height: 22px; }
 .fc-seqbtn { min-width: 150px; height: 46px; background: var(--card); color: var(--fg); font-weight: 600; box-shadow: 0 6px 18px rgba(0,0,0,.12); }
 .fc-seqbtn.primary { background: var(--acc); color: #141414; }
 .kpanel { display: grid; gap: 14px; }
-.k-opts { display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: 6px; }
-.k-left { display: flex; align-items: center; gap: 10px; }
+.k-opts { display: flex; align-items: center; justify-content: flex-end; gap: 5px; flex: none; }
+.k-left { display: flex; align-items: center; gap: 8px; flex: none; }
 .k-div { width: 1.5px; height: 20px; margin-right: 2px; border-radius: 1px; background: color-mix(in srgb, var(--on-panel) 30%, transparent); }
-.k-sec .k-tog, .k-sec .pillbtn { padding: 6px 12px; font-size: .8rem; }
+.k-sec .k-tog, .k-sec .pillbtn { padding: 5px 10px; font-size: .78rem; white-space: nowrap; }
 .k-sec .k-led { display: inline-block; width: 7px; height: 7px; margin-left: 7px; border-radius: 50%; vertical-align: 1px; background: #141414; transition: background .2s, box-shadow .2s; }
 .k-tog.on .k-led { background: var(--acc); box-shadow: 0 0 6px var(--acc); }
 .k-cnt { font-size: .7rem; }
@@ -463,8 +464,8 @@ body.karten #theme svg { width: 22px; height: 22px; }
 .k-tog { color: var(--fg); }
 .k-tog.on { background: var(--fg); color: var(--card); }
 .k-cnt { display: inline-block; min-width: 1.5em; margin-left: 4px; padding: 0 6px; border-radius: 999px; background: #e5484d; color: #fff; font-size: .78rem; font-weight: 600; text-align: center; }
-.k-sec { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; }
-.k-sec h3 { margin: 0; font-size: 1rem; }
+.k-sec { display: flex; align-items: center; justify-content: space-between; gap: 6px; }
+.k-sec h3 { margin: 0; font-size: .95rem; }
 .k-kats { display: grid; gap: 6px; }
 /* wie die Routen-Karten (.rt): dunkel, rund, links das Schraffur-Muster */
 .k-kat { position: relative; overflow: hidden; display: grid; grid-template-columns: 52px 1fr auto; grid-template-rows: auto auto; gap: 5px 12px; align-items: center; text-align: left; border: 0; border-radius: 20px; padding: 10px 18px 10px 16px; background: color-mix(in srgb, var(--dark) 50%, transparent); cursor: pointer; font-size: 1rem; color: var(--dark-fg); }
@@ -482,8 +483,13 @@ body.karten #theme svg { width: 22px; height: 22px; }
 .k-reset { font-size: .82rem; }
 .k-foot { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
 /* Alle auswählen/abwählen: umrandete Pille (ohne Füllung), damit sie sich von Mischen/Falsch (gefüllt) unterscheidet */
-.k-link { border: 1.5px solid rgba(20,20,20,.55); background: none; border-radius: 999px; padding: 5px 12px; font: inherit; font-size: .8rem; font-weight: 500; color: #141414; cursor: pointer; transition: background .15s, border-color .15s; }
+.k-link { display: inline-flex; align-items: center; gap: 6px; flex: none; border: 1.5px solid rgba(20,20,20,.55); background: none; border-radius: 999px; padding: 4px 10px 4px 6px; font: inherit; font-size: .78rem; font-weight: 500; color: #141414; cursor: pointer; transition: background .15s, border-color .15s; }
 .k-link:hover { background: rgba(0,0,0,.07); border-color: #141414; }
+/* Kästchen im „Alle“-Knopf: leer = keine, Strich = einige, Haken = alle Kategorien gewählt */
+.k-box { position: relative; width: 14px; height: 14px; border-radius: 4px; border: 1.5px solid #141414; }
+.k-link.all .k-box, .k-link.some .k-box { background: #141414; }
+.k-link.all .k-box::after { content: ''; position: absolute; left: 3.5px; top: 0.5px; width: 3.5px; height: 7px; border: solid var(--acc); border-width: 0 2px 2px 0; transform: rotate(45deg); }
+.k-link.some .k-box::after { content: ''; position: absolute; left: 2px; right: 2px; top: 4.5px; height: 2px; border-radius: 1px; background: var(--acc); }
 .k-src { margin: 0; font-size: .75rem; color: var(--on-panel-muted); }
 @media (max-width: 760px) {
   body.karten .mapwrap { height: 80vh; height: 80dvh; }
@@ -528,8 +534,7 @@ body.karten #theme svg { width: 22px; height: 22px; }
     <div class="mapctl">
       <button class="gbtn" id="zin" type="button" title="Näher" aria-label="Näher zoomen"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></button>
       <button class="gbtn" id="zout" type="button" title="Weiter weg" aria-label="Weiter weg zoomen"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M5 12h14"/></svg></button>
-      <button class="gbtn" id="zarrow" type="button" title="Zum Pfeil" aria-label="Kamera zum Pfeil" hidden><svg viewBox="0 0 24 24" fill="var(--route)" stroke="var(--route)" stroke-width="1.9" stroke-linejoin="round"><path d="M4.5 11.2L19.5 4.5l-6.7 15-1.9-6.4z"/></svg></button>
-      <button class="gbtn" id="zfit" type="button" title="Ganze Route zeigen" aria-label="Ganze Route zeigen"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="3.2"/><path d="M12 2.5v3M12 18.5v3M2.5 12h3M18.5 12h3"/><circle cx="12" cy="12" r="7.2"/></svg></button>
+      <button class="gbtn" id="zarrow" type="button" title="Zum Pfeil" aria-label="Kamera zum Pfeil"><svg viewBox="0 0 24 24" fill="var(--route)" stroke="var(--route)" stroke-width="1.9" stroke-linejoin="round"><path d="M4.5 11.2L19.5 4.5l-6.7 15-1.9-6.4z"/></svg></button>
     </div>
     <section id="cards" aria-label="Karteikarten"></section>
     <div id="quest" role="status" hidden><small>Wo startet die Route?</small><b></b><span class="qmsg"></span><button class="qskip" type="button">Überspringen</button></div>
@@ -550,7 +555,7 @@ body.karten #theme svg { width: 22px; height: 22px; }
       </div>
       <div class="sec"><h3>Routen <small id="count"></small></h3><button id="shuffle" class="pillbtn" type="button">Zufällig</button></div>
       <div id="routes"></div>
-      <div class="foot"><span>Stand 31.10.2026 23:11 · Routen: WKO-Fragenkatalog 2026 · Daten: Stadt Wien, basemap.at, OpenStreetMap</span><span class="foot-btns"><button id="melden" type="button">Fehler melden</button><button id="reload" type="button">Straßennetz neu laden</button></span></div>
+      <div class="foot"><span>Stand 31.10.2026 23:20 · Routen: WKO-Fragenkatalog 2026 · Daten: Stadt Wien, basemap.at, OpenStreetMap</span><span class="foot-btns"><button id="melden" type="button">Fehler melden</button><button id="reload" type="button">Straßennetz neu laden</button></span></div>
     </div>
   </aside>
 </div>
@@ -1528,13 +1533,10 @@ function endFollow() { if (follow) { follow = false; ownCam = false; map._moveEn
 // zoomt der Nutzer gerade (Mausrad/Trackpad, +/−, Doppelklick, zwei Finger)? Dann skaliert Leaflet die Zeichenfläche nur
 // per CSS – eine Linie, die jetzt neu gezeichnet wird, landet daneben. Die Fahrt wartet deshalb, bis der Zoom fertig ist.
 const userZooming = () => wheelZ != null || map._animatingZoom || !!(map.touchZoom && map.touchZoom._zooming);
-// Knopf „Zum Pfeil“: nur sichtbar, wenn man weggeschoben hat oder der Pfeil nicht (mehr) im Bild ist
-function updateFollowBtn() {
-  const b = document.getElementById('zarrow'); if (!b) return;
-  const on = curHead && map.hasLayer(curHead);
-  b.hidden = !(on && (userDrag || !map.getBounds().pad(-0.06).contains(curHead.getLatLng())));
-}
-map.on('moveend', updateFollowBtn);
+// Knopf „Zum Pfeil“ (immer sichtbar, ersetzt „Ganze Route zeigen“): ist der Pfeil nicht im Bild, fliegt die Kamera hin;
+// ist er im Bild, aber weit herausgezoomt, zoomt sie auf die normale Nähe (17) hinein. Ohne Pfeil (Route noch nicht
+// gestartet) gilt dasselbe für den Start, ohne Route geht es zur Wien-Übersicht.
+const ZOOM_NAH = 17;
 // Linien, die sich während einer Kartenbewegung ändern, auf den aktuellen Kartenstand bringen
 const routeLayer = L.layerGroup().addTo(map);
 const flashLayer = L.layerGroup().addTo(map);
@@ -1956,7 +1958,6 @@ function drawSeg(i, opts = {}) {
     if (head._labelText) { head._labelDir = null; placeLabel(head, p); }
     rotate(head, p);
     if (gen !== drawGen) return;
-    updateFollowBtn();
     if (opts.onDone) opts.onDone();
   };
   const run = () => {
@@ -2045,7 +2046,7 @@ function showPointsInner(withGoal, redo) {
 }
 let drawGen = 0, endActiveCam = null;
 function closeStreetView() { try { if (svPop) { map.closePopup(svPop); svPop = null; } } catch (e) {} } // try: svPop wird erst weiter unten angelegt
-function stopAnim() { closeStreetView(); endQuest(); stopVoice(); stopDrive(); hideFfwd(); endFollow(); segRunning = false; curHead = null; updateFollowBtn(); state.busy = false; resultLayer.clearLayers(); if (endActiveCam) endActiveCam(); drawGen++; if (anim) cancelAnimationFrame(anim); anim = null; clearLabel(); }
+function stopAnim() { closeStreetView(); endQuest(); stopVoice(); stopDrive(); hideFfwd(); endFollow(); segRunning = false; curHead = null; state.busy = false; resultLayer.clearLayers(); if (endActiveCam) endActiveCam(); drawGen++; if (anim) cancelAnimationFrame(anim); anim = null; clearLabel(); }
 // Route genau bis Straße i zeigen (Rest ausblenden), Straße i hervorheben
 function showUpTo(i) {
   for (let k = 0; k <= i; k++) if (!state.res[k]) state.res[k] = 'shown';
@@ -2421,6 +2422,7 @@ function missPulse(latlng) {
 const ICON_REDO = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 12a8 8 0 1 1-2.6-5.9"/><path d="M20 4v5h-5"/></svg>';
 // Route ganz von vorne (Fortschritt, Ergebnis, Kamera zum Start)
 function redoRoute() { reset(); renderList(); cameraTo(state.route); }
+function closeRoute() { state.open = false; reset(); renderList(); scrollPanelTop(); }
 function reset() { state.paused = false; state.playing = false; state.res = []; state.miss = {}; state.how = {}; state.finished = false; stopAnim(); const sc = document.getElementById('score'); if (sc) sc.textContent = ''; state.step = 0; state.errors = 0; state.done = false; state.choices = null; state.answered = null; routeLayer.clearLayers(); flashLayer.clearLayers(); showPoints(false); render(); }
 function nextRoute(random) {
   let r;
@@ -2451,7 +2453,14 @@ function header() {
   const row = el('div', 'h-top'), left = el('div', 'h-left'), nav = el('div', 'h-nav');
   left.append(el('h2', 'h-title', 'Route ' + r.n), badges);
   const redo = el('button', 'rbtn'); redo.type = 'button'; redo.title = 'Nochmal von vorne'; redo.setAttribute('aria-label', 'Route nochmal von vorne');
-  redo.innerHTML = ICON_REDO; redo.onclick = redoRoute; nav.append(redo);
+  redo.innerHTML = ICON_REDO; redo.onclick = redoRoute;
+  // Lernen: rotes X klappt die Route wieder zu (zurück zur Übersicht „Routen lernen“)
+  if (state.mode === 'lernen') {
+    const zu = el('button', 'rbtn zu'); zu.type = 'button'; zu.title = 'Route schließen'; zu.setAttribute('aria-label', 'Route schließen');
+    zu.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M7 7l10 10M17 7L7 17"/></svg>';
+    zu.onclick = closeRoute; nav.append(zu);
+  }
+  nav.append(redo);
   [[-1, 'Vorige Route', 'M6 15l6-6 6 6'], [1, 'Nächste Route', 'M6 9l6 6 6-6']].forEach(([d, label, path]) => {
     const b = el('button', 'rbtn'); b.type = 'button'; b.title = label + ' (Pfeiltaste ' + (d < 0 ? '↑' : '↓') + ')'; b.setAttribute('aria-label', label);
     b.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="${path}"/></svg>`;
@@ -3004,10 +3013,14 @@ $('#chap').onchange = e => setChap(+e.target.value);
 $('#zin').onclick = () => { camSeq++; userZoom = true; map.zoomIn(); };
 $('#zout').onclick = () => { camSeq++; userZoom = true; map.zoomOut(); };
 $('#zarrow').onclick = () => {
-  if (!curHead) return;
-  userDrag = false; camSeq++; if (segRunning) userZoom = true; // während der Fahrt danach weiter mitfahren
-  map.flyTo(curHead.getLatLng(), Math.max(map.getZoom(), 16), { duration: reduced() ? 0 : 0.7 });
-  updateFollowBtn();
+  const r = state.route, ziel = curHead && map.hasLayer(curHead) ? curHead.getLatLng()
+    : shown() && r && (r._startShown || r.start) ? L.latLng(...(r._startShown || r.start).slice(0, 2)) : null;
+  camSeq++;
+  if (!ziel) { map.flyTo([48.2085, 16.3725], 13, { duration: reduced() ? 0 : 0.8 }); return; }
+  userDrag = false; if (segRunning) userZoom = true; // während der Fahrt danach weiter mitfahren
+  const imBild = map.getBounds().pad(-0.06).contains(ziel), opt = { duration: reduced() ? 0 : 0.7 };
+  if (!imBild) map.flyTo(ziel, Math.max(map.getZoom(), 16), opt);          // wie bisher: hinfliegen
+  else if (map.getZoom() < ZOOM_NAH - 0.25) map.flyTo(ziel, ZOOM_NAH, opt); // im Bild, aber herausgezoomt: hineinzoomen
 };
 // Überspringen: in der 1. Stufe nur die Bezirkswahl (weiter zur Gegend), in der 2. direkt zum Start
 $('#quest .qskip').onclick = async () => {
@@ -3017,7 +3030,6 @@ $('#quest .qskip').onclick = async () => {
   questZoom(bezirkAt(j, [q.r.start[0], q.r.start[1]]));
 };
 $('#ffwd').onclick = () => { if (ffwdFn) ffwdFn(); };
-$('#zfit').onclick = () => { camSeq++; if (shown()) fitRoute(); else map.flyTo([48.2085, 16.3725], 13, { duration: reduced() ? 0 : 0.8 }); };
 // Darstellung: hell oder dunkel (im Dunklen wird die Karte gefiltert). Ohne gespeicherte Wahl startet sie wie das System,
 // der Knopf wechselt dann nur zwischen den beiden.
 const THEME_KEY = 'taxi-theme-v1', THEME_NAME = { light: 'hell', dark: 'dunkel' };
@@ -3427,25 +3439,29 @@ function renderKartenPanel() {
     return b;
   };
   // „Licht“ rechts im Knopf: gelb = gemischt an, schwarz = aus
-  const mx = tog('mischen', 'Mischen'); mx.append(el('span', 'k-led')); opts.append(mx);
-  // „Falsch“ erst, wenn eine Karte falsch beantwortet wurde; ist es an, führt „Alle“ zurück zum ganzen Stapel
+  // „Falsch“ erst, wenn eine Karte falsch beantwortet wurde; ist es an, steht statt „Mischen“ (schließt sich mit Falsch
+  // ohnehin aus) „Alle“ davor – zurück zum ganzen Stapel; so bleibt alles in einer Zeile
   const nf = kWrongIds().length;
-  if (kset.falsch) {
+  if (!kset.falsch) { const mx = tog('mischen', 'Mischen'); mx.append(el('span', 'k-led')); opts.append(mx); }
+  else {
     const a = el('button', 'k-tog', 'Alle'); a.type = 'button'; a.title = 'Wieder alle Karten der gewählten Kategorien';
     a.onclick = () => { kset.falsch = false; kSave(KSET_KEY, kset); kNewDeck(); drawKarten(); renderKartenPanel(); };
     opts.append(a);
   }
   if (nf || kset.falsch) { const f = tog('falsch', 'Falsch '); f.append(el('span', 'k-cnt', String(nf))); opts.append(f); }
   const sec = el('div', 'k-sec'); sec.append(el('h3', '', 'Kategorien'));
-  // ein Knopf oben neben „Kategorien“, der umschaltet: „Alle auswählen“, solange eine fehlt, sonst „Alle abwählen“
-  // (nur die Kategorien des gewählten Kapitels)
+  // ein kleiner Knopf „☐ Alle“ neben „Kategorien“ (wie das Häkchen der Kategorien, damit alles in eine Zeile passt):
+  // Kästchen voll = alle gewählt (Klick wählt alle ab), halb = einige, leer = keine (Klick wählt alle aus);
+  // gilt nur für die Kategorien des gewählten Kapitels
   const setKat = kat => { kset.kat = kat.sort((a, b) => a - b); kSave(KSET_KEY, kset); kNewDeck(); drawKarten(); renderKartenPanel(); };
   const sichtbar = KARTEN.map((_, i) => i).filter(inTeil);
-  const link = (label, fn) => { const b = el('button', 'k-link', label); b.type = 'button'; b.onclick = fn; return b; };
   // links „Kategorien“ und der Link, rechts nach einem Strich Mischen/Alle/Falsch
-  const alle = sichtbar.every(i => kset.kat.includes(i));
-  const left = el('div', 'k-left'); left.append(sec.firstChild, alle ? link('Alle abwählen', () => setKat(kset.kat.filter(i => !sichtbar.includes(i))))
-    : link('Alle auswählen', () => setKat([...new Set(kset.kat.concat(sichtbar))]))); opts.prepend(el('span', 'k-div')); sec.append(left, opts); p.append(sec);
+  const nOn = sichtbar.filter(i => kset.kat.includes(i)).length, alle = nOn === sichtbar.length;
+  const ab = el('button', 'k-link' + (alle ? ' all' : nOn ? ' some' : '')); ab.type = 'button';
+  ab.title = alle ? 'Alle abwählen' : 'Alle auswählen'; ab.setAttribute('aria-label', ab.title);
+  ab.append(el('span', 'k-box'), 'Alle');
+  ab.onclick = () => setKat(alle ? kset.kat.filter(i => !sichtbar.includes(i)) : [...new Set(kset.kat.concat(sichtbar))]);
+  const left = el('div', 'k-left'); left.append(sec.firstChild, ab); opts.prepend(el('span', 'k-div')); sec.append(left, opts); p.append(sec);
   const list = el('div', 'k-kats');
   sichtbar.forEach(i => {
     const k = KARTEN[i], ids = KARTEN_ALL.filter(c => c.kat === i).map(c => c.id), kk = ids.filter(known).length, on = kset.kat.includes(i);
