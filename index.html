@@ -541,7 +541,7 @@ body.karten #theme svg { width: 22px; height: 22px; }
       </div>
       <div class="sec"><h3>Routen <small id="count"></small></h3><button id="shuffle" class="pillbtn" type="button">Zufällig</button></div>
       <div id="routes"></div>
-      <div class="foot"><span>Stand 31.10.2026 21:10 · Routen: WKO-Fragenkatalog 2026 · Daten: Stadt Wien, basemap.at, OpenStreetMap</span><span class="foot-btns"><button id="melden" type="button">Fehler melden</button><button id="reload" type="button">Straßennetz neu laden</button></span></div>
+      <div class="foot"><span>Stand 31.10.2026 21:13 · Routen: WKO-Fragenkatalog 2026 · Daten: Stadt Wien, basemap.at, OpenStreetMap</span><span class="foot-btns"><button id="melden" type="button">Fehler melden</button><button id="reload" type="button">Straßennetz neu laden</button></span></div>
     </div>
   </aside>
 </div>
@@ -3309,7 +3309,7 @@ function kSeqCard(fc, c) {
   });
   const info = el('div', 'seq-fehler'), txt = el('span', '', kSeqInfo(c, st)); info.append(txt);
   if (st.n >= c.adr.length) {
-    txt.classList.add(st.rf ? 'bad' : st.shown ? '' : 'ok');
+    if (st.rf) txt.classList.add('bad'); else if (!st.shown) txt.classList.add('ok');
     // fertig, aber nicht fehlerfrei: dieselbe Karte gleich nochmal legen
     if (st.fehler) { const b = el('button', 'seq-again', '↻ Nochmal üben'); b.type = 'button'; b.onclick = kSeqNochmal; info.append(b); }
   }
