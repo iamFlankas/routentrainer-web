@@ -236,6 +236,11 @@ ol.steps li.dest .chip { background: var(--acc); color: var(--acc-ink); padding:
 .rt-to { text-align: right; }
 .empty { color: var(--on-panel-muted); text-align: center; padding: 20px 0; margin: 0; }
 .foot { font-size: .78rem; color: var(--on-panel-muted); display: flex; justify-content: space-between; gap: 8px; flex-wrap: wrap; padding-top: 4px; }
+.foot-btns { display: flex; gap: 14px; }
+.flink { justify-self: start; align-self: flex-start; border: 0; background: none; padding: 2px 0; font: inherit; font-size: .82rem; color: var(--on-panel-muted); text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
+.flink:hover { color: var(--on-panel); }
+.fc-melden { align-self: center; margin-top: 6px; color: rgba(242,241,237,.55); }
+.fc-melden:hover { color: #f2f1ed; }
 .foot button { border: 0; background: none; color: var(--on-panel-muted); text-decoration: underline; font-size: inherit; cursor: pointer; padding: 0; }
 
 /* Filter (Leaflet-Steuerung oben rechts) */
@@ -495,7 +500,7 @@ body.karten #theme svg { width: 22px; height: 22px; }
       </div>
       <div class="sec"><h3>Routen <small id="count"></small></h3><button id="shuffle" class="pillbtn" type="button">Zufällig</button></div>
       <div id="routes"></div>
-      <div class="foot"><span>Stand 30.10.2026 19:58 · Routen: WKO-Fragenkatalog 2026 · Daten: Stadt Wien, basemap.at, OpenStreetMap</span><button id="reload" type="button">Straßennetz neu laden</button></div>
+      <div class="foot"><span>Stand 31.10.2026 12:14 · Routen: WKO-Fragenkatalog 2026 · Daten: Stadt Wien, basemap.at, OpenStreetMap</span><span class="foot-btns"><button id="melden" type="button">Fehler melden</button><button id="reload" type="button">Straßennetz neu laden</button></span></div>
     </div>
   </aside>
 </div>
@@ -1443,11 +1448,16 @@ let userZoom = false, userDrag = false, follow = false, curHead = null, segRunni
 map.on('dragstart', () => { userDrag = true; });
 map.on('dblclick', () => { userZoom = true; });
 map.getContainer().addEventListener('touchstart', e => { if (e.touches.length > 1) userZoom = true; }, { passive: true });
-function followHead(pt) {
+function followHead(pt, line) {
   if (wheelZ != null || map._animatingZoom) return;
   if (!follow) { follow = true; ownCam = true; map._stop(); map._moveStart(true, false); }
   moveMap(L.latLng(pt[0], pt[1]), map.getZoom());
+  syncLines(line);
 }
+// Linien auf den aktuellen Kartenstand bringen, wenn die Kamera die Karte selbst bewegt: Leaflet verschiebt die
+// Zeichenfläche dabei nur per CSS und zeichnet erst bei 'moveend' neu – eine Linie, die sich währenddessen ändert,
+// landet sonst versetzt (sie „rutscht“ bis zum Ende der Straße neben der Fahrbahn her)
+function syncLines(line) { const r = line && line._renderer; if (r) { r._onZoomEnd(); r._update(); } }
 function endFollow() { if (follow) { follow = false; ownCam = false; map._moveEnd(true); } }
 // Knopf „Zum Pfeil“: nur sichtbar, wenn man weggeschoben hat oder der Pfeil nicht (mehr) im Bild ist
 function updateFollowBtn() {
@@ -1854,8 +1864,7 @@ function drawSeg(i, opts = {}) {
     const a0 = map.project(cam.c0, zr), a1 = map.project(headPt ? L.latLng(headPt[0], headPt[1]) : cam.end, zr);
     const c = f >= 1 ? cam.end : map.unproject(a0.add(a1.subtract(a0).multiplyBy(e)), zr);
     moveMap(c, z);
-    // Routenlinien auf den aktuellen Kartenstand bringen (sonst verrutschen sie beim Zoomen)
-    const r = line && line._renderer; if (r) { r._onZoomEnd(); r._update(); }
+    syncLines(line);
     if (f >= 1) { cam.started = false; ownCam = false; map._moveEnd(true); cam = null; endActiveCam = null; }
   };
   const finish = async () => {
@@ -1887,7 +1896,7 @@ function drawSeg(i, opts = {}) {
       const f = Math.min(1, done / ms), part = partialPath(p, f);
       camFrame(f, part[part.length - 1]);
       // nach dem Zoomen durch den Nutzer: Pfeil in der Mitte halten (beim gewählten Zoom); nach Verschieben: loslassen
-      if (followCam) { if (userDrag) endFollow(); else if (!cam && userZoom) followHead(part[part.length - 1]); }
+      if (followCam) { if (userDrag) endFollow(); else if (!cam && userZoom) followHead(part[part.length - 1], line); }
       line.setLatLngs(part); head.setLatLng(part[part.length - 1]); rotate(head, part, true);
       if (f < 1) anim = requestAnimationFrame(frame); else { hideFfwd(); finish(); }
     };
@@ -2362,7 +2371,13 @@ function header() {
     b.onclick = () => swipeRoute(d); nav.append(b);
   });
   row.append(left, nav);
-  h.append(row, tl);
+  // Fehler in dieser Route melden – mit Nummer, Start/Ziel, Straßen und wo man gerade ist
+  const melden = fehlerLink('Fehler in dieser Route melden', `Route ${r.n} (Katalog Nr. ${r.kat})`, () => [
+    `Route ${r.n} (WKO-Katalog Nr. ${r.kat}), Kapitel ${r.chap + 1}`, `Von: ${r.from}`, `Nach: ${r.to}`,
+    `Straßen: ${r.steps.map(stepName).join(' – ')}`,
+    state.step > 0 && state.step <= r.steps.length ? `Zuletzt aufgedeckt: ${stepName(r.steps[state.step - 1])}` : '',
+  ].filter(Boolean));
+  h.append(row, tl, melden);
 }
 function chip(label, cls = '') {
   const c = el('span', 'chip ' + cls, stepName(label)); const n = stepNote(label); if (n) c.append(el('small', '', n)); return c;
@@ -2906,6 +2921,16 @@ function applyTheme() {
 }
 $('#theme').onclick = () => { theme = theme === 'dark' ? 'light' : 'dark'; try { localStorage.setItem(THEME_KEY, theme); } catch (e) {} applyTheme(); };
 applyTheme();
+// Fehler melden: öffnet das Mailprogramm mit vorausgefülltem Betreff und Text (Adresse kommt noch vom Nutzer)
+const FEHLER_MAIL = '';
+function fehlerMelden(betreff, zeilen) {
+  const body = zeilen.concat(['', 'Was stimmt nicht?', '']).join('\n');
+  location.href = `mailto:${FEHLER_MAIL}?subject=${encodeURIComponent('TaxiLernen: ' + betreff)}&body=${encodeURIComponent(body)}`;
+}
+function fehlerLink(label, betreff, zeilen, cls = 'flink') {
+  const b = el('button', cls, label); b.type = 'button'; b.onclick = () => fehlerMelden(betreff, typeof zeilen === 'function' ? zeilen() : zeilen); return b;
+}
+$('#melden').onclick = () => fehlerMelden('Fehler melden', []);
 $('#reload').onclick = async () => { await idbDel(IDB_KEY); STREETS = null; render(); loadStreets(); };
 renderList(); render(); loadStreets();
 
@@ -2926,9 +2951,10 @@ let kstat = kLoad(KSTAT_KEY, {});
 let kset = Object.assign({ kat: KARTEN.map((_, i) => i), falsch: false, mischen: true }, kLoad(KSET_KEY, {}));
 delete kset.offen;
 if (kset.falsch && kset.mischen) kset.mischen = false;
-// laufender Stapel: Karten-IDs, Position, Ergebnisse (id -> true/false) in der Reihenfolge der Antworten
+kset.kat = (Array.isArray(kset.kat) ? kset.kat : []).filter(i => Number.isInteger(i) && i >= 0 && i < KARTEN.length);
+// laufender Stapel: Karten-IDs, Position, Antworten [id, gewusst?, vorher schon gewusst?] in der Reihenfolge der Antworten
 let krun = kLoad(KRUN_KEY, null);
-let kflip = false, kdrag = null;
+let kflip = false, kdrag = null, kflying = false;
 const known = id => kstat[id] && kstat[id][2];
 // falsch: zuletzt nicht gewusst
 const wrong = id => !!kstat[id] && !kstat[id][2] && kstat[id][1] > 0;
@@ -2953,18 +2979,20 @@ function kValid() {
 const kRight = () => krun.hist.filter(h => h[1]).length, kWrong = () => krun.hist.filter(h => !h[1]).map(h => h[0]);
 
 function kAnswer(ok) {
-  if (!krun || krun.i >= krun.ids.length) return;
-  const id = krun.ids[krun.i], s = kstat[id] || [0, 0, false];
+  // solange die Karte noch hinausfliegt, zählt kein zweiter Tastendruck (sonst wäre die nächste Karte ungesehen beantwortet)
+  if (!krun || krun.i >= krun.ids.length || kflying) return;
+  const id = krun.ids[krun.i], s = kstat[id] || [0, 0, false], before = s[2];
   s[ok ? 0 : 1]++; s[2] = ok; kstat[id] = s; kSave(KSTAT_KEY, kstat);
-  krun.hist.push([id, ok]); krun.i++; kflip = false; kSave(KRUN_KEY, krun);
+  krun.hist.push([id, ok, before]); krun.i++; kflip = false; kSave(KRUN_KEY, krun);
   sfx(ok ? 'ok' : 'wrong');
   if (krun.i >= krun.ids.length) sfx('goal');
   kFly(ok ? 1 : -1);
 }
 function kUndo() {
-  if (!krun || !krun.hist.length) return;
-  const [id, ok] = krun.hist.pop(), s = kstat[id];
-  if (s) { s[ok ? 0 : 1] = Math.max(0, s[ok ? 0 : 1] - 1); s[2] = false; }
+  if (!krun || !krun.hist.length || kflying) return;
+  const [id, ok, before] = krun.hist.pop(), s = kstat[id];
+  // Lernstand wie vor der Antwort (ältere Stapel ohne dritten Wert: „nicht gewusst“)
+  if (s) { s[ok ? 0 : 1] = Math.max(0, s[ok ? 0 : 1] - 1); s[2] = !!before; }
   kSave(KSTAT_KEY, kstat); krun.i = Math.max(0, krun.i - 1); kflip = false; kSave(KRUN_KEY, krun);
   drawKarten(); renderKartenPanel();
 }
@@ -2973,9 +3001,10 @@ function kFlip() { if (!krun || krun.i >= krun.ids.length) return; kflip = !kfli
 function kFly(dir) {
   const f = $('#cards .fc');
   if (!f || reduced()) { drawKarten(); renderKartenPanel(); return; }
+  kflying = true;
   f.style.transition = 'transform .28s ease-in, opacity .28s ease-in';
   f.style.transform = `translateX(${dir * 120}%) rotate(${dir * 14}deg)`; f.style.opacity = '0';
-  setTimeout(() => { drawKarten(); renderKartenPanel(); }, 230);
+  setTimeout(() => { kflying = false; drawKarten(); renderKartenPanel(); }, 230);
 }
 
 // beim Ein- und Ausschalten von „Gemischt“: die obersten Karten des neuen Stapels (mit Namen) fächern nach links und
@@ -2985,8 +3014,9 @@ function kFly(dir) {
 function kShuffleAnim(prev) {
   const stage = $('#cards .fc-stage'), fc = $('#cards .fc');
   if (!stage || !fc || reduced() || !fc.animate) return;
-  const more = krun.ids.slice(krun.i + 1, krun.i + 6), pool = KARTEN_ALL.filter(c => !krun.ids.includes(c.id) || more.includes(c.id));
-  while (more.length < 5 && pool.length) more.push(pool[Math.floor(Math.random() * pool.length)].id);
+  // die nächsten Karten des Stapels; ist er kürzer, irgendwelche anderen (nur fürs Bild)
+  const more = krun.ids.slice(krun.i + 1, krun.i + 6), pool = KARTEN_ALL.filter(c => c.id !== krun.ids[krun.i]);
+  while (more.length < 5) more.push(pool[Math.floor(Math.random() * pool.length)].id);
   const ghosts = more.map(id => {
     const c = KARTEN_BY_ID.get(id), g = el('div', 'fc-ghost'), f = el('div', 'fc-face fc-front');
     f.append(el('small', '', KARTEN[c.kat].name), el('b', '', c.name)); g.append(f); stage.insertBefore(g, fc); return g;
@@ -3067,6 +3097,7 @@ function drawKarten() {
   const yes = el('button', 'fc-btn ok'); yes.type = 'button'; yes.title = 'Gewusst (→)'; yes.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>'; yes.onclick = () => kAnswer(true);
   btns.append(no, un, yes); box.append(btns);
   box.append(el('p', 'fc-keys', 'Leertaste: umdrehen · Pfeil rechts: gewusst · Pfeil links: nicht gewusst · Pfeil runter: zurück'));
+  box.append(fehlerLink('Fehler auf dieser Karte melden', `Karteikarte „${c.name}“`, [`Kategorie: ${KARTEN[c.kat].name}`, `Ort: ${c.name}`, `Adresse (Katalog): ${c.adr}`], 'flink fc-melden'));
   kDragInit(fc);
 }
 // Wischen: Karte folgt dem Finger, ab ~90 px zählt es als Antwort, sonst ist es ein Tipp zum Umdrehen
@@ -3096,6 +3127,7 @@ function kDragInit(fc) {
 }
 document.addEventListener('keydown', e => {
   if (state.mode !== 'karten' || e.metaKey || e.ctrlKey || e.altKey || (e.target instanceof Element && e.target.closest('input, textarea, select'))) return;
+  if (e.repeat && [' ', 'ArrowUp', 'ArrowRight', 'ArrowLeft', 'ArrowDown'].includes(e.key)) { e.preventDefault(); return; } // gedrückt halten zählt nur einmal
   if (e.key === ' ' || e.key === 'ArrowUp') { e.preventDefault(); if (document.activeElement && document.activeElement.blur) document.activeElement.blur(); kFlip(); }
   else if (e.key === 'ArrowRight') { e.preventDefault(); kAnswer(true); }
   else if (e.key === 'ArrowLeft') { e.preventDefault(); kAnswer(false); }
