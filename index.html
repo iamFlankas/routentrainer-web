@@ -197,8 +197,6 @@ ol.steps li.dest .chip { background: var(--acc); color: var(--acc-ink); padding:
 .result.bad { background: var(--bad-bg); color: var(--bad); }
 .feedback { margin: 0; color: var(--bad); font-weight: 500; }
 .feedback:empty { display: none; }
-.prog { height: 6px; background: var(--card); border-radius: 3px; overflow: hidden; }
-.prog i { display: block; height: 100%; background: var(--acc); border-radius: 3px; transition: width .3s; }
 
 /* Routenliste: dunkle Karten */
 .sec { display: flex; justify-content: space-between; align-items: center; gap: 10px; margin-top: 6px; }
@@ -571,10 +569,9 @@ body.bilder .fc-keys, body.bilder .fc-melden { display: none; }
       <p id="modeSub"></p>
     </header>
     <nav class="tabs" aria-label="Modus">
-      <button class="gbtn tab on" data-mode="lernen" type="button" title="Lernen" aria-label="Lernen"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 5.5c3-1.2 6-1.2 9 .8 3-2 6-2 9-.8V19c-3-1.2-6-1.2-9 .8-3-2-6-2-9-.8z"/><path d="M12 6.3v13.5"/></svg></button>
+      <button class="gbtn tab on" data-mode="lernen" type="button" title="Routen" aria-label="Routen"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="18" r="2.2"/><path d="M8.2 18H15a3.5 3.5 0 0 0 0-7H9a3.5 3.5 0 0 1 0-7h6.5"/><path d="M18 1.8c-1.7 0-3 1.3-3 2.9 0 2.2 3 4.8 3 4.8s3-2.6 3-4.8c0-1.6-1.3-2.9-3-2.9z"/></svg></button>
       <button class="gbtn tab" data-mode="karten" type="button" title="Karteikarten" aria-label="Karteikarten"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="7" width="14" height="13" rx="3"/><path d="M7 4h11a3 3 0 0 1 3 3v9"/><path d="M7 12.5h6M7 15.5h4"/></svg></button>
       <button class="gbtn tab" data-mode="bilder" type="button" title="Bilder" aria-label="Bilder"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4.5" width="18" height="15" rx="3.5"/><circle cx="8.6" cy="9.6" r="1.7"/><path d="M3.5 17l5-4.6 3.6 3.2 3.4-3 5 4.4"/></svg></button>
-      <button class="gbtn tab" data-mode="fahren" type="button" title="Nachfahren" aria-label="Nachfahren"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="18" r="2.2"/><path d="M8.2 18H15a3.5 3.5 0 0 0 0-7H9a3.5 3.5 0 0 1 0-7h6.5"/><path d="M18 1.8c-1.7 0-3 1.3-3 2.9 0 2.2 3 4.8 3 4.8s3-2.6 3-4.8c0-1.6-1.3-2.9-3-2.9z"/></svg></button>
     </nav>
     <div class="mapctl">
       <button class="gbtn" id="zin" type="button" title="Näher" aria-label="Näher zoomen"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></button>
@@ -600,7 +597,7 @@ body.bilder .fc-keys, body.bilder .fc-melden { display: none; }
       </div>
       <div class="sec"><h3>Routen <small id="count"></small></h3><button id="shuffle" class="pillbtn" type="button">Zufällig</button></div>
       <div id="routes"></div>
-      <div class="foot"><span>Stand 01.11.2026 21:35 · Routen: WKO-Fragenkatalog 2026 · Daten: Stadt Wien, basemap.at, OpenStreetMap</span><span class="foot-btns"><button id="melden" type="button">Fehler melden</button><button id="reload" type="button">Straßennetz neu laden</button></span></div>
+      <div class="foot"><span>Stand 01.11.2026 21:43 · Routen: WKO-Fragenkatalog 2026 · Daten: Stadt Wien, basemap.at, OpenStreetMap</span><span class="foot-btns"><button id="melden" type="button">Fehler melden</button><button id="reload" type="button">Straßennetz neu laden</button></span></div>
     </div>
   </aside>
 </div>
@@ -2521,7 +2518,6 @@ const MODES = {
   lernen: ['Lernen', 'Route ablaufen lassen oder Straße für Straße antippen'],
   karten: ['Karteikarten', 'Ortskunde aus dem Prüfungskatalog'],
   bilder: ['Bilder', 'Sehenswürdigkeiten erkennen'],
-  fahren: ['Nachfahren', 'Wie bei der mündlichen Prüfung: Straßen auf der Karte antippen'],
 };
 // Felder mit umbrochenem Text so schmal wie die längste Zeile machen (CSS allein lässt sie volle Breite)
 function fitWidths(root) {
@@ -2546,7 +2542,7 @@ function render() {
   const tb = $('#theme'), kk = ohneKarte(), home = kk ? $('.mapwrap') : $('.topbar');
   if (tb.parentNode !== home) home.append(tb);
   tb.className = kk ? 'gbtn' : 'iconbtn';
-  ({ lernen: renderLernen, karten: renderKarten, bilder: renderBilder, fahren: renderFahren })[state.mode](p);
+  ({ lernen: renderLernen, karten: renderKarten, bilder: renderBilder })[state.mode](p);
 }
 
 // Lernen
@@ -2555,7 +2551,7 @@ function geoNotice(p) {
   const box = el('div', 'notice');
   if (geoState === 'failed') {
     box.append(el('strong', '', 'Ohne Linien auf der Karte'));
-    box.append(el('span', '', 'Das Straßennetz konnte nicht geladen werden (' + geoError + '). Lernen, Karteikarten und Bilder gehen trotzdem. Für Linien und „Nachfahren": Internet prüfen und die Datei am besten in Google Chrome öffnen – Safari blockiert solche Abrufe aus lokalen Dateien oft.'));
+    box.append(el('span', '', 'Das Straßennetz konnte nicht geladen werden (' + geoError + '). Lernen, Karteikarten und Bilder gehen trotzdem. Für Linien: Internet prüfen und die Datei am besten in Google Chrome öffnen – Safari blockiert solche Abrufe aus lokalen Dateien oft.'));
     const b = el('button', 'btn', 'Nochmal laden'); b.onclick = () => loadStreets(); box.append(b);
   } else box.append(el('span', '', 'Straßennetz wird geladen … die Linien erscheinen gleich.'));
   p.append(box);
@@ -2687,21 +2683,6 @@ function playRoute(resume) {
   else setTimeout(tick, 500);
 }
 
-// Nachfahren (mündlich)
-function renderFahren(p) {
-  const r = state.route;
-  if (!STREETS) { geoNotice(p); p.append(el('p', 'hint', 'Für diesen Modus muss das Straßennetz geladen sein.')); return; }
-  if (state.step >= r.steps.length) return finish(p);
-  p.append(el('p', 'hint', state.step === 0
-    ? `Wie bei der mündlichen Prüfung: Tipp auf der Karte die Straßen der Reihe nach an. Start: ${r.from}.`
-    : `${state.step} von ${r.steps.length} geschafft. Tipp die nächste Straße an.`));
-  const ch = el('div', 'chain'); r.steps.slice(0, state.step).forEach(s => ch.append(chip(s, 'ok'))); p.append(ch);
-  const fb = el('p', 'feedback'); fb.id = 'fb'; p.append(fb);
-  const bar = el('div', 'bar');
-  const hint = el('button', 'btn', 'Tipp'); hint.onclick = () => { const nx = state.step; state.errors++; state.miss[nx] = true; $('#fb').textContent = 'Nächste Straße: ' + stepName(r.steps[nx]); flash(nx); $('#score').textContent = state.errors + ' Fehler'; };
-  const sol = el('button', 'btn', 'Lösung zeigen'); sol.onclick = () => { state.errors += 99; clearLabel(); for (let i = state.step; i < r.steps.length; i++) drawSeg(i); state.step = r.steps.length; fitRoute(); render(); };
-  bar.append(hint, sol); p.append(bar, progress());
-}
 const errLayer = L.layerGroup().addTo(map);
 // falsche Straße: das Stück rund um den Klick rot blinken lassen
 // Abstand Punkt -> Linienzug in Metern
@@ -2842,7 +2823,7 @@ function streetHit(e) {
   };
   return { pxDist, nearest, TOL: 22 };
 }
-// richtige nächste Straße einzeichnen (Lernen per Liste/Karte und Nachfahren)
+// richtige nächste Straße einzeichnen (Lernen per Liste/Karte)
 // --- Antippen auf der Karte: richtige Straße -> der Pfeil fährt sie bis zur Abbiegestelle (er bleibt in der Kreuzung stehen) ---
 // state.step = nächste Straße, state.how[i] = 'ok' (selbst gefunden) | 'shown' (aufgedeckt)
 const pathsOf = () => routePaths(state.route) || [];
@@ -2914,7 +2895,7 @@ function onMapClick(e) {
   if (quest) { questTap(e); return; }
   if (!STREETS || state.playing || state.busy) return;
   const lern = state.mode === 'lernen' && state.open;
-  if (!lern && state.mode !== 'fahren') return;
+  if (!lern) return;
   if (state.step >= state.route.steps.length) return;
   const h = streetHit(e), want = streetKey(state.route.steps[state.step]);
   const r = state.route, n = r.steps.length, P = pathsOf(), seg = P[state.step];
@@ -2987,24 +2968,6 @@ function streetView(latlng) {
   // Rechtsklick; das Kontextmenü des Browsers (bzw. das lange Drücken auf dem Handy) unterdrücken
   map.on('contextmenu', e => { if (e.originalEvent.pointerType !== 'touch' && svNoClick !== Infinity) streetView(e.latlng); });
   box.addEventListener('contextmenu', e => e.preventDefault());
-}
-
-function progress() { const d = el('div', 'prog'); const f = el('i'); f.style.width = (100 * state.step / state.route.steps.length) + '%'; d.append(f); return d; }
-function finish(p) {
-  showPoints(true);
-  const r = state.route, perfect = state.errors === 0;
-  if (!state.done) { state.done = true; record(r.n, perfect); }
-  const box = el('div', 'result ' + (perfect ? 'good' : 'bad'));
-  box.append(el('strong', '', perfect ? 'Fehlerfrei – Ziel erreicht.' : (state.errors >= 99 ? 'Lösung angezeigt.' : `Ziel erreicht mit ${state.errors} Fehler${state.errors === 1 ? '' : 'n'}.`)));
-  box.append(el('div', '', 'Ziel: ' + r.to));
-  p.append(box, nextBar()); fitRoute();
-}
-function nextBar() {
-  const bar = el('div', 'bar');
-  const again = el('button', 'btn', 'Nochmal'); again.onclick = reset;
-  const nx = el('button', 'btn primary', 'Nächste Route'); nx.onclick = () => swipeRoute(1);
-  const rnd = el('button', 'btn', 'Zufällig (schwache zuerst)'); rnd.onclick = () => nextRoute(true);
-  bar.append(again, nx, rnd); return bar;
 }
 
 document.addEventListener('keydown', e => {
