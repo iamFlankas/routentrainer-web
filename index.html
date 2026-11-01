@@ -95,7 +95,7 @@ body.questing .maphead p { visibility: hidden; }
 .status::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: var(--acc); }
 /* --- Leiste rechts --- */
 .panel { background: var(--panel); color: var(--on-panel); border-radius: var(--r); display: flex; flex-direction: column; min-height: 0; overflow: hidden; }
-.chapdd, .iconbtn, .card, .chip, .btn, .opt, .choice, .pillbtn, .notice, .status { color: var(--fg); }
+.chapdd, .iconbtn, .card, .chip, .btn, .opt, .pillbtn, .notice, .status { color: var(--fg); }
 .topbar { display: flex; gap: 10px; align-items: center; }
 .chapdd { position: relative; flex: 1; min-width: 0; display: flex; align-items: center; gap: 10px; background: var(--card); border-radius: 999px; padding: 0 16px; height: 48px; cursor: pointer; }
 .chapdd svg { flex: none; width: 18px; height: 18px; color: var(--muted); }
@@ -106,7 +106,7 @@ body.questing .maphead p { visibility: hidden; }
 .iconbtn svg { width: 20px; height: 20px; }
 .iconbtn:hover { box-shadow: inset 0 0 0 1px var(--line); }
 .scroll { overflow-y: auto; padding: 28px 22px 26px; display: flex; flex-direction: column; gap: 16px; min-height: 0; flex: 1; }
-.rbtn:focus-visible, .btn:focus-visible, .opt:focus-visible, .choice:focus-visible, .rt:focus-visible, .gbtn:focus-visible, .iconbtn:focus-visible, .pillbtn:focus-visible { outline: 2px solid #141414; outline-offset: 2px; }
+.rbtn:focus-visible, .btn:focus-visible, .opt:focus-visible, .rt:focus-visible, .gbtn:focus-visible, .iconbtn:focus-visible, .pillbtn:focus-visible { outline: 2px solid #141414; outline-offset: 2px; }
 #stage { display: flex; flex-direction: column; gap: 16px; }
 #head { display: flex; flex-direction: column; gap: 14px; }
 .h-top { display: flex; justify-content: space-between; align-items: flex-end; gap: 12px; }
@@ -148,13 +148,10 @@ body.questing .maphead p { visibility: hidden; }
 .chip { display: inline-flex; align-items: baseline; gap: 6px; padding: 5px 12px; border-radius: 999px; background: var(--card); font-weight: 500; font-size: .92rem; }
 .chip small { font-size: .74rem; color: var(--muted); font-weight: 400; }
 .chip.ok { background: var(--good-bg); color: var(--good); }
-.chip.diff { background: var(--bad-bg); color: var(--bad); }
 .chip.dest { background: var(--acc); color: var(--acc-ink); }
 .chain { display: flex; flex-wrap: wrap; gap: 6px; }
 .chain:empty { display: none; }
 .chain .chip:not(:last-child)::after { content: "›"; margin-left: 4px; color: var(--muted); }
-.choice .chain .chip { background: var(--soft); }
-.choice .chain .chip.diff { background: var(--bad-bg); }
 .chain.small .chip { font-size: .82rem; padding: 3px 9px; }
 
 /* Schritte als Zeitleiste */
@@ -193,13 +190,6 @@ ol.steps li.dest .chip { background: var(--acc); color: var(--acc-ink); padding:
 .opt:hover { box-shadow: inset 0 0 0 2px var(--fg); }
 .opt.no { background: var(--bad-bg); color: var(--bad); animation: shake .3s; }
 @keyframes shake { 25% { transform: translateX(-4px); } 75% { transform: translateX(4px); } }
-.choice { display: grid; grid-template-columns: auto 1fr; gap: 8px 12px; text-align: left; padding: 14px; border: 0; border-radius: 22px; background: var(--card); cursor: pointer; }
-.choice:hover:not(:disabled) { box-shadow: inset 0 0 0 2px var(--fg); }
-.choice .letter { font-weight: 600; font-size: 1.05rem; background: var(--acc); color: var(--acc-ink); width: 36px; height: 36px; display: grid; place-items: center; border-radius: 50%; }
-.choice .why { grid-column: 2; font-size: .85rem; color: var(--bad); }
-.choice.right { box-shadow: inset 0 0 0 2px var(--good); }
-.choice.wrong { box-shadow: inset 0 0 0 2px var(--bad); }
-.choice:disabled { cursor: default; }
 .result { margin: 0; padding: 14px 16px; border-radius: 20px; display: flex; flex-direction: column; gap: 4px; }
 .result.good { background: var(--good-bg); color: var(--good); }
 .result.bad { background: var(--bad-bg); color: var(--bad); }
@@ -493,6 +483,30 @@ body.karten #theme svg { width: 22px; height: 22px; }
 .k-link.all .k-box::after { content: ''; position: absolute; left: 3.5px; top: 0.5px; width: 3.5px; height: 7px; border: solid var(--acc); border-width: 0 2px 2px 0; transform: rotate(45deg); }
 .k-link.some .k-box::after { content: ''; position: absolute; left: 2px; right: 2px; top: 4.5px; height: 2px; border-radius: 1px; background: var(--acc); }
 .k-src { margin: 0; font-size: .75rem; color: var(--on-panel-muted); }
+/* --- Bilder (Modus „bilder“, gleiche Fläche wie die Karteikarten): Foto, darunter vier Namen --- */
+.bq { flex: 1; min-height: 0; width: min(640px, 100%); display: flex; flex-direction: column; align-items: center; gap: 12px; margin-top: 14px; }
+.bq-frage { margin: 0; color: rgba(242,241,237,.72); font-weight: 500; font-size: .95rem; }
+.bq-img { position: relative; flex: 1 1 auto; min-height: 140px; width: 100%; margin: 0; border-radius: 24px; overflow: hidden; background: #1c1c1e; box-shadow: 0 16px 40px rgba(0,0,0,.25); }
+.bq-img img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; }
+.bq-img img.bq-bg { object-fit: cover; filter: blur(22px) brightness(.6); transform: scale(1.15); }
+.bq-frage.bq-adr { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: center; column-gap: 10px; row-gap: 0; padding: 7px 16px; border-radius: 14px; background: var(--acc); color: #141414; text-align: center; animation: bqin .3s cubic-bezier(.2,.8,.2,1); }
+.bq-adr b { font-size: 1rem; font-weight: 650; } .bq-adr span { font-size: .85rem; }
+@keyframes bqin { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+.bq-credit { margin: -6px 0 0; font-size: .7rem; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.bq-credit a { color: rgba(242,241,237,.5); text-decoration: none; } .bq-credit a:hover { color: #f2f1ed; text-decoration: underline; }
+.bq-opts { width: 100%; display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.bq-opt { display: flex; align-items: center; gap: 10px; min-height: 54px; padding: 10px 14px; border: 0; border-radius: 18px; background: var(--card); color: var(--fg); font: inherit; font-size: 1rem; font-weight: 550; line-height: 1.2; text-align: left; cursor: pointer; box-shadow: 0 6px 18px rgba(0,0,0,.14); transition: background .2s, color .2s, opacity .2s; }
+.bq-opt:hover:not(:disabled) { box-shadow: inset 0 0 0 2px var(--acc), 0 6px 18px rgba(0,0,0,.14); }
+.bq-nr { flex: none; width: 24px; height: 24px; border-radius: 50%; display: grid; place-items: center; font-size: .75rem; font-weight: 600; background: color-mix(in srgb, var(--fg) 9%, transparent); }
+.bq-opt:disabled { cursor: default; opacity: .45; }
+.bq-opt.ok, .bq-opt.nein { opacity: 1; color: #fff; } .bq-opt.ok .bq-nr, .bq-opt.nein .bq-nr { background: rgba(255,255,255,.25); }
+.bq-opt.ok { background: #1f8a45; }
+.bq-opt.nein { background: #d23b2f; animation: seqNein .4s; }
+.bq-next, .bq-frage, .bq-credit, .bq-opts { flex: none; }
+.b-list { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+.b-row { display: flex; align-items: center; gap: 8px; padding: 7px 12px; border-radius: 14px; background: color-mix(in srgb, var(--dark) 50%, transparent); color: var(--dark-fg); font-size: .84rem; line-height: 1.2; }
+.b-dot { flex: none; width: 9px; height: 9px; border-radius: 50%; background: var(--dark-muted); opacity: .6; }
+.b-row.ok .b-dot { background: #6fd08d; opacity: 1; } .b-row.nein .b-dot { background: #ff8a80; opacity: 1; }
 @media (max-width: 760px) {
   body.karten .mapwrap { height: 80vh; height: 80dvh; }
   body.karten #theme { top: calc(max(8px, env(safe-area-inset-top)) + 10px); right: 16px; }
@@ -512,6 +526,11 @@ body.karten #theme svg { width: 22px; height: 22px; }
   .seq-again { font-size: .8rem; padding: 5px 12px; }
   .fc-btn { width: 56px; height: 56px; }
   .fc-keys { display: none; }
+  .bq { gap: 10px; margin-top: 10px; }
+  body.bilder .fc-melden { display: none; } /* Platz fürs Foto; „Fehler melden“ steht auch in der Fußzeile */
+  .bq-opts { gap: 8px; }
+  .bq-opt { min-height: 48px; padding: 8px 10px; font-size: .9rem; gap: 8px; border-radius: 16px; }
+  .bq-nr { width: 20px; height: 20px; font-size: .68rem; }
 }
 /* kleine Handys (iPhone SE): Platz für die Karte – Fehler melden gibt es auch in der Fußzeile */
 @media (max-width: 760px) and (max-height: 720px) { body.karten .fc-melden { display: none; } }
@@ -530,7 +549,7 @@ body.karten #theme svg { width: 22px; height: 22px; }
     <nav class="tabs" aria-label="Modus">
       <button class="gbtn tab on" data-mode="lernen" type="button" title="Lernen" aria-label="Lernen"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 5.5c3-1.2 6-1.2 9 .8 3-2 6-2 9-.8V19c-3-1.2-6-1.2-9 .8-3-2-6-2-9-.8z"/><path d="M12 6.3v13.5"/></svg></button>
       <button class="gbtn tab" data-mode="karten" type="button" title="Karteikarten" aria-label="Karteikarten"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="7" width="14" height="13" rx="3"/><path d="M7 4h11a3 3 0 0 1 3 3v9"/><path d="M7 12.5h6M7 15.5h4"/></svg></button>
-      <button class="gbtn tab" data-mode="auswahl" type="button" title="Auswahl" aria-label="Auswahl"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="3.5" width="17" height="17" rx="5"/><path d="M8 12.2l2.7 2.7L16.3 9"/></svg></button>
+      <button class="gbtn tab" data-mode="bilder" type="button" title="Bilder" aria-label="Bilder"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4.5" width="18" height="15" rx="3.5"/><circle cx="8.6" cy="9.6" r="1.7"/><path d="M3.5 17l5-4.6 3.6 3.2 3.4-3 5 4.4"/></svg></button>
       <button class="gbtn tab" data-mode="fahren" type="button" title="Nachfahren" aria-label="Nachfahren"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="18" r="2.2"/><path d="M8.2 18H15a3.5 3.5 0 0 0 0-7H9a3.5 3.5 0 0 1 0-7h6.5"/><path d="M18 1.8c-1.7 0-3 1.3-3 2.9 0 2.2 3 4.8 3 4.8s3-2.6 3-4.8c0-1.6-1.3-2.9-3-2.9z"/></svg></button>
     </nav>
     <div class="mapctl">
@@ -557,7 +576,7 @@ body.karten #theme svg { width: 22px; height: 22px; }
       </div>
       <div class="sec"><h3>Routen <small id="count"></small></h3><button id="shuffle" class="pillbtn" type="button">Zufällig</button></div>
       <div id="routes"></div>
-      <div class="foot"><span>Stand 01.11.2026 11:11 · Routen: WKO-Fragenkatalog 2026 · Daten: Stadt Wien, basemap.at, OpenStreetMap</span><span class="foot-btns"><button id="melden" type="button">Fehler melden</button><button id="reload" type="button">Straßennetz neu laden</button></span></div>
+      <div class="foot"><span>Stand 01.11.2026 20:56 · Routen: WKO-Fragenkatalog 2026 · Daten: Stadt Wien, basemap.at, OpenStreetMap</span><span class="foot-btns"><button id="melden" type="button">Fehler melden</button><button id="reload" type="button">Straßennetz neu laden</button></span></div>
     </div>
   </aside>
 </div>
@@ -699,6 +718,7 @@ const ROUTES = [
 ];
 // Karteikarten aus dem Fragenkatalog, je Kategorie: [vorne, hinten, Zusatz]; hinten als Liste = Reihenfolge legen
 const KARTEN = [{"name":"Regierung & Ministerien","karten":[["Parlament (Nationalrat und Bundesrat)","1., Dr.-Karl-Renner-Ring 3"],["Bundespräsident (Präsidentschaftskanzlei)","1., Ballhausplatz (Hofburg)"],["Bundeskanzleramt","1., Ballhausplatz 2"],["Bundesministerium für Inneres","1., Herrengasse 7"],["Bundesministerium für Europäische und Internationale Angelegenheiten","1., Minoritenplatz 8"],["Bundesministerium für Europa, Integration und Familie","1., Ballhausplatz 2"],["Bundesministerium für Bildung","1., Minoritenplatz 5"],["Bundesministerium für Frauen, Wissenschaft und Forschung","1., Minoritenplatz 3"],["Bundesministerium für Arbeit, Soziales, Gesundheit, Pflege und Konsumentenschutz","1., Stubenring 1"],["Bundesministerium für Finanzen","1., Johannesgasse 5"],["Bundesministerium für Innovation, Mobilität und Infrastruktur","3., Radetzkystraße 2"],["Bundesministerium für Wohnen, Kunst, Kultur, Medien und Sport","3., Radetzkystraße 2"],["Bundesministerium für Land- und Forstwirtschaft, Klima- und Umweltschutz, Regionen und Wasserwirtschaft","1., Stubenring 1"],["Bundesministerium für Wirtschaft, Energie und Tourismus","1., Stubenring 1"],["Bundesministerium für Justiz","7., Museumstraße 7"],["Bundesministerium für Landesverteidigung","9., Roßauer Lände 1"],["Landtag, Landesregierung und Gemeindeverwaltung für Wien / Landeshauptmann und Bürgermeister","1., Rathausplatz (Rathaus)"]],"teil":1},{"name":"Gerichte","karten":[["Verfassungsgerichtshof","1., Freyung 8"],["Verwaltungsgerichtshof","1., Judenplatz 11"],["Oberlandesgericht Wien","1., Schmerlingplatz 11"],["Landesgericht für Zivilrechtssachen","1., Schmerlingplatz 10-11"],["Justizanstalt Wien Josefstadt","8., Wickenburggasse 18-20"],["Justiz-Zentrum Wien Mitte (Handelsgericht Wien, Bezirksgericht für Handelssachen und Bezirksgericht Innere Stadt)","3., Marxergasse 1a"],["Arbeits- und Sozialgericht Wien","9., Althanstraße 39-45"],["Polizeianhaltezentrum Wien","8., Hernalser Gürtel 6-12"],["Rechnungshof","3., Dampfschiffstraße 2"]],"teil":1},{"name":"Polizei","karten":[["Bundespolizeidirektion Wien – Sicherheitsdirektion","1., Schottenring 7-9"],["BFA Bundesamt für Fremdenwesen und Asyl","8., Hernalser Gürtel 6-12"],["Verkehrsamt (Führerschein/Taxireferat)","3., Dietrichgasse 27"],["Stadtpolizeikommando Innere Stadt","1., Deutschmeisterplatz 3"],["Stadtpolizeikommando Landstraße","3., Juchgasse 19"],["Stadtpolizeikommando Margareten (für die Bezirke 4, 5 und 6)","5., Viktor-Christ-Gasse 19"],["Stadtpolizeikommando Josefstadt (für die Bezirke 7, 8 und 9)","8., Fuhrmannsgasse 5"],["Stadtpolizeikommando Favoriten","10., Van-der-Nüll-Gasse 11"],["Stadtpolizeikommando Simmering","11., Enkplatz 3"],["Stadtpolizeikommando Meidling (für die Bezirke 12 und 13)","12., Hohenbergstraße 1"],["Stadtpolizeikommando Fünfhaus (für die Bezirke 14 und 15)","15., Tannengasse 6"],["Stadtpolizeikommando Ottakring (für die Bezirke 16 und 17)","16., Wattgasse 15"],["Stadtpolizeikommando Döbling (für die Bezirke 18 und 19)","19., Hohe Warte 32"],["Stadtpolizeikommando Brigittenau (für die Bezirke 2 und 20)","20., Pappenheimgasse 33"],["Stadtpolizeikommando Floridsdorf","21., Hermann-Bahr-Straße 3"],["Stadtpolizeikommando Donaustadt","22., Wagramer Straße 89"],["Stadtpolizeikommando Liesing","23., Lehmanngasse 3a"]],"teil":1},{"name":"Post & Verkehr","karten":[["Hauptpostamt","1., Fleischmarkt 19"],["Post-Verteilerzentrum","23., Halban-Kurz-Straße"],["Hauptbahnhof Wien","10., Am Hauptbahnhof 1"],["Franz-Josefs-Bahnhof","9., Julius-Tandler-Platz 3"],["Westbahnhof","15., Europaplatz / Felberstraße"],["City-Air-Terminal / CAT (City Airport Train)","3., Gigergasse / Marxergasse"],["Bahnhof Wien-Nord","2., Praterstern"],["Bahnhof Wien-Mitte","3., Landstraßer Hauptstraße"],["Bahnhof Hütteldorf","14., Keißlergasse 5"],["Bahnhof Meidling","12., Eichenstraße 25"],["Vienna International Busbahnhof (VIB)","3., Erdbergstraße 200a / U3"],["Autobusbahnhof Südtiroler Platz","10., Südtiroler Platz / Wiedner Gürtel / U1"],["Autobusbahnhof Floridsdorf","21., Floridsdorf / Schloßhofer Straße / U6"],["Autobusbahnhof Kagran","22., Dr.-Adolf-Schärf-Platz / U1"],["Autobusbahnhof Simmering","11., Simmeringer Platz / U3"],["International Fernbus Terminal für Wien (beim Stadion-Center)","2., Engerthstraße 269"],["DDSG-Schifffahrtszentrum (Wien-Reichsbrücke)","2., Handelskai 265"],["Dampfschiffstation Schwedenbrücke (Wien-Rundfahrten)","1., Franz-Josefs-Kai / Schwedenbrücke"],["Wiener Hafen (Zollfreizone)","2., Seitenhafenstraße 15"],["Freudenauer Hafen","2., Freudenauer Hafenstraße 8-10"],["Alberner Hafen","11., Alberner Hafen Zufahrtsstraße"],["Kuchelauer Hafen","19., Kuchelauer Hafenstraße"],["Kfz-Verwahrstelle der MA 48","11., Jedletzbergerstraße 1"],["Landesfahrzeugprüfstelle","11., 7. Haidequerstraße 5"]],"teil":1},{"name":"Medien & Kammern","karten":[["ORF Funkhaus Wien","4., Argentinierstraße 30a"],["ORF Fernsehen / ORF Rundfunk / Ö3","13., Hugo-Portisch-Gasse 1"],["ORF-Landesstudio Wien","19., Heiligenstädter Lände 27c"],["„Kronen Zeitung“","19., Muthgasse 2"],["„Kurier“ – Redaktion","19., Leopold-Ungar-Platz 1"],["Druckzentrum „Media-Print“","23., Richard-Strauss-Straße 16"],["Österreichische Staatsdruckerei","23., Tenschertstraße 7"],["APA – Austria Presse Agentur","6., Laimgrubengasse 10"],["ATV / PULS 4 (Media Quarter Marx)","3., Maria-Jacobi-Gasse 1"],["Arbeiterkammer Wien","4., Prinz-Eugen-Straße 20-22"],["Wirtschaftskammer Österreich","4., Wiedner Hauptstraße 63"],["Wirtschaftskammer Wien / Fachgruppe Wien für Personenbeförderungsgewerbe","2., Straße der Wiener Wirtschaft 1"]],"teil":1},{"name":"Bezirksämter","karten":[["Magistratisches Bezirksamt 1. und 8. Bezirk","1., Wipplingerstraße 8"],["Magistratisches Bezirksamt 2. Bezirk","2., Karmelitergasse 9"],["Magistratisches Bezirksamt 3. Bezirk","3., Karl-Borromäus-Platz 3"],["Magistratisches Bezirksamt 4. und 5. Bezirk","5., Rechte Wienzeile 105"],["Magistratisches Bezirksamt 6. und 7. Bezirk","7., Hermanngasse 24-26"],["Magistratisches Bezirksamt 9. Bezirk","9., Wilhelm-Exner-Gasse 5"],["Magistratisches Bezirksamt 10. Bezirk","10., Laxenburger Straße 43-45"],["Magistratisches Bezirksamt 11. Bezirk","11., Enkplatz 2"],["Magistratisches Bezirksamt 12. Bezirk","12., Schönbrunner Straße 259"],["Magistratisches Bezirksamt 13. und 14. Bezirk","13., Hietzinger Kai 1-3"],["Magistratisches Bezirksamt 15. Bezirk","15., Gasgasse 8-10"],["Magistratisches Bezirksamt 16. Bezirk","16., Richard-Wagner-Platz 19"],["Magistratisches Bezirksamt 17. Bezirk","17., Elterleinplatz 14"],["Magistratisches Bezirksamt 18. Bezirk","18., Martinstraße 100"],["Magistratisches Bezirksamt 19. Bezirk","19., Pfarrwiesengasse 23c"],["Magistratisches Bezirksamt 20. Bezirk","20., Brigittaplatz 10"],["Magistratisches Bezirksamt 21. Bezirk","21., Am Spitz 1"],["Magistratisches Bezirksamt 22. Bezirk","22., Schrödingerplatz 1"],["Magistratisches Bezirksamt 23. Bezirk","23., Perchtoldsdorfer Straße 2"],["Fundservice Wien","5., Siebenbrunnenfeldgasse 3"]],"teil":1},{"name":"Hotels","karten":[["Hotel Imperial","1., Kärntner Ring 16"],["Palais Coburg Residenz","1., Coburgbastei 4"],["Anantara Palais Hansen Vienna","1., Schottenring 24"],["Hotel Sacher Wien","1., Philharmonikerstraße 4"],["Vienna Marriott Hotel","1., Parkring 12a"],["Mandarin Oriental Vienna","1., Riemergasse 7"],["Adagio Vienna City","1., Uraniastraße 2 / Julius-Raab-Platz"],["Hotel Am Konzerthaus","3., Am Heumarkt 35-37"],["Hotel Am Parkring","1., Parkring 12"],["Hotel Am Stephansplatz","1., Stephansplatz 9"],["Austria Trend Hotel Ananas","5., Rechte Wienzeile 93-95"],["Arcotel Wimberger Wien","7., Neubaugürtel 34-36"],["Hotel Bosei","10., Gutheil-Schoder-Gasse 7b"],["Hotel City Central","2., Taborstraße 8"],["Hotel Doppio","3., Rennweg 99 / Rinnböckstraße 1"],["Hotel Erzherzog Rainer","4., Wiedner Hauptstraße 27-29"],["Eurostars Embassy","3., Landstraßer Hauptstraße 120"],["Flemings Hotel Wien-Stadthalle","7., Neubaugürtel 26-28"],["Hideouts Hotels Villa","19., Hasenauerstraße 12"],["Hotel Holiday Deluxe Inn Vienna City","5., Margaretenstraße 53"],["InterCityHotel Wien","7., Mariahilfer Straße 122 / Kaiserstraße 1-3"],["Hotel Johann Strauss","4., Favoritenstraße 12"],["Hotel Josefshof am Rathaus","8., Josefsgasse 4-8"],["K+K Hotel Maria Theresia","7., Kirchberggasse 6-8"],["Lindner Hotel Am Belvedere","3., Rennweg 12"],["Mercure Grand Hotel Biedermeier","3., Landstraßer Hauptstraße 28"],["Mercure Wien City","2., Hollandstraße 3"],["Mercure Wien Westbahnhof","15., Felberstraße 4"],["Hotel Nestroy Wien","2., Rotensterngasse 12"],["NH Wien City","7., Mariahilfer Straße 32-34"],["NH Danube City","22., Wagramer Straße 21"],["NH Wien Belvedere","3., Rennweg 12a"],["Novotel Wien City","2., Aspernbrückengasse 1"],["Park Inn by Radisson Uno City Vienna","22., Wagramer Straße 16-18"],["Plaza Premium Wien – RTK Round Table Konferenzhotels","10., Hertha-Firnberg-Straße 5"],["Hotel Regina","9., Rooseveltplatz 15"],["Schloss Wilhelminenberg","16., Savoyenstraße 2"],["Hotel Secession an der Oper","6., Getreidemarkt 5"],["Hotel Simm’s","11., Simmeringer Hauptstraße 55"],["Starlight Suiten Hotel Wien Heumarkt","3., Am Heumarkt 15"],["Starlight Suiten Hotel Wien Renngasse","1., Renngasse 13"],["Starlight Suiten Hotel Wien Salzgries","1., Salzgries 12"],["Hotel Stefanie","2., Taborstraße 12"],["Strudlhof Hotel & Palais","9., Pasteurgasse 1"],["Vienna Sporthotel","3., Baumgasse 83"],["Ibis Styles Wien City","19., Döblinger Hauptstraße 2"],["Ibis Wien City","5., Schönbrunner Straße 92"],["Ibis Wien Mariahilf","6., Mariahilfer Gürtel 22-24"],["Ibis Wien Messe","2., Lassallestraße 7a"],["Spark by Hilton Vienna Messe Prater","2., Messestraße 2"],["Hotel Post","1., Fleischmarkt 24"],["25hours Hotel beim MuseumsQuartier","7., Lerchenfelder Straße 1-3"],["Adina Apartment Hotel Vienna Belvedere","10., Canettistraße 3"],["Almanac Palais Vienna","1., Parkring 14-16"],["Hotel Ambassador","1., Kärntner Straße 22 / Neuer Markt 5"],["Hyatt Regency Vienna","10., Arsenalstraße 10"],["Hotel Daniel Vienna","3., Landstraßer Gürtel 5"],["Flemings Selection Hotel Wien-City","8., Josefstädter Straße 10-12"],["Hotel Grand Ferdinand","1., Schubertring 10-12"],["Grand Hotel","1., Kärntner Ring 9"],["Hilton Vienna Park","3., Am Stadtpark 1"],["Hilton Vienna Plaza","1., Schottenring 11"],["Hilton Vienna Danube Waterfront","2., Handelskai 269"],["Ibercity Wien Schönbrunn","12., Schönbrunner Schloßstraße 38-40"],["Imperial Riding School","3., Ungargasse 60"],["InterContinental Wien","3., Johannesgasse 28"],["Le Méridien Wien","1., Robert-Stolz-Platz 1"],["Meliá Vienna","22., Donau-City-Straße 7"],["Mercure Wien Zentrum","1., Fleischmarkt 1a"],["Moons Vienna","4., Wiedner Gürtel 16"],["Park Hyatt Vienna","1., Am Hof 2"],["Radisson Blu Das Triest Hotel Vienna","4., Wiedner Hauptstraße 12"],["Radisson Red Vienna","2., Obere Donaustraße 61"],["Renaissance Wien Hotel","15., Ullmannstraße 71 / Linke Wienzeile"],["Rosewood Vienna","1., Petersplatz 7"],["SO/ Vienna","2., Praterstraße 1"],["Spark by Hilton Vienna","22., Dr.-Adolf-Schärf-Platz 6"],["Steigenberger Hotel Herrenhof","1., Herrengasse 10"],["The Amauris Vienna","1., Kärntner Ring 8"],["The Ritz-Carlton","1., Schubertring 5-7"],["Hotel Topazz","1., Lichtensteg 3"]],"teil":1},{"name":"Kaffeehäuser","karten":[["Café Central","1., Herrengasse 14"],["Café Einstein","1., Rathausplatz 8"],["Café Hawelka","1., Dorotheergasse 6"],["Café Landtmann","1., Universitätsring 4"],["Café Mozart","1., Albertinaplatz 2"],["Café Museum","1., Operngasse 7"],["Café Prückel","1., Stubenring 24"],["Café Schwarzenberg","1., Kärntner Ring 17"],["Café Lusthaus","2., Freudenau 254 / Aspernallee"],["Café Drechsler","6., Linke Wienzeile 22"],["Café Ritter","6., Mariahilfer Straße 73"],["Café Sperl","6., Gumpendorfer Straße 11"],["Café Eiles","8., Josefstädter Straße 2"],["Café Hummel","8., Josefstädter Straße 66"],["Kurkonditorei Oberlaa Dommayer","13., Auhofstraße 2"]],"teil":1},{"name":"Friedhöfe","karten":[["Friedhof Aspern","22., Langobardenstraße 180"],["Friedhof Baumgarten","14., Waidhausenstraße 52"],["Friedhof Döbling","19., Hartäckerstraße 65"],["Friedhof Dornbach","17., Alszeile 28"],["Feuerhalle Simmering","11., Simmeringer Hauptstraße 337"],["Friedhof Grinzing","19., An den langen Lüssen 33"],["Friedhof Groß-Jedlersdorf","21., Strebersdorfer Straße 2"],["Friedhof Heiligenstadt","19., Wildgrubgasse 20"],["Friedhof Hernals","17., Leopold-Kunschak-Platz 7"],["Friedhof Hietzing","13., Maxingstraße 15"],["Friedhof Hütteldorf","14., Samptwandnergasse 6"],["Friedhof Inzersdorf","23., Kolbegasse 34"],["Islamischer Friedhof","23., Großmarktstraße 2a"],["Friedhof Meidling","12., Eibesbrunnergasse 1a (Haidackergasse 6)"],["Friedhof Mauer","23., Friedensstraße 6-16"],["Friedhof Neustift","18., Pötzleinsdorfer Höhe 2"],["Friedhof Oberlaa","10., Friedhofstraße 33"],["Friedhof Ottakring","16., Gallitzinstraße 5"],["Friedhof Sievering","19., Nottebohmstraße 51"],["Friedhof Simmering","11., Unter der Kirche 5"],["Stammersdorfer Zentralfriedhof","21., Stammersdorfer Straße 244-260"],["Südwestfriedhof","12., Hervicusgasse 44 bzw. Wundtgasse 1A"],["Zentralfriedhof (Simmering)","11., Simmeringer Hauptstraße 234"]],"teil":1},{"name":"Krankenhäuser","karten":[["Allgemeines Krankenhaus (AKH)","9., Währinger Gürtel 18"],["AUVA – Traumazentrum Wien Meidling","12., Kundratstraße 37"],["AUVA – Traumazentrum Wien Lorenz Böhler","20., Donaueschingenstraße 13"],["Krankenhaus Barmherzige Schwestern","6., Stumpergasse 13-15"],["Krankenhaus Barmherzige Brüder","2., Johannes-von-Gott-Platz 1"],["Privatklinik Confraternität","8., Skodagasse 32"],["Klinik Donaustadt","22., Langobardenstraße 122"],["Evangelisches Krankenhaus","18., Hans-Sachs-Gasse 10-12"],["Anton-Proksch-Institut (API)","23., Gräfin-Zichy-Straße 6"],["Franziskus Spital Landstraße","3., Landstraßer Hauptstraße 4a"],["Franziskus Spital Margareten","5., Nikolsdorfer Gasse 32"],["Privatklinik Goldenes Kreuz","9., Lazarettgasse 16-18"],["Krankenhaus Göttlicher Heiland","17., Dornbacher Straße 20-30"],["Hanusch-Krankenhaus","14., Heinrich-Collin-Straße 30"],["Sanatorium Liebhartstal","16., Kollburggasse 6-10"],["Sanitätszentrum Ost","21., Brünner Straße 238"],["Herz-Jesu-Krankenhaus","3., Baumgasse 20A"],["Klinik Hietzing","13., Wolkersbergenstraße 1"],["Neurologisches Krankenhaus Rosenhügel","13., Riedelgasse 5"],["Orthopädisches Spital Speising","13., Speisinger Straße 109"],["Rudolfinerhaus","19., Billrothstraße 78"],["Klinik Landstraße","3., Juchgasse 25"],["Sanatorium Hera","9., Löblichgasse 14"],["Privatklinik Döbling","19., Heiligenstädter Straße 55 und 63"],["Klinik Penzing","14., Baumgartner Höhe 1"],["Klinik Favoriten","10., Kundratstraße 3"],["St. Anna Kinderspital","9., Kinderspitalgasse 6"],["St. Josef Krankenhaus","13., Auhofstraße 189"],["Universitätszahnklinik","9., Sensengasse 2a"],["Klinik Floridsdorf","21., Brünner Straße 68"],["Klinik Ottakring","16., Montleartstraße 37"],["Wiener Privatklinik","9., Pelikangasse 15"],["Kuratorium der Wiener Pensionistenwohnhäuser (Zentrale)","9., Seegasse 11"]],"teil":1},{"name":"Theater & Kultur","karten":[["Burgtheater","1., Universitätsring 2"],["Kammerspiele","1., Rotenturmstraße 20"],["Musikverein","1., Musikvereinsplatz 1"],["Ronacher","1., Seilerstätte 9 / Himmelpfortgasse 25"],["Staatsoper","1., Opernring 2"],["Wiener Kammeroper","1., Fleischmarkt 24"],["Akademietheater","3., Lisztstraße 1"],["Konzerthaus","3., Lothringerstraße 20"],["Raimundtheater","6., Wallgasse 18-20"],["Theater an der Wien","6., Linke Wienzeile 6"],["Volkstheater","7., Arthur-Schnitzler-Platz 1"],["Theater in der Josefstadt","8., Josefstädter Straße 26"],["Volksoper","9., Währinger Straße 78"],["Stadthalle","15., Roland-Rainer-Platz 1 / Hütteldorfer Straße"],["CasaNova Vienna","1., Dorotheergasse 6-8"],["Eden Bar","1., Liliengasse 2"],["Globe Wien – Marx Halle","3., Karl-Farkas-Gasse 19"],["Kabarett Niedermair","8., Lenaugasse 1A"],["Kabarett Vindobona","20., Wallensteinplatz 6"],["Kulisse","17., Rosensteingasse 39"],["Metropol","17., Hernalser Hauptstraße 55"],["Orpheum","22., Steigenteschgasse 94b"],["Rabenhof Theater","3., Rabengasse 3"],["Sargfabrik","14., Goldschlagstraße 169"],["Simpl","1., Wollzeile 36"],["Stadtsaal","6., Mariahilfer Straße 81"],["Theater Akzent","4., Theresianumgasse 18"],["Theater am Spittelberg","7., Spittelberggasse 10"]],"teil":1},{"name":"Universitäten","karten":[["Universität Wien","1., Universitätsring 1"],["Universität für angewandte Kunst","1., Oskar-Kokoschka-Platz 2"],["Akademie der bildenden Künste","1., Schillerplatz 3"],["Universität für Musik und darstellende Kunst","3., Anton-von-Webern-Platz 1"],["Tech Gate Vienna","22., Donau-City-Straße 9"],["Technische Universität","4., Karlsplatz 13"],["Wirtschaftsuniversität („WU“)","2., Welthandelsplatz 1"],["Universität für Bodenkultur („BOKU“)","18., Gregor-Mendel-Straße 33"],["Veterinärmedizinische Universität","21., Veterinärplatz 1"],["Pädagogische Hochschule Wien","10., Grenzackerstraße 18"]],"teil":1},{"name":"Museen","karten":[["Albertina","1., Albertinaplatz 1"],["Museum für angewandte Kunst („MAK“)","1., Stubenring 5"],["Kunsthistorisches Museum","1., Burgring 5 / Maria-Theresien-Platz"],["Naturhistorisches Museum","1., Burgring 7 / Maria-Theresien-Platz"],["Secession","1., Friedrichstraße 12"],["Weltmuseum Wien","1., Neue Burg (Heldenplatz)"],["Sisi Museum Hofburg Wien","1., Hofburg / Michaelerkuppel"],["Kaisergruft (Kapuzinergruft)","1., Tegetthoffstraße 2 / Neuer Markt"],["Heeresgeschichtliches Museum","3., Arsenal, Objekt 1"],["Kunst Haus Wien","3., Untere Weißgerberstraße 13"],["Wien Museum","4., Karlsplatz 8"],["MuseumsQuartier","7., Museumsplatz 1"],["Technisches Museum","14., Mariahilfer Straße 212"]],"teil":1},{"name":"Sehenswürdigkeiten","karten":[["Hofburgkapelle","1., Hofburg (Schweizerhof)"],["Schatzkammer","1., Hofburg (Schweizerhof)"],["Kongresszentrum Hofburg","1., Hofburg (Heldenplatz)"],["Nationalbibliothek","1., Josefsplatz"],["Spanische Hofreitschule","1., Michaelerplatz 1"],["Prinz-Eugen-Denkmal","1., Heldenplatz"],["Erzherzog-Karl-Denkmal","1., Heldenplatz"],["Ankeruhr","1., Hoher Markt 10-11"],["Stephansdom","1., Stephansplatz 3"],["Riesenrad","2., Riesenradplatz"],["Schloss Belvedere","3., Prinz-Eugen-Straße 27"],["Hundertwasserhaus","3., Löwengasse / Kegelgasse 36"],["Haus des Meeres","6., Fritz-Grünbaum-Platz 1"],["Sigmund-Freud-Museum","9., Berggasse 19"],["Schloss Schönbrunn (Haupteingang)","13., Schönbrunner Schloßstraße 47"],["Tiergarten Schönbrunn","13., Maxingstraße 13b"],["Gloriette (Schönbrunn)","12., Hohenbergstraße (Parkeingang)"],["Austria Center Vienna","22., Bruno-Kreisky-Platz 1"],["Donauturm","22., Donauturmplatz 1"],["UNO-City","22., Wagramer Straße 5"],["Roßauer Kaserne","9., Türkenstraße 22"],["Karlskirche","4., Kreuzherrengasse 1"],["Votivkirche","9., Rooseveltplatz"],["Peterskirche","1., Petersplatz 1"]],"teil":1},{"name":"Bezirke","frage":"Wie heißt der Bezirk?","karten":[["1. Bezirk","Innere Stadt"],["2. Bezirk","Leopoldstadt"],["3. Bezirk","Landstraße"],["4. Bezirk","Wieden"],["5. Bezirk","Margareten"],["6. Bezirk","Mariahilf"],["7. Bezirk","Neubau"],["8. Bezirk","Josefstadt"],["9. Bezirk","Alsergrund"],["10. Bezirk","Favoriten"],["11. Bezirk","Simmering"],["12. Bezirk","Meidling"],["13. Bezirk","Hietzing"],["14. Bezirk","Penzing"],["15. Bezirk","Rudolfsheim-Fünfhaus"],["16. Bezirk","Ottakring"],["17. Bezirk","Hernals"],["18. Bezirk","Währing"],["19. Bezirk","Döbling"],["20. Bezirk","Brigittenau"],["21. Bezirk","Floridsdorf"],["22. Bezirk","Donaustadt"],["23. Bezirk","Liesing"]],"teil":2},{"name":"Ortsteile & Heurigenorte","frage":"In welchem Bezirk liegt …","karten":[["Prater","Leopoldstadt","2. Bezirk"],["Krieau","Leopoldstadt","2. Bezirk"],["Freudenau","Leopoldstadt","2. Bezirk"],["Viertel Zwei","Leopoldstadt","2. Bezirk"],["Erdberg","Landstraße","3. Bezirk"],["St. Marx","Landstraße","3. Bezirk"],["Spittelberg","Neubau","7. Bezirk"],["Wienerfeld (West und Ost)","Favoriten","10. Bezirk"],["Otto-Probst-Siedlung","Favoriten","10. Bezirk"],["Per-Albin-Hansson-Siedlung (West und Ost)","Favoriten","10. Bezirk"],["Unterlaa","Favoriten","10. Bezirk"],["Böhmischer Prater","Favoriten","10. Bezirk"],["Neu Laa","Favoriten","10. Bezirk"],["Rothneusiedl","Favoriten","10. Bezirk"],["Monte Laa","Favoriten","10. Bezirk"],["Oberlaa","Favoriten","10. Bezirk · Heurigenort"],["Simmeringer Haide","Simmering","11. Bezirk"],["Thürnlhof-Siedlung","Simmering","11. Bezirk"],["Leberberg-Siedlung","Simmering","11. Bezirk"],["Kaiser Ebersdorf","Simmering","11. Bezirk"],["Albern","Simmering","11. Bezirk"],["Hetzendorf","Meidling","12. Bezirk"],["Altmannsdorf (Schöpfwerk)","Meidling","12. Bezirk"],["Schönbrunn","Hietzing","13. Bezirk"],["Speising","Hietzing","13. Bezirk"],["Rosenhügel","Hietzing","13. Bezirk"],["Lainz","Hietzing","13. Bezirk"],["Unter St. Veit","Hietzing","13. Bezirk"],["Ober St. Veit","Hietzing","13. Bezirk"],["Hacking","Hietzing","13. Bezirk"],["Breitensee","Penzing","14. Bezirk"],["Baumgarten","Penzing","14. Bezirk"],["Hütteldorf","Penzing","14. Bezirk"],["Hüttelberg","Penzing","14. Bezirk"],["Wolfersberg","Penzing","14. Bezirk"],["Mariabrunn","Penzing","14. Bezirk"],["Hadersdorf","Penzing","14. Bezirk"],["Weidlingau","Penzing","14. Bezirk"],["Schmelz","Rudolfsheim-Fünfhaus","15. Bezirk"],["Neulerchenfeld","Ottakring","16. Bezirk"],["Sandleiten","Ottakring","16. Bezirk"],["Gallitzinberg (Wilhelminenberg)","Ottakring","16. Bezirk"],["Alt-Ottakring","Ottakring","16. Bezirk · Heurigenort"],["Dornbach","Hernals","17. Bezirk"],["Heuberg","Hernals","17. Bezirk"],["Neuwaldegg","Hernals","17. Bezirk"],["Gersthof","Währing","18. Bezirk"],["Schafberg","Währing","18. Bezirk"],["Pötzleinsdorf","Währing","18. Bezirk"],["Hohe Warte","Döbling","19. Bezirk"],["Salmannsdorf","Döbling","19. Bezirk"],["Cobenzl","Döbling","19. Bezirk"],["Kahlenberg","Döbling","19. Bezirk"],["Leopoldsberg","Döbling","19. Bezirk"],["Grinzing","Döbling","19. Bezirk · Heurigenort"],["Heiligenstadt","Döbling","19. Bezirk · Heurigenort"],["Kahlenbergerdorf","Döbling","19. Bezirk · Heurigenort"],["Neustift am Walde","Döbling","19. Bezirk · Heurigenort"],["Nußdorf","Döbling","19. Bezirk · Heurigenort"],["Sievering","Döbling","19. Bezirk · Heurigenort"],["Donaufeld","Floridsdorf","21. Bezirk"],["Mühlschüttel","Floridsdorf","21. Bezirk"],["Bruckhaufen","Floridsdorf","21. Bezirk"],["Jedlesee","Floridsdorf","21. Bezirk"],["Leopoldau","Floridsdorf","21. Bezirk"],["Großfeldsiedlung","Floridsdorf","21. Bezirk · in Leopoldau"],["Nordrandsiedlung","Floridsdorf","21. Bezirk · in Leopoldau"],["Schwarzlackenau","Floridsdorf","21. Bezirk"],["Groß-Jedlersdorf","Floridsdorf","21. Bezirk · Heurigenort"],["Stammersdorf","Floridsdorf","21. Bezirk · Heurigenort"],["Strebersdorf","Floridsdorf","21. Bezirk · Heurigenort"],["Kaisermühlen","Donaustadt","22. Bezirk"],["Kagran","Donaustadt","22. Bezirk"],["Rennbahnsiedlung","Donaustadt","22. Bezirk"],["Süßenbrunn","Donaustadt","22. Bezirk"],["Breitenlee","Donaustadt","22. Bezirk"],["Neu-Eßling","Donaustadt","22. Bezirk"],["Hirschstetten","Donaustadt","22. Bezirk"],["Stadlau","Donaustadt","22. Bezirk"],["Lobau (Nationalpark)","Donaustadt","22. Bezirk"],["Aspern","Donaustadt","22. Bezirk"],["Eßling","Donaustadt","22. Bezirk"],["Gewerbepark Stadlau","Donaustadt","22. Bezirk"],["Gewerbepark Kagran","Donaustadt","22. Bezirk"],["Seestadt","Donaustadt","22. Bezirk"],["Atzgersdorf","Liesing","23. Bezirk"],["Alt-Erlaa (Wohnpark)","Liesing","23. Bezirk"],["Siebenhirten","Liesing","23. Bezirk"],["Inzersdorf","Liesing","23. Bezirk"],["Kalksburg","Liesing","23. Bezirk"],["Mauer","Liesing","23. Bezirk · Heurigenort"],["Rodaun","Liesing","23. Bezirk · Heurigenort"]],"teil":2},{"name":"Gürtel-Querungen","frage":"Wie heißt die Straße, nachdem Sie den Gürtel überquert haben?","karten":[["3., Adolf-Blamauer-Gasse","3., Ghegastraße"],["3./4., Prinz-Eugen-Straße","3./10., Arsenalstraße"],["3., Schweizer-Garten-Straße","3., Fasangasse"],["4., Argentinierstraße","10., Gertrude-Fröhlich-Sandner-Straße"],["5., Arbeitergasse","12., Steinbauergasse"],["5., Kliebergasse","10., Landgutgasse"],["5., Margaretenstraße","12., Arndtstraße"],["5., Siebenbrunnengasse","12., Flurschützstraße"],["6., Gumpendorfer Straße","15., Sechshauser Straße"],["7./8., Lerchenfelder Straße","16., Thaliastraße"],["7., Neustiftgasse","16., Koppstraße"],["7., Stollgasse","15., Felberstraße"],["7., Urban-Loritz-Platz (Westbahnstraße)","15., Hütteldorfer Straße"],["8./9., Alser Straße","16./17., Ottakringer Straße"],["9., Lazarettgasse","17./18., Jörgerstraße"],["9., Nußdorfer Straße","19., Döblinger Hauptstraße"],["9., Sechsschimmelgasse","18., Gentzgasse"],["10., Gudrunstraße","5., Wiedner Hauptstraße"],["10., Laxenburger Straße","4., Favoritenstraße"],["10., Triester Straße","5., Wiedner Hauptstraße"],["15./16., Gablenzgasse","7., Burggasse"],["16., Neulerchenfelder Straße","8., Josefstädter Straße"],["17., Hernalser Hauptstraße","9., Kinderspitalgasse"],["18., Schulgasse","9., Währinger Straße"]],"teil":2},{"name":"Donaukanal-Querungen","frage":"Wie heißt die Straße nach der Brücke über den Donaukanal (die Donau)?","karten":[["1., Laurenzerberg","2., Taborstraße"],["1./9., Maria-Theresien-Straße","2., Untere Augartenstraße"],["1., Rotenturmstraße","2., Lilienbrunngasse / Gredlerstraße"],["2., Aspernbrückengasse","1., Julius-Raab-Platz (Stubenring)"],["2., Franzensbrückenstraße","3., Radetzkystraße"],["2., Hollandstraße","1., Salztorgasse"],["2., Lassallestraße (über die Donau)","22., Wagramer Straße"],["2., Rembrandtstraße","9., Türkenstraße"],["2., Wittelsbachstraße","3., Rasumofskygasse"],["9., Alserbachstraße","20., Wallensteinstraße"],["11., 11. Haidequerstraße","2., Seitenhafenstraße"],["19., Döblinger Gürtel","20., Adalbert-Stifter-Straße"],["20., Adalbert-Stifter-Straße (über die Donau)","21., Floridsdorfer Hauptstraße"]],"teil":2},{"name":"Hausnummern","frage":"Nummerierungs-System","karten":[["Wie bzw. nach welchem System sind die Wiener Plätze nummeriert?","Im Uhrzeigersinn, beginnend bei den dem Stadtzentrum näheren Häusern"],["Wo beginnen die Hausnummern bei Straßen, die vom Stadtzentrum aus stadtauswärts führen?","Grundsätzlich am Anfang der Straße, der dem Stadtzentrum näher liegt"],["Wo beginnen die Hausnummern bei Straßen, die vom Stadtzentrum aus gesehen querverlaufend sind?","Beginnend im Uhrzeigersinn"],["Sie stehen in einer Straße. Rechts von Ihnen ist eine gerade Hausnummer. Wo beginnt die Straße?","Hinter mir"],["Sie stehen in einer Straße. Rechts von Ihnen ist eine ungerade Hausnummer. Wo beginnt die Straße?","Vor mir"]],"teil":2},{"name":"Plätze: Straßen rundum","frage":"Einmündende und wegführende Straßen","karten":[["23., Atzgersdorfer Platz",["Breitenfurter Straße","Levasseurgasse","Breitenfurter Straße","Brunner Straße","Erlaaer Straße"]],["21., Floridsdorf Am Spitz",["Floridsdorfer Hauptstraße","Schloßhofer Straße","Brünner Straße","Prager Straße (einmündend)","Schwaigergasse"]],["20., Gaußplatz",["Obere Donaustraße","Obere Augartenstraße","Wasnergasse","Jägerstraße","Klosterneuburger Straße","Treustraße","Württemberggasse","Perinetgasse"]],["2., Praterstern",["Praterstraße","Franzensbrückenstraße","Helenengasse","Ausstellungsstraße","Lassallestraße","Nordbahnstraße"]],["10., Verteilerkreis Favoriten / Altes Landgut",["Favoritenstraße","Grenzackerstraße","A23-Abfahrt Richtung Süden","A23-Zubringer aus Süden","Favoritenstraße","Ludwig-von-Höhnel-Gasse (Generali-Arena)","A23-Abfahrt Richtung Norden","A23-Zubringer aus Norden"]]],"teil":2},{"name":"Ring & Kai: Straßen stadtauswärts","frage":"Straßen und Brücken stadtauswärts","karten":[["Stubenring","Oskar-Kokoschka-Platz (Marxergasse) – Weiskirchnerstraße"],["Parkring","Johannesgasse"],["Schubertring","Schwarzenbergplatz"],["Opernring",["Operngasse","Eschenbachgasse"]],["Burgring","Babenbergerstraße"],["Dr.-Karl-Renner-Ring",["Schmerlingplatz – Volksgartenstraße","Rathausplatz / Stadiongasse"]],["Universitätsring",["Rathausplatz / Grillparzerstraße","Schottengasse / Währinger Straße"]],["Schottenring",["Hohenstaufengasse – Liechtensteinstraße","Wipplingerstraße / Peregringasse"]],["Franz-Josefs-Kai",["Salztorbrücke","Marienbrücke","Schwedenbrücke","Aspernbrücke","Uraniastraße"]]],"teil":2},{"name":"Gürtel: Querstraßen","frage":"Querstraßen in Fahrtrichtung","karten":[["Landstraßer Gürtel",["Landstraßer Hauptstraße","Adolf-Blamauer-Gasse","Fasangasse","Jacquingasse","Prinz-Eugen-Straße"],"Innerer Gürtel"],["Wiedner Gürtel",["Mommsengasse","Südtiroler Platz","Favoritenstraße"],"Innerer Gürtel"],["Margaretengürtel",["Kliebergasse","Matzleinsdorfer Platz","Wiedner Hauptstraße","Siebenbrunnengasse","Schönbrunner Straße"],"Innerer Gürtel"],["Gumpendorfer Gürtel","Gumpendorfer Straße","Innerer Gürtel"],["Mariahilfer Gürtel","Mariahilfer Straße","Innerer Gürtel"],["Neubaugürtel",["Seidengasse","Westbahnstraße","Burggasse"],"Innerer Gürtel"],["Lerchenfelder Gürtel",["Lerchenfelder Straße","Josefstädter Straße"],"Innerer Gürtel"],["Hernalser Gürtel",["Laudongasse","Alser Straße","Lazarettgasse"],"Innerer Gürtel"],["Währinger Gürtel",["Währinger Straße","Fuchsthallergasse","Nußdorfer Straße","Heiligenstädter Straße"],"Innerer Gürtel"],["Döblinger Gürtel","Döblinger Hauptstraße","Äußerer Gürtel"],["Währinger Gürtel",["Sternwartestraße","Gentzgasse","Währinger Straße","Jörgerstraße"],"Äußerer Gürtel"],["Hernalser Gürtel","Ottakringer Straße","Äußerer Gürtel"],["Lerchenfelder Gürtel",["Neulerchenfelder Straße","Thaliastraße","Koppstraße","Herbststraße"],"Äußerer Gürtel"],["Neubaugürtel",["Hütteldorfer Straße","Märzstraße","Felberstraße"],"Äußerer Gürtel"],["Europaplatz","Mariahilfer Straße","Äußerer Gürtel"],["Mariahilfer Gürtel","Sechshauser Straße","Äußerer Gürtel"],["Sechshauser Gürtel","Linke Wienzeile","Äußerer Gürtel"],["Gaudenzdorfer Gürtel",["Arndtstraße","Steinbauergasse","Flurschützstraße","Eichenstraße"],"Äußerer Gürtel"],["Margaretengürtel",["Matzleinsdorfer Platz","Gudrunstraße","Triester Straße","Landgutgasse"],"Äußerer Gürtel"],["Wiedner Gürtel",["Südtiroler Platz","Laxenburger Straße","Arsenalstraße"],"Äußerer Gürtel"],["Landstraßer Gürtel",["Ghegastraße","A23"],"Äußerer Gürtel"]],"zusVorne":true,"teil":2}];
+const BILDER = [{"name":"Albertina","typ":"gebaeude","adr":"1., Albertinaplatz 1","katalogAdr":true,"bild":"bilder/albertina.jpg","w":900,"h":658,"foto":{"autor":"C.Stadler/Bwag","lizenz":"CC BY-SA 4.0","lizenzUrl":"https://creativecommons.org/licenses/by-sa/4.0","quelle":"https://commons.wikimedia.org/wiki/File:Wien_-_Albertina_(b).JPG"}},{"name":"Ankeruhr","typ":"gebaeude","adr":"1., Hoher Markt 10-11","katalogAdr":true,"bild":"bilder/ankeruhr.jpg","w":900,"h":900,"foto":{"autor":"Thomas Ledl","lizenz":"CC BY-SA 4.0","lizenzUrl":"https://creativecommons.org/licenses/by-sa/4.0","quelle":"https://commons.wikimedia.org/wiki/File:Ankeruhr,_Hoher_Markt,_Vienna.jpg"}},{"name":"Burgtheater","typ":"gebaeude","adr":"1., Universitätsring 2","katalogAdr":true,"bild":"bilder/burgtheater.jpg","w":900,"h":509,"foto":{"autor":"C.Stadler/Bwag","lizenz":"CC BY-SA 4.0","lizenzUrl":"https://creativecommons.org/licenses/by-sa/4.0","quelle":"https://commons.wikimedia.org/wiki/File:Wien_-_Burgtheater.JPG"}},{"name":"Deutschmeister-Denkmal","typ":"denkmal","adr":"1., Deutschmeisterplatz","katalogAdr":false,"bild":"bilder/deutschmeister-denkmal.jpg","w":800,"h":577,"foto":{"autor":"GuentherZ","lizenz":"CC BY-SA 3.0","lizenzUrl":"http://creativecommons.org/licenses/by-sa/3.0/","quelle":"https://commons.wikimedia.org/wiki/File:GuentherZ_2008-09-06_1123_Deutschmeisterdenkmal_Total.jpg"}},{"name":"Dreimäderlhaus","typ":"gebaeude","adr":"1., Schreyvogelgasse 10","katalogAdr":false,"bild":"bilder/dreimaederlhaus.jpg","w":900,"h":883,"foto":{"autor":"C.Stadler/Bwag","lizenz":"CC BY-SA 4.0","lizenzUrl":"https://creativecommons.org/licenses/by-sa/4.0","quelle":"https://commons.wikimedia.org/wiki/File:Wien_-_Dreim%C3%A4derlhaus.JPG"}},{"name":"Café Landtmann","typ":"gebaeude","adr":"1., Universitätsring 4","katalogAdr":true,"bild":"bilder/caf-landtmann.jpg","w":900,"h":675,"foto":{"autor":"Gryffindor","lizenz":"CC BY 2.5","lizenzUrl":"https://creativecommons.org/licenses/by/2.5","quelle":"https://commons.wikimedia.org/wiki/File:Palais_Lieben-Auspitz_Vienna_Sept._2006_001.jpg"}},{"name":"Börse","typ":"gebaeude","adr":"1., Schottenring 16","katalogAdr":false,"bild":"bilder/boerse.jpg","w":900,"h":506,"foto":{"autor":"Peter Gugerell","lizenz":"Public domain","lizenzUrl":"","quelle":"https://commons.wikimedia.org/wiki/File:B%C3%B6rse_Wien_01.jpg"}},{"name":"MAK","typ":"gebaeude","adr":"1., Stubenring 5","katalogAdr":true,"bild":"bilder/mak.jpg","w":900,"h":506,"foto":{"autor":"Gugerell","lizenz":"CC0","lizenzUrl":"http://creativecommons.org/publicdomain/zero/1.0/deed.en","quelle":"https://commons.wikimedia.org/wiki/File:Wien_01_Museum_f%C3%BCr_angewandte_Kunst_a.jpg"}},{"name":"Karlskirche","typ":"kirche","adr":"4., Kreuzherrengasse 1","katalogAdr":true,"bild":"bilder/karlskirche.jpg","w":900,"h":599,"foto":{"autor":"Thomas Ledl","lizenz":"CC BY-SA 4.0","lizenzUrl":"https://creativecommons.org/licenses/by-sa/4.0","quelle":"https://commons.wikimedia.org/wiki/File:Karlskirche_Abendsonne_1.jpg"}},{"name":"Goethe-Denkmal","typ":"denkmal","adr":"1., Opernring / Goethegasse","katalogAdr":false,"bild":"bilder/goethe-denkmal.jpg","w":900,"h":599,"foto":{"autor":"C.Stadler/Bwag","lizenz":"CC BY-SA 4.0","lizenzUrl":"https://creativecommons.org/licenses/by-sa/4.0","quelle":"https://commons.wikimedia.org/wiki/File:Wien_-_Goethedenkmal_(1).JPG"}},{"name":"Hundertwasserhaus","typ":"gebaeude","adr":"3., Löwengasse / Kegelgasse 36","katalogAdr":true,"bild":"bilder/hundertwasserhaus.jpg","w":900,"h":599,"foto":{"autor":"C.Stadler/Bwag","lizenz":"CC BY-SA 4.0","lizenzUrl":"https://creativecommons.org/licenses/by-sa/4.0","quelle":"https://commons.wikimedia.org/wiki/File:Wien_-_Hundertwasserhaus_(01).JPG"}},{"name":"Erzherzog-Carl-Denkmal","typ":"denkmal","adr":"1., Heldenplatz","katalogAdr":true,"bild":"bilder/erzherzog-carl-denkmal.jpg","w":675,"h":900,"foto":{"autor":"C.Stadler/Bwag","lizenz":"CC BY-SA 4.0","lizenzUrl":"https://creativecommons.org/licenses/by-sa/4.0","quelle":"https://commons.wikimedia.org/wiki/File:Wien_-_Heldenplatz,_Erzherzog-Karl-Denkmal.JPG"}},{"name":"Michaelerkuppel","typ":"gebaeude","adr":"1., Michaelerplatz","katalogAdr":false,"bild":"bilder/michaelerkuppel.jpg","w":596,"h":900,"foto":{"autor":"Txllxt TxllxT","lizenz":"CC BY-SA 4.0","lizenzUrl":"https://creativecommons.org/licenses/by-sa/4.0","quelle":"https://commons.wikimedia.org/wiki/File:Wien_-_Michaelerplatz_-_View_WSW_on_Hofburg.jpg"}},{"name":"Kunsthistorisches Museum","typ":"gebaeude","adr":"1., Burgring 5 / Maria-Theresien-Platz","katalogAdr":true,"bild":"bilder/kunsthistorisches-museum.jpg","w":900,"h":661,"foto":{"autor":"Sjaak Kempe from Groningen, The Netherlands","lizenz":"CC BY 2.0","lizenzUrl":"https://creativecommons.org/licenses/by/2.0","quelle":"https://commons.wikimedia.org/wiki/File:20160612_015_Wien_Vienna_Wenen_-_Maria-Theresien-Platz_-_Kunsthistorisches_Museum_Wien_(27713227705).jpg"}},{"name":"Naturhistorisches Museum","typ":"gebaeude","adr":"1., Burgring 7 / Maria-Theresien-Platz","katalogAdr":true,"bild":"bilder/naturhistorisches-museum.jpg","w":900,"h":506,"foto":{"autor":"C.Stadler/Bwag","lizenz":"CC BY-SA 4.0","lizenzUrl":"https://creativecommons.org/licenses/by-sa/4.0","quelle":"https://commons.wikimedia.org/wiki/File:Wien_-_Naturhistorisches_Museum_(4).JPG"}},{"name":"Musikverein","typ":"gebaeude","adr":"1., Musikvereinsplatz 1","katalogAdr":true,"bild":"bilder/musikverein.jpg","w":900,"h":621,"foto":{"autor":"C.Stadler/Bwag","lizenz":"CC BY-SA 4.0","lizenzUrl":"https://creativecommons.org/licenses/by-sa/4.0","quelle":"https://commons.wikimedia.org/wiki/File:Wien_-_Haus_des_Wiener_Musikvereins_(1).JPG"}},{"name":"Ruprechtskirche","typ":"kirche","adr":"1., Ruprechtsplatz","katalogAdr":false,"bild":"bilder/ruprechtskirche.jpg","w":799,"h":900,"foto":{"autor":"C.Stadler/Bwag","lizenz":"CC BY-SA 4.0","lizenzUrl":"https://creativecommons.org/licenses/by-sa/4.0","quelle":"https://commons.wikimedia.org/wiki/File:Wien_-_Ruprechtskirche.JPG"}},{"name":"Mozart-Denkmal","typ":"denkmal","adr":"1., Burggarten","katalogAdr":false,"bild":"bilder/mozart-denkmal.jpg","w":900,"h":599,"foto":{"autor":"C.Stadler/Bwag","lizenz":"CC BY-SA 4.0","lizenzUrl":"https://creativecommons.org/licenses/by-sa/4.0","quelle":"https://commons.wikimedia.org/wiki/File:Wien_-_Mozartdenkmal_(1).JPG"}},{"name":"Karl-Lueger-Denkmal","typ":"denkmal","adr":"1., Dr.-Karl-Lueger-Platz","katalogAdr":false,"bild":"bilder/karl-lueger-denkmal.jpg","w":900,"h":636,"foto":{"autor":"C.Stadler/Bwag","lizenz":"CC BY-SA 4.0","lizenzUrl":"https://creativecommons.org/licenses/by-sa/4.0","quelle":"https://commons.wikimedia.org/wiki/File:Wien_-_Luegerdenkmal,_Dr.-Karl-Lueger-Platz.JPG"}},{"name":"Maria-Theresien-Denkmal","typ":"denkmal","adr":"1., Maria-Theresien-Platz","katalogAdr":false,"bild":"bilder/maria-theresien-denkmal.jpg","w":720,"h":900,"foto":{"autor":"Dietmar Rabich","lizenz":"CC BY-SA 4.0","lizenzUrl":"https://creativecommons.org/licenses/by-sa/4.0","quelle":"https://commons.wikimedia.org/wiki/File:Wien,_Maria-Theresien-Denkmal_--_2018_--_3048.jpg"}},{"name":"Wirtschaftskammer Wien","typ":"gebaeude","adr":"2., Straße der Wiener Wirtschaft 1","katalogAdr":true,"bild":"bilder/wirtschaftskammer-wien.jpg","w":900,"h":675,"foto":{"autor":"Clemens Mosch","lizenz":"CC BY-SA 4.0","lizenzUrl":"https://creativecommons.org/licenses/by-sa/4.0","quelle":"https://commons.wikimedia.org/wiki/File:Hausderwienerwirtschaft.jpg"}},{"name":"Schwarzenberg-Denkmal","typ":"denkmal","adr":"1., Schwarzenbergplatz","katalogAdr":false,"bild":"bilder/schwarzenberg-denkmal.jpg","w":900,"h":562,"foto":{"autor":"Tokfo","lizenz":"CC0","lizenzUrl":"http://creativecommons.org/publicdomain/zero/1.0/deed.en","quelle":"https://commons.wikimedia.org/wiki/File:Denkmal_F%C3%BCrst_Karl_Philipp_zu_Schwarzenberg_(20927)_IMG_6613.jpg"}},{"name":"Riesenrad","typ":"gebaeude","adr":"2., Riesenradplatz","katalogAdr":true,"bild":"bilder/riesenrad.jpg","w":900,"h":600,"foto":{"autor":"Thomas Ledl","lizenz":"CC BY-SA 4.0","lizenzUrl":"https://creativecommons.org/licenses/by-sa/4.0","quelle":"https://commons.wikimedia.org/wiki/File:Wien_Riesenrad.jpg"}},{"name":"Parlament","typ":"gebaeude","adr":"1., Dr.-Karl-Renner-Ring 3","katalogAdr":true,"bild":"bilder/parlament.jpg","w":900,"h":506,"foto":{"autor":"C.Stadler/Bwag","lizenz":"CC BY-SA 4.0","lizenzUrl":"https://creativecommons.org/licenses/by-sa/4.0","quelle":"https://commons.wikimedia.org/wiki/File:Wien_-_Parlamentsgeb%C3%A4ude.JPG"}},{"name":"Regierungsgebäude","typ":"gebaeude","adr":"1., Stubenring 1","katalogAdr":false,"bild":"bilder/regierungsgebaeude.jpg","w":900,"h":516,"foto":{"autor":"C.Stadler/Bwag","lizenz":"CC BY-SA 4.0","lizenzUrl":"https://creativecommons.org/licenses/by-sa/4.0","quelle":"https://commons.wikimedia.org/wiki/File:Wien_-_Regierungsgeb%C3%A4ude,_Stubenring_1.JPG"}},{"name":"Denkmal der Republik","typ":"denkmal","adr":"1., Dr.-Karl-Renner-Ring (beim Parlament)","katalogAdr":false,"bild":"bilder/denkmal-der-republik.jpg","w":900,"h":599,"foto":{"autor":"C.Stadler/Bwag","lizenz":"CC BY-SA 4.0","lizenzUrl":"https://creativecommons.org/licenses/by-sa/4.0","quelle":"https://commons.wikimedia.org/wiki/File:Wien_-_Denkmal_der_Republik.JPG"}},{"name":"Prinz-Eugen-Denkmal","typ":"denkmal","adr":"1., Heldenplatz","katalogAdr":true,"bild":"bilder/prinz-eugen-denkmal.jpg","w":900,"h":599,"foto":{"autor":"C.Stadler/Bwag","lizenz":"CC BY-SA 4.0","lizenzUrl":"https://creativecommons.org/licenses/by-sa/4.0","quelle":"https://commons.wikimedia.org/wiki/File:Wien_-_Heldenplatz,_Prinz-Eugen-Denkmal_(2).JPG"}},{"name":"Schiller-Denkmal","typ":"denkmal","adr":"1., Schillerplatz","katalogAdr":false,"bild":"bilder/schiller-denkmal.jpg","w":600,"h":900,"foto":{"autor":"Thomas Ledl","lizenz":"CC BY-SA 4.0","lizenzUrl":"https://creativecommons.org/licenses/by-sa/4.0","quelle":"https://commons.wikimedia.org/wiki/File:Schillerdenkmal,_Vienna.jpg"}},{"name":"Stephansdom","typ":"kirche","adr":"1., Stephansplatz 3","katalogAdr":true,"bild":"bilder/stephansdom.jpg","w":600,"h":900,"foto":{"autor":"C.Stadler/Bwag","lizenz":"CC BY-SA 4.0","lizenzUrl":"https://creativecommons.org/licenses/by-sa/4.0","quelle":"https://commons.wikimedia.org/wiki/File:Wien_-_Stephansdom_(1).JPG"}},{"name":"Schloss Schönbrunn","typ":"gebaeude","adr":"13., Schönbrunner Schloßstraße 47","katalogAdr":true,"bild":"bilder/schloss-schoenbrunn.jpg","w":900,"h":615,"foto":{"autor":"C.Stadler/Bwag","lizenz":"CC BY-SA 4.0","lizenzUrl":"https://creativecommons.org/licenses/by-sa/4.0","quelle":"https://commons.wikimedia.org/wiki/File:Wien_-_Schloss_Sch%C3%B6nbrunn.JPG"}},{"name":"Urania","typ":"gebaeude","adr":"1., Uraniastraße 1","katalogAdr":false,"bild":"bilder/urania.jpg","w":900,"h":506,"foto":{"autor":"Gugerell","lizenz":"CC0","lizenzUrl":"http://creativecommons.org/publicdomain/zero/1.0/deed.en","quelle":"https://commons.wikimedia.org/wiki/File:Wien_01_Urania_05.jpg"}},{"name":"UNO-City","typ":"gebaeude","adr":"22., Wagramer Straße 5","katalogAdr":true,"bild":"bilder/uno-city.jpg","w":900,"h":598,"foto":{"autor":"BambooBeast","lizenz":"CC BY-SA 3.0","lizenzUrl":"https://creativecommons.org/licenses/by-sa/3.0","quelle":"https://commons.wikimedia.org/wiki/File:Uno_City_Kaiserwasser.jpg"}},{"name":"Votivkirche","typ":"kirche","adr":"9., Rooseveltplatz","katalogAdr":true,"bild":"bilder/votivkirche.jpg","w":900,"h":789,"foto":{"autor":"White Banana","lizenz":"CC BY-SA 4.0","lizenzUrl":"https://creativecommons.org/licenses/by-sa/4.0","quelle":"https://commons.wikimedia.org/wiki/File:Votivkirche_in_saniertem_Zustand._April_2023..jpg"}},{"name":"Universität","typ":"gebaeude","adr":"1., Universitätsring 1","katalogAdr":true,"bild":"bilder/universitaet.jpg","w":900,"h":539,"foto":{"autor":"C.Stadler/Bwag","lizenz":"CC BY-SA 4.0","lizenzUrl":"https://creativecommons.org/licenses/by-sa/4.0","quelle":"https://commons.wikimedia.org/wiki/File:Wien_-_Universit%C3%A4t_(3).JPG"}}];
 // frühere App-Nummer (1–160) -> heutige Nummer, für den gespeicherten Lernstand
 const ALT_NR = {"1":1,"2":2,"3":3,"4":4,"5":5,"6":6,"7":7,"8":8,"9":9,"10":10,"11":11,"12":12,"13":13,"14":14,"15":15,"16":16,"17":17,"18":18,"19":19,"20":20,"22":97,"24":52,"26":31,"29":21,"30":49,"31":32,"33":23,"34":24,"35":95,"36":42,"38":28,"39":30,"40":34,"41":35,"43":36,"44":37,"47":104,"48":108,"49":43,"50":26,"51":58,"52":61,"54":45,"56":46,"57":48,"59":68,"60":76,"61":89,"63":47,"64":51,"65":41,"66":29,"67":84,"68":88,"69":53,"72":103,"73":106,"75":54,"76":56,"77":59,"78":60,"79":62,"80":64,"82":69,"84":82,"85":55,"87":50,"88":66,"90":70,"93":77,"94":77,"95":74,"96":71,"97":72,"98":73,"99":75,"101":94,"102":80,"103":81,"104":83,"105":85,"106":87,"107":91,"108":101,"109":105,"111":98,"112":100,"115":79,"116":25,"117":27,"118":90,"120":86,"125":96,"126":99,"128":33,"130":111,"132":112,"134":93,"136":110,"137":117,"142":124,"144":122,"146":123,"147":102,"148":107,"149":78,"150":114,"152":121,"155":125,"156":127,"157":126,"158":128,"159":130};
 // vorhandene Aufnahmen der Straßennamen je Stimme in audio/<stimme>/ (stimmen.py)
@@ -784,48 +804,6 @@ function streetPool(routes) {
   const m = new Map();
   routes.forEach(r => r.steps.forEach(s => { const k = streetKey(s); if (!m.has(k)) m.set(k, stepName(s)); }));
   return m; // key -> Anzeigename
-}
-// Falsche Varianten einer Route für die Auswahl-Aufgabe
-function mutateRoute(steps, pool, rnd = Math.random) {
-  const s = steps.slice(); const n = s.length;
-  const kinds = shuffle(['swap', 'replace', 'drop', 'insert'], rnd);
-  for (const kind of kinds) {
-    if (kind === 'swap' && n >= 4) {
-      const i = 1 + Math.floor(rnd() * (n - 3));
-      if (streetKey(s[i]) === streetKey(s[i + 1])) continue;
-      [s[i], s[i + 1]] = [s[i + 1], s[i]]; return { steps: s, kind, at: i };
-    }
-    if (kind === 'replace' && n >= 3) {
-      const i = 1 + Math.floor(rnd() * (n - 2));
-      const used = new Set(steps.map(streetKey));
-      const cand = [...pool.entries()].filter(([k]) => !used.has(k));
-      if (!cand.length) continue;
-      s[i] = cand[Math.floor(rnd() * cand.length)][1]; return { steps: s, kind, at: i };
-    }
-    if (kind === 'drop' && n >= 5) {
-      const i = 1 + Math.floor(rnd() * (n - 2));
-      if (i > 0 && i < n - 1 && streetKey(s[i - 1]) === streetKey(s[i + 1])) continue;
-      s.splice(i, 1); return { steps: s, kind, at: i };
-    }
-    if (kind === 'insert') {
-      const i = 1 + Math.floor(rnd() * (n - 1));
-      const used = new Set(steps.map(streetKey));
-      const cand = [...pool.entries()].filter(([k]) => !used.has(k));
-      if (!cand.length) continue;
-      s.splice(i, 0, cand[Math.floor(rnd() * cand.length)][1]); return { steps: s, kind, at: i };
-    }
-  }
-  return null;
-}
-function sameRoute(a, b) { return a.length === b.length && a.every((x, i) => streetKey(x) === streetKey(b[i])); }
-function makeChoices(route, pool, count = 3, rnd = Math.random) {
-  const opts = [{ steps: route.steps, correct: true }];
-  let guard = 0;
-  while (opts.length < count && guard++ < 60) {
-    const m = mutateRoute(route.steps, pool, rnd);
-    if (m && !opts.some(o => sameRoute(o.steps, m.steps))) opts.push({ steps: m.steps, correct: false, kind: m.kind, at: m.at });
-  }
-  return shuffle(opts, rnd);
 }
 // Geometrie: Meter-Distanz (equirektangulär, reicht für die Innenstadt)
 function dist(a, b) {
@@ -2384,7 +2362,7 @@ function questPad(p) {
   return { paddingTopLeft: [p, Math.max(p, Math.min(top + 12, map.getSize().y / 2))], paddingBottomRight: [p, p] };
 }
 function startQuest(r) {
-  if (!FILTER.startsuche || !r.start || state.mode === 'auswahl' || (state.mode === 'lernen' && !state.open)) return false;
+  if (!FILTER.startsuche || !r.start || ohneKarte() || (state.mode === 'lernen' && !state.open)) return false;
   quest = { r, miss: 0, stage: 1 };
   pointLayer.clearLayers(); questLayer.clearLayers(); updateArrowBtn();
   camSeq++; sfx('flug', 1.1);
@@ -2457,7 +2435,7 @@ const ICON_REDO = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" st
 // Route ganz von vorne (Fortschritt, Ergebnis, Kamera zum Start)
 function redoRoute() { reset(); renderList(); cameraTo(state.route); }
 function closeRoute() { state.open = false; reset(); renderList(); scrollPanelTop(); }
-function reset() { state.paused = false; state.playing = false; state.res = []; state.miss = {}; state.how = {}; state.finished = false; stopAnim(); const sc = document.getElementById('score'); if (sc) sc.textContent = ''; state.step = 0; state.errors = 0; state.done = false; state.choices = null; state.answered = null; routeLayer.clearLayers(); flashLayer.clearLayers(); showPoints(false); render(); }
+function reset() { state.paused = false; state.playing = false; state.res = []; state.miss = {}; state.how = {}; state.finished = false; stopAnim(); const sc = document.getElementById('score'); if (sc) sc.textContent = ''; state.step = 0; state.errors = 0; state.done = false; routeLayer.clearLayers(); flashLayer.clearLayers(); showPoints(false); render(); }
 function nextRoute(random) {
   let r;
   const V = inChap();
@@ -2513,10 +2491,12 @@ function header() {
 function chip(label, cls = '') {
   const c = el('span', 'chip ' + cls, stepName(label)); const n = stepNote(label); if (n) c.append(el('small', '', n)); return c;
 }
+// Modi ohne Karte (eigene Fläche statt der Karte)
+const ohneKarte = () => state.mode === 'karten' || state.mode === 'bilder';
 const MODES = {
   lernen: ['Lernen', 'Route ablaufen lassen oder Straße für Straße antippen'],
   karten: ['Karteikarten', 'Ortskunde aus dem Prüfungskatalog'],
-  auswahl: ['Auswahl', 'Welche Variante stimmt mit dem Fragenkatalog überein?'],
+  bilder: ['Bilder', 'Sehenswürdigkeiten erkennen'],
   fahren: ['Nachfahren', 'Wie bei der mündlichen Prüfung: Straßen auf der Karte antippen'],
 };
 // Felder mit umbrochenem Text so schmal wie die längste Zeile machen (CSS allein lässt sie volle Breite)
@@ -2536,12 +2516,13 @@ function render() {
   $('#modeTitle').textContent = MODES[state.mode][0]; $('#modeSub').textContent = MODES[state.mode][1];
   document.querySelectorAll('.tab').forEach(t => t.classList.toggle('on', t.dataset.mode === state.mode));
   const p = $('#play'); p.innerHTML = '';
-  document.body.classList.toggle('karten', state.mode === 'karten');
+  // Karteikarten und Bilder: statt der Karte eine eigene Fläche (#cards) über der abgedunkelten Karte
+  document.body.classList.toggle('karten', ohneKarte()); document.body.classList.toggle('bilder', state.mode === 'bilder');
   // Tag/Nacht-Knopf: bei den Karteikarten oben rechts auf der Karte (wo sonst das Zahnrad ist), sonst in der Leiste
-  const tb = $('#theme'), kk = state.mode === 'karten', home = kk ? $('.mapwrap') : $('.topbar');
+  const tb = $('#theme'), kk = ohneKarte(), home = kk ? $('.mapwrap') : $('.topbar');
   if (tb.parentNode !== home) home.append(tb);
   tb.className = kk ? 'gbtn' : 'iconbtn';
-  ({ lernen: renderLernen, karten: renderKarten, auswahl: renderAuswahl, fahren: renderFahren })[state.mode](p);
+  ({ lernen: renderLernen, karten: renderKarten, bilder: renderBilder, fahren: renderFahren })[state.mode](p);
 }
 
 // Lernen
@@ -2550,7 +2531,7 @@ function geoNotice(p) {
   const box = el('div', 'notice');
   if (geoState === 'failed') {
     box.append(el('strong', '', 'Ohne Linien auf der Karte'));
-    box.append(el('span', '', 'Das Straßennetz konnte nicht geladen werden (' + geoError + '). Lernen, Auswahl und Karteikarten gehen trotzdem. Für Linien und „Nachfahren": Internet prüfen und die Datei am besten in Google Chrome öffnen – Safari blockiert solche Abrufe aus lokalen Dateien oft.'));
+    box.append(el('span', '', 'Das Straßennetz konnte nicht geladen werden (' + geoError + '). Lernen, Karteikarten und Bilder gehen trotzdem. Für Linien und „Nachfahren": Internet prüfen und die Datei am besten in Google Chrome öffnen – Safari blockiert solche Abrufe aus lokalen Dateien oft.'));
     const b = el('button', 'btn', 'Nochmal laden'); b.onclick = () => loadStreets(); box.append(b);
   } else box.append(el('span', '', 'Straßennetz wird geladen … die Linien erscheinen gleich.'));
   p.append(box);
@@ -2680,37 +2661,6 @@ function playRoute(resume) {
   // nah an die Stelle, an der es losgeht, dann Straße für Straße
   if (startPt && !reduced()) { camSeq++; camMove(() => map.flyTo(startPt, Math.max(17, Math.min(18, Math.round(map.getZoom()))), { duration: 0.8 }), 0.8).then(() => { if (gen === drawGen) setTimeout(tick, 250); }); }
   else setTimeout(tick, 500);
-}
-
-// Auswahl (schriftlich)
-function renderAuswahl(p) {
-  const r = state.route;
-  if (!state.choices) state.choices = makeChoices(r, POOL, 3);
-  p.append(el('p', 'hint', 'Welche Route ist richtig? Genau eine stimmt mit dem Fragenkatalog überein.'));
-  state.choices.forEach((c, idx) => {
-    const card = el('button', 'choice'); card.type = 'button';
-    card.append(el('span', 'letter', 'ABC'[idx]));
-    const ch = el('div', 'chain small');
-    c.steps.forEach((s, i) => {
-      let cls = '';
-      if (state.answered != null && !c.correct && (i === c.at || (c.kind === 'swap' && i === c.at + 1))) cls = 'diff';
-      ch.append(chip(s, cls));
-    });
-    card.append(ch);
-    if (state.answered != null && !c.correct) card.append(el('span', 'why', { swap: 'Zwei Straßen vertauscht', replace: 'Falsche Straße eingebaut', drop: 'Vor der markierten Straße fehlt eine', insert: 'Zusätzliche Straße eingebaut' }[c.kind]));
-    if (state.answered != null) { card.disabled = true; if (c.correct) card.classList.add('right'); else if (state.answered === idx) card.classList.add('wrong'); }
-    card.onclick = () => {
-      state.answered = idx; if (!c.correct) state.errors++; sfx(c.correct ? 'goal' : 'wrong');
-      drawAll(); fitRoute();
-      record(r.n, c.correct); render();
-    };
-    p.append(card);
-  });
-  if (state.answered != null) {
-    const ok = state.choices[state.answered].correct;
-    p.append(el('p', 'result ' + (ok ? 'good' : 'bad'), ok ? 'Richtig.' : 'Falsch. Die markierte Stelle weicht vom Fragenkatalog ab.'));
-    p.append(nextBar());
-  }
 }
 
 // Nachfahren (mündlich)
@@ -3034,7 +2984,7 @@ function nextBar() {
 }
 
 document.addEventListener('keydown', e => {
-  if (!shown() || state.mode === 'karten' || (e.target instanceof Element && e.target.closest('input, textarea, select, button'))) return;
+  if (!shown() || ohneKarte() || (e.target instanceof Element && e.target.closest('input, textarea, select, button'))) return;
   if (e.key === 'ArrowDown') { e.preventDefault(); swipeRoute(1); }
   if (e.key === 'ArrowUp') { e.preventDefault(); swipeRoute(-1); }
   if (state.mode !== 'lernen' || !STREETS || state.playing) return;
@@ -3510,6 +3460,148 @@ function renderKartenPanel() {
   rs.onclick = () => { if (!confirm('Lernstand aller Karteikarten wirklich löschen?')) return; kstat = {}; kSave(KSTAT_KEY, kstat); kNewDeck(); drawKarten(); renderKartenPanel(); };
   const foot = el('div', 'k-foot'); foot.append(rs);
   p.append(foot, el('p', 'k-src', 'Quelle: WKO-Fragenkatalog 2026, Ortskunde'));
+}
+
+// --- Bilder: Sehenswürdigkeiten erkennen (WKO-Katalog VIII., S. 56–60), wie bei der Vorprüfung am Computer ---
+// Ein Foto, vier Namen zur Auswahl. Richtig: grün, nach kurzer Pause das nächste Bild. Falsch: rot, der richtige Name
+// wird grün, weiter mit „Weiter“. Danach steht die Adresse unter dem Foto. Tasten 1–4 wählen, Leertaste/Enter = weiter.
+// Fotos aus Wikimedia Commons (freie Lizenzen) – Urheber und Lizenz stehen immer unter dem Foto (Pflicht der Lizenzen).
+const BSTAT_KEY = 'taxi-bilder-v1', BRUN_KEY = 'taxi-bilder-runde-v1', BSET_KEY = 'taxi-bilder-auswahl-v1';
+const BILD_BY_NAME = new Map(BILDER.map(b => [b.name, b]));
+// Lernstand je Bild: [wie oft erkannt, wie oft nicht, zuletzt erkannt?]
+let bstat = kLoad(BSTAT_KEY, {});
+let bset = Object.assign({ falsch: false }, kLoad(BSET_KEY, {}));
+// laufende Runde: Namen, Position, Antworten [Name, richtig?], zur aktuellen Frage die vier Namen und die gewählte Antwort
+let brun = kLoad(BRUN_KEY, null);
+let bweiter = null;
+const bWrong = n => !!bstat[n] && !bstat[n][2] && bstat[n][1] > 0;
+const bKnown = n => bstat[n] && bstat[n][2];
+
+function bValid() {
+  if (!brun || !Array.isArray(brun.ids) || !Array.isArray(brun.hist)) return false;
+  brun.ids = brun.ids.filter(n => BILD_BY_NAME.has(n)); brun.hist = brun.hist.filter(h => BILD_BY_NAME.has(h[0]));
+  brun.i = Math.min(brun.i, brun.ids.length);
+  if (brun.opts && !brun.opts.every(n => BILD_BY_NAME.has(n))) brun.opts = null;
+  return true;
+}
+function bDeck(ids) { brun = { ids: shuffle(ids.slice()), i: 0, hist: [], opts: null, pick: null }; kSave(BRUN_KEY, brun); }
+function bNewDeck() { let ids = BILDER.map(b => b.name); if (bset.falsch) ids = ids.filter(bWrong); bDeck(ids); }
+// vier Namen: der richtige und drei falsche – möglichst von derselben Art (Denkmal zu Denkmal, Kirche zu Kirche),
+// damit es wie bei der Prüfung nicht zu leicht ist
+function bOptions(name) {
+  const b = BILD_BY_NAME.get(name), andere = BILDER.filter(x => x.name !== name);
+  const gleich = shuffle(andere.filter(x => x.typ === b.typ)), rest = shuffle(andere.filter(x => x.typ !== b.typ));
+  return shuffle([name, ...gleich.concat(rest).slice(0, 3).map(x => x.name)]);
+}
+function bAnswer(k) {
+  if (!brun || brun.i >= brun.ids.length || brun.pick != null || !brun.opts) return;
+  const name = brun.ids[brun.i], ok = brun.opts[k] === name, s = bstat[name] || [0, 0, false];
+  s[ok ? 0 : 1]++; s[2] = ok; bstat[name] = s; kSave(BSTAT_KEY, bstat);
+  brun.pick = k; brun.hist.push([name, ok]); kSave(BRUN_KEY, brun);
+  sfx(ok ? 'ok' : 'wrong');
+  drawBilder(); renderBilderPanel();
+  // richtig: nach kurzer Pause von selbst weiter (Zeit zum Lesen der Adresse)
+  clearTimeout(bweiter);
+  if (ok) { const i = brun.i; bweiter = setTimeout(() => { if (state.mode === 'bilder' && brun.i === i && brun.pick != null) bNext(); }, 1600); }
+}
+function bNext() {
+  if (!brun || brun.pick == null) return;
+  clearTimeout(bweiter);
+  brun.i++; brun.pick = null; brun.opts = null; kSave(BRUN_KEY, brun);
+  if (brun.i >= brun.ids.length) sfx('goal');
+  drawBilder();
+}
+function fotoCredit(b) {
+  const f = b.foto, p = el('p', 'bq-credit');
+  const a = el('a', '', `Foto: ${f.autor} · ${f.lizenz}`); a.href = f.quelle; a.target = '_blank'; a.rel = 'noopener';
+  p.append(a); return p;
+}
+function drawBilder() {
+  const box = $('#cards'); box.innerHTML = '';
+  if (!bValid()) bNewDeck();
+  const n = brun.ids.length, done = brun.i >= n, right = brun.hist.filter(h => h[1]).length, wrong = brun.hist.filter(h => !h[1]).map(h => h[0]);
+  const top = el('div', 'fc-top');
+  const prog = el('div', 'fc-prog'), bar = el('i'); bar.style.width = (n ? 100 * (brun.i + (brun.pick != null ? 1 : 0)) / n : 0) + '%'; prog.append(bar);
+  const cnt = el('div', 'fc-cnt');
+  cnt.append(el('span', 'fc-ok', `✓ ${right}`), el('span', 'fc-pos', n ? `${Math.min(brun.i + 1, n)} / ${n}` : '0 / 0'), el('span', 'fc-bad', `✕ ${wrong.length}`));
+  top.append(prog, cnt); box.append(top);
+  if (!n || done) {
+    const stage = el('div', 'fc-stage'), e = el('div', 'fc-end'); stage.append(e); box.append(stage);
+    if (!n) { e.append(el('b', '', 'Keine Bilder'), el('span', '', 'Kein Bild ist mehr falsch. Schalte „Falsch“ aus, um wieder alle zu üben.')); return; }
+    const pct = Math.round(100 * right / n);
+    e.append(el('small', '', 'Runde fertig'), el('b', '', `${right} von ${n} erkannt`), el('span', '', pct === 100 ? 'Alles erkannt – stark!' : `${pct} %`));
+    const row = el('div', 'fc-endbtns');
+    if (wrong.length) { const b = el('button', 'btn primary', `Falsche wiederholen (${wrong.length})`); b.type = 'button'; b.onclick = () => { bDeck(wrong); drawBilder(); renderBilderPanel(); }; row.append(b); }
+    const all = el('button', 'btn', 'Alle nochmal'); all.type = 'button'; all.onclick = () => { bset.falsch = false; kSave(BSET_KEY, bset); bNewDeck(); drawBilder(); renderBilderPanel(); };
+    row.append(all); e.append(row); return;
+  }
+  const name = brun.ids[brun.i], b = BILD_BY_NAME.get(name);
+  if (!brun.opts) { brun.opts = bOptions(name); kSave(BRUN_KEY, brun); }
+  const q = el('div', 'bq'), fig = el('figure', 'bq-img'), img = el('img');
+  img.src = b.bild; img.alt = 'Foto einer Sehenswürdigkeit'; img.width = b.w; img.height = b.h; img.draggable = false;
+  // dahinter dasselbe Foto unscharf, damit Hochformat-Bilder keine schwarzen Ränder bekommen
+  const bg = el('img', 'bq-bg'); bg.src = b.bild; bg.alt = ''; bg.setAttribute('aria-hidden', 'true');
+  fig.append(bg, img);
+  const beantwortet = brun.pick != null;
+  // über dem Foto die Frage; nach der Antwort stattdessen Name und Adresse (nicht auf dem Foto, sonst verdeckt es auf dem Handy fast alles)
+  const kopf = el('p', 'bq-frage');
+  if (beantwortet) { kopf.classList.add('bq-adr'); kopf.append(el('b', '', b.name), el('span', '', b.adr.replace(/^(\d+)\.,\s*/, '$1. Bezirk, '))); }
+  else kopf.textContent = 'Wie heißt diese Sehenswürdigkeit?';
+  q.append(kopf, fig, fotoCredit(b));
+  const opts = el('div', 'bq-opts');
+  brun.opts.forEach((o, k) => {
+    const btn = el('button', 'bq-opt'); btn.type = 'button';
+    btn.append(el('span', 'bq-nr', String(k + 1)), el('span', '', o));
+    if (beantwortet) {
+      btn.disabled = true;
+      if (o === name) btn.classList.add('ok'); else if (k === brun.pick) btn.classList.add('nein');
+    } else btn.onclick = () => bAnswer(k);
+    opts.append(btn);
+  });
+  q.append(opts);
+  const ok = beantwortet && brun.opts[brun.pick] === name;
+  const go = el('button', 'btn fc-seqbtn bq-next' + (beantwortet && !ok ? ' primary' : ''), 'Weiter →'); go.type = 'button';
+  go.onclick = bNext; go.disabled = !beantwortet; go.style.visibility = beantwortet ? '' : 'hidden';
+  q.append(go);
+  box.append(q);
+  box.append(el('p', 'fc-keys', 'Tasten 1–4: Antwort wählen · Leertaste: weiter'));
+  box.append(fehlerLink('Fehler bei diesem Bild melden', `Bild „${name}“`, [`Richtige Antwort: ${name}`, `Adresse: ${b.adr}`, `Foto: ${b.foto.quelle}`], 'flink fc-melden'));
+  // nächstes Foto schon laden
+  const nx = brun.ids[brun.i + 1]; if (nx) { const pre = new Image(); pre.src = BILD_BY_NAME.get(nx).bild; }
+}
+document.addEventListener('keydown', e => {
+  if (state.mode !== 'bilder' || e.metaKey || e.ctrlKey || e.altKey || e.repeat || (e.target instanceof Element && e.target.closest('input, textarea, select'))) return;
+  if (/^[1-4]$/.test(e.key)) { e.preventDefault(); bAnswer(+e.key - 1); }
+  else if (e.key === ' ' || e.key === 'Enter' || e.key === 'ArrowRight') { e.preventDefault(); if (document.activeElement && document.activeElement.blur) document.activeElement.blur(); bNext(); }
+});
+
+// Leiste links: Erklärung, „Falsch“, Übersicht aller Bilder mit Lernstand
+function renderBilder(p) { clearTimeout(bweiter); p.append(el('div', 'kpanel')); renderBilderPanel(); drawBilder(); setTimeout(() => map.invalidateSize(), 0); }
+function renderBilderPanel() {
+  const p = $('#play .kpanel'); if (!p) return; p.innerHTML = '';
+  p.append(el('h2', 'h-title', 'Bilder erkennen'));
+  p.append(el('p', 'k-info', `Die ${BILDER.length} Sehenswürdigkeiten aus dem Bilder-Teil des Prüfungskatalogs: Wie bei der Vorprüfung am Computer siehst du ein Foto und wählst aus vier Namen. Danach steht die Adresse dabei.`));
+  const nf = BILDER.filter(b => bWrong(b.name)).length, kn = BILDER.filter(b => bKnown(b.name)).length;
+  const sec = el('div', 'k-sec'), left = el('div', 'k-left'), opts = el('div', 'k-opts');
+  left.append(el('h3', '', `Sehenswürdigkeiten · ${kn}/${BILDER.length}`));
+  if (nf || bset.falsch) {
+    const f = el('button', 'k-tog' + (bset.falsch ? ' on' : ''), 'Falsch '); f.type = 'button'; f.setAttribute('aria-pressed', !!bset.falsch);
+    f.append(el('span', 'k-cnt', String(nf)));
+    f.onclick = () => { bset.falsch = !bset.falsch; kSave(BSET_KEY, bset); bNewDeck(); drawBilder(); renderBilderPanel(); };
+    opts.append(el('span', 'k-div'), f);
+  }
+  sec.append(left, opts); p.append(sec);
+  const list = el('div', 'b-list');
+  BILDER.forEach(b => {
+    const s = bstat[b.name], row = el('div', 'b-row' + (s ? (s[2] ? ' ok' : ' nein') : ''));
+    row.append(el('span', 'b-dot'), el('span', 'k-name', b.name));
+    list.append(row);
+  });
+  p.append(list);
+  const rs = el('button', 'btn k-reset', 'Lernstand der Bilder löschen'); rs.type = 'button';
+  rs.onclick = () => { if (!confirm('Lernstand aller Bilder wirklich löschen?')) return; bstat = {}; kSave(BSTAT_KEY, bstat); bset.falsch = false; kSave(BSET_KEY, bset); bNewDeck(); drawBilder(); renderBilderPanel(); };
+  const foot = el('div', 'k-foot'); foot.append(rs);
+  p.append(foot, el('p', 'k-src', 'Quelle: WKO-Fragenkatalog 2026, VIII. Sehenswürdigkeiten Bilder. Fotos: Wikimedia Commons (freie Lizenzen, Urheber unter jedem Foto).'));
 }
 
 </script>
