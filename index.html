@@ -111,8 +111,9 @@ body.questing .maphead p { visibility: hidden; }
 #head { display: flex; flex-direction: column; gap: 14px; }
 .h-top { display: flex; justify-content: space-between; align-items: flex-end; gap: 12px; }
 .h-left { display: flex; flex-direction: column; gap: 14px; min-width: 0; }
-.h-nav { flex: none; display: flex; gap: 8px; align-self: flex-end; }
-.flink.h-melden { align-self: flex-start; margin-top: 6px; text-align: right; }
+.h-nav { flex: none; display: flex; gap: 8px; align-self: center; }
+/* auf einer Linie mit dem Kapitel-Schild (unten in der Titelzeile) */
+.flink.h-melden { align-self: flex-end; margin-bottom: 3px; text-align: right; }
 .rbtn { width: 46px; height: 46px; border-radius: 50%; border: 0; padding: 0; background: #141414; color: var(--acc); display: grid; place-items: center; cursor: pointer; transition: transform .15s; }
 .rbtn:hover { transform: translateY(-1px); }
 .rbtn:active { transform: scale(.94); }
@@ -556,7 +557,7 @@ body.karten #theme svg { width: 22px; height: 22px; }
       </div>
       <div class="sec"><h3>Routen <small id="count"></small></h3><button id="shuffle" class="pillbtn" type="button">Zufällig</button></div>
       <div id="routes"></div>
-      <div class="foot"><span>Stand 01.11.2026 10:39 · Routen: WKO-Fragenkatalog 2026 · Daten: Stadt Wien, basemap.at, OpenStreetMap</span><span class="foot-btns"><button id="melden" type="button">Fehler melden</button><button id="reload" type="button">Straßennetz neu laden</button></span></div>
+      <div class="foot"><span>Stand 01.11.2026 10:57 · Routen: WKO-Fragenkatalog 2026 · Daten: Stadt Wien, basemap.at, OpenStreetMap</span><span class="foot-btns"><button id="melden" type="button">Fehler melden</button><button id="reload" type="button">Straßennetz neu laden</button></span></div>
     </div>
   </aside>
 </div>
@@ -2502,7 +2503,7 @@ function header() {
     `Straßen: ${r.steps.map(stepName).join(' – ')}`,
     state.step > 0 && state.step <= r.steps.length ? `Zuletzt aufgedeckt: ${stepName(r.steps[state.step - 1])}` : '',
   ].filter(Boolean));
-  // oben rechts neben dem Titel der Link „Fehler melden“, die Knöpfe (✕ ↻ ▲ ▼) unter der Strecke (vom Nutzer so gewünscht)
+  // rechts auf Höhe des Kapitel-Schilds der Link „Fehler melden“, die Knöpfe (✕ ↻ ▲ ▼) mittig unter der Strecke (vom Nutzer so gewünscht)
   melden.classList.add('h-melden'); row.append(left, melden);
   h.append(row, tl, nav);
 }
