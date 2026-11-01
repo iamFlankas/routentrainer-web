@@ -111,7 +111,9 @@ body.questing .maphead p { visibility: hidden; }
 #head { display: flex; flex-direction: column; gap: 14px; }
 .h-top { display: flex; justify-content: space-between; align-items: flex-end; gap: 12px; }
 .h-left { display: flex; flex-direction: column; gap: 14px; min-width: 0; }
-.h-nav { flex: none; display: flex; gap: 8px; align-self: center; }
+/* Knöpfe unter der Strecke: rotes ✕ links, ↻ ▲ ▼ rechts (vom Nutzer so gewünscht) */
+.h-nav { flex: none; display: flex; gap: 8px; align-self: stretch; justify-content: flex-end; }
+.h-nav .rbtn.zu { margin-right: auto; }
 /* auf einer Linie mit dem Kapitel-Schild (unten in der Titelzeile) */
 .flink.h-melden { align-self: flex-end; margin-bottom: 3px; text-align: right; }
 .rbtn { width: 46px; height: 46px; border-radius: 50%; border: 0; padding: 0; background: #141414; color: var(--acc); display: grid; place-items: center; cursor: pointer; transition: transform .15s; }
@@ -598,7 +600,7 @@ body.bilder .fc-keys, body.bilder .fc-melden { display: none; }
       </div>
       <div class="sec"><h3>Routen <small id="count"></small></h3><button id="shuffle" class="pillbtn" type="button">Zufällig</button></div>
       <div id="routes"></div>
-      <div class="foot"><span>Stand 01.11.2026 21:20 · Routen: WKO-Fragenkatalog 2026 · Daten: Stadt Wien, basemap.at, OpenStreetMap</span><span class="foot-btns"><button id="melden" type="button">Fehler melden</button><button id="reload" type="button">Straßennetz neu laden</button></span></div>
+      <div class="foot"><span>Stand 01.11.2026 21:29 · Routen: WKO-Fragenkatalog 2026 · Daten: Stadt Wien, basemap.at, OpenStreetMap</span><span class="foot-btns"><button id="melden" type="button">Fehler melden</button><button id="reload" type="button">Straßennetz neu laden</button></span></div>
     </div>
   </aside>
 </div>
@@ -3137,6 +3139,9 @@ function kUndo() {
   if (s) { s[ok ? 0 : 1] = Math.max(0, s[ok ? 0 : 1] - 1); s[2] = !!before; }
   kSave(KSTAT_KEY, kstat); krun.i = Math.max(0, krun.i - 1); kflip = false; kSave(KRUN_KEY, krun);
   sfx('zurueck'); drawKarten(); renderKartenPanel();
+  // die Karte kommt von der Seite zurück, zu der sie weggeflogen ist (gewusst: rechts, nicht gewusst: links)
+  const f = $('#cards .fc'), dir = ok ? 1 : -1;
+  if (f && f.animate && !reduced()) f.animate([{ transform: `translateX(${dir * 120}%) rotate(${dir * 14}deg)`, opacity: 0 }, { transform: 'none', opacity: 1 }], { duration: 340, easing: 'cubic-bezier(.2,.8,.2,1)' });
 }
 function kFlip() { if (!krun || krun.i >= krun.ids.length) return; kflip = !kflip; sfx('umdrehen'); const f = $('#cards .fc'); if (f) f.classList.toggle('flipped', kflip); }
 // Karte fliegt zur Seite hinaus, dann kommt die nächste
