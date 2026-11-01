@@ -484,7 +484,7 @@ body.karten #theme svg { width: 22px; height: 22px; }
 .k-link.some .k-box::after { content: ''; position: absolute; left: 2px; right: 2px; top: 4.5px; height: 2px; border-radius: 1px; background: var(--acc); }
 .k-src { margin: 0; font-size: .75rem; color: var(--on-panel-muted); }
 /* --- Bilder (Modus „bilder“, gleiche Fläche wie die Karteikarten): Foto, darunter vier Namen --- */
-.bq { flex: 1; min-height: 0; width: min(640px, 100%); display: flex; flex-direction: column; align-items: center; gap: 12px; margin-top: 14px; }
+.bq { flex: 1; min-height: 0; width: 100%; display: flex; flex-direction: column; align-items: center; gap: 12px; margin-top: 14px; }
 .bq-frage { margin: 0; color: rgba(242,241,237,.72); font-weight: 500; font-size: .95rem; }
 .bq-img { position: relative; flex: 1 1 auto; min-height: 140px; width: 100%; margin: 0; border-radius: 24px; overflow: hidden; background: #1c1c1e; box-shadow: 0 16px 40px rgba(0,0,0,.25); }
 .bq-img img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; }
@@ -494,8 +494,8 @@ body.karten #theme svg { width: 22px; height: 22px; }
 @keyframes bqin { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
 .bq-credit { margin: -6px 0 0; font-size: .7rem; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .bq-credit a { color: rgba(242,241,237,.5); text-decoration: none; } .bq-credit a:hover { color: #f2f1ed; text-decoration: underline; }
-.bq-opts { width: 100%; display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-.bq-opt { display: flex; align-items: center; gap: 10px; min-height: 54px; padding: 10px 14px; border: 0; border-radius: 18px; background: var(--card); color: var(--fg); font: inherit; font-size: 1rem; font-weight: 550; line-height: 1.2; text-align: left; cursor: pointer; box-shadow: 0 6px 18px rgba(0,0,0,.14); transition: background .2s, color .2s, opacity .2s; }
+.bq-opts { width: 100%; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+.bq-opt { display: flex; align-items: center; gap: 10px; min-height: 54px; padding: 10px 14px; border: 0; border-radius: 18px; background: var(--card); color: var(--fg); font: inherit; font-size: 1rem; font-weight: 550; line-height: 1.2; text-align: left; overflow-wrap: anywhere; hyphens: auto; cursor: pointer; box-shadow: 0 6px 18px rgba(0,0,0,.14); transition: background .2s, color .2s, opacity .2s; }
 .bq-opt:hover:not(:disabled) { box-shadow: inset 0 0 0 2px var(--acc), 0 6px 18px rgba(0,0,0,.14); }
 .bq-nr { flex: none; width: 24px; height: 24px; border-radius: 50%; display: grid; place-items: center; font-size: .75rem; font-weight: 600; background: color-mix(in srgb, var(--fg) 9%, transparent); }
 .bq-opt:disabled { cursor: default; opacity: .45; }
@@ -503,6 +503,24 @@ body.karten #theme svg { width: 22px; height: 22px; }
 .bq-opt.ok { background: #1f8a45; }
 .bq-opt.nein { background: #d23b2f; animation: seqNein .4s; }
 .bq-next, .bq-frage, .bq-credit, .bq-opts { flex: none; }
+/* Foto so groß wie möglich (vom Nutzer gewünscht): Titel „Bilder“ oben links weg (steht in der Leiste), Fläche beginnt
+   direkt unter Logo und Modus-Knöpfen; Tasten-Hinweis und „Fehler melden“ (auch in der Fußzeile) nur in hohen Fenstern */
+body.bilder .maphead h1, body.bilder .maphead p { display: none; }
+body.bilder #cards { container-type: inline-size; padding-top: 100px; padding-bottom: 18px; }
+body.bilder .fc-keys, body.bilder .fc-melden { display: none; }
+@media (min-height: 980px) { body.bilder .fc-keys, body.bilder .fc-melden { display: block; } }
+/* breite Fläche (nicht Fenster – links ist ja noch die Leiste): Foto über die ganze Breite, die vier Namen in einer Reihe
+   darunter, „Weiter“ rechts neben der Frage – die meisten Fotos sind quer, so werden sie am größten */
+@container (min-width: 560px) {
+  .fc-top { width: 100%; }
+  .bq { width: 100%; display: grid; grid-template-columns: minmax(0, 1fr); grid-template-rows: auto minmax(0, 1fr) auto auto;
+    grid-template-areas: "kopf" "fig" "credit" "opts"; gap: 10px; margin-top: 8px; }
+  .bq-frage { grid-area: kopf; justify-self: center; align-self: center; max-width: calc(100% - 340px); }
+  .bq-next { grid-area: kopf; justify-self: end; min-width: 150px; }
+  .bq-img { grid-area: fig; min-height: 0; height: 100%; }
+  .bq-credit { grid-area: credit; justify-self: center; margin: -4px 0 0; }
+  .bq-opts { grid-area: opts; grid-template-columns: repeat(4, minmax(0, 1fr)); }
+}
 .b-list { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
 .b-row { display: flex; align-items: center; gap: 8px; padding: 7px 12px; border-radius: 14px; background: color-mix(in srgb, var(--dark) 50%, transparent); color: var(--dark-fg); font-size: .84rem; line-height: 1.2; }
 .b-dot { flex: none; width: 9px; height: 9px; border-radius: 50%; background: var(--dark-muted); opacity: .6; }
@@ -527,7 +545,7 @@ body.karten #theme svg { width: 22px; height: 22px; }
   .fc-btn { width: 56px; height: 56px; }
   .fc-keys { display: none; }
   .bq { gap: 10px; margin-top: 10px; }
-  body.bilder .fc-melden { display: none; } /* Platz fürs Foto; „Fehler melden“ steht auch in der Fußzeile */
+  body.bilder #cards { padding-top: 76px; padding-bottom: 100px; }
   .bq-opts { gap: 8px; }
   .bq-opt { min-height: 48px; padding: 8px 10px; font-size: .9rem; gap: 8px; border-radius: 16px; }
   .bq-nr { width: 20px; height: 20px; font-size: .68rem; }
@@ -576,7 +594,7 @@ body.karten #theme svg { width: 22px; height: 22px; }
       </div>
       <div class="sec"><h3>Routen <small id="count"></small></h3><button id="shuffle" class="pillbtn" type="button">Zufällig</button></div>
       <div id="routes"></div>
-      <div class="foot"><span>Stand 01.11.2026 20:56 · Routen: WKO-Fragenkatalog 2026 · Daten: Stadt Wien, basemap.at, OpenStreetMap</span><span class="foot-btns"><button id="melden" type="button">Fehler melden</button><button id="reload" type="button">Straßennetz neu laden</button></span></div>
+      <div class="foot"><span>Stand 01.11.2026 21:09 · Routen: WKO-Fragenkatalog 2026 · Daten: Stadt Wien, basemap.at, OpenStreetMap</span><span class="foot-btns"><button id="melden" type="button">Fehler melden</button><button id="reload" type="button">Straßennetz neu laden</button></span></div>
     </div>
   </aside>
 </div>
