@@ -557,7 +557,7 @@ body.karten #theme svg { width: 22px; height: 22px; }
       </div>
       <div class="sec"><h3>Routen <small id="count"></small></h3><button id="shuffle" class="pillbtn" type="button">Zufällig</button></div>
       <div id="routes"></div>
-      <div class="foot"><span>Stand 01.11.2026 10:57 · Routen: WKO-Fragenkatalog 2026 · Daten: Stadt Wien, basemap.at, OpenStreetMap</span><span class="foot-btns"><button id="melden" type="button">Fehler melden</button><button id="reload" type="button">Straßennetz neu laden</button></span></div>
+      <div class="foot"><span>Stand 01.11.2026 11:11 · Routen: WKO-Fragenkatalog 2026 · Daten: Stadt Wien, basemap.at, OpenStreetMap</span><span class="foot-btns"><button id="melden" type="button">Fehler melden</button><button id="reload" type="button">Straßennetz neu laden</button></span></div>
     </div>
   </aside>
 </div>
@@ -652,7 +652,7 @@ const ROUTES = [
   {"n":84,"kat":1002,"chap":4,"from":"Therme Wien","to":"Schönbrunner Straße / U4 – Taxistandplatz","via":"Grenzackerstraße","hinweis":"","steps":["Kurbadstraße","Laaer-Berg-Straße","Theodor-Sickel-Gasse","Endlichergasse","Ludwig-von-Höhnel-Gasse","Altes Landgut","Grenzackerstraße","Raxstraße","Triester Straße","Wienerbergstraße","Wienerbergbrücke","Ruckergasse"],"start":[48.143784,16.401188,"Therme Wien","ort"],"goal":[48.183781,16.332959,"Schönbrunner Straße / U4 – Taxistandplatz","taxi"]},
   {"n":85,"kat":1003,"chap":4,"from":"Klinik Favoriten","to":"Therme Wien","via":"Kennergasse","hinweis":"","steps":["Kundratstraße","Davidgasse","Gußriegelstraße","Inzersdorfer Straße","Antonsplatz","Inzersdorfer Straße","Kennergasse","Laaer-Berg-Straße","Kurbadstraße"],"start":[48.173501,16.350548,"Klinik Favoriten","klinik"],"goal":[48.143784,16.401188,"Therme Wien","ort"]},
   {"n":86,"kat":1004,"chap":4,"from":"Generali Arena","to":"Simmeringer Zentralfriedhof","via":"Bitterlichbrücke","hinweis":"","steps":["Fischhofgasse","Ludwig-von-Höhnel-Gasse","Endlichergasse","Theodor-Sickel-Gasse","Bitterlichstraße","Bitterlichbrücke","Gadnergasse","Swatoschgasse","Schemmerlstraße","Weichseltalweg","Simmeringer Hauptstraße"],"start":[48.162408,16.388339,"Generali Arena","ort"],"goal":[48.154036,16.441685,"Simmeringer Zentralfriedhof","ort"]},
-  {"n":87,"kat":1005,"chap":4,"from":"Hauptbahnhof (Taxistandplatz, Polizeikommissariat)","to":"Hotel Hilton Vienna Park","via":"Mohsgasse","hinweis":"","steps":["Am Hauptbahnhof","Gertrude-Fröhlich-Sandner-Straße","Wiedner Gürtel","Landstraßer Gürtel","Jacquingasse","Mohsgasse","Fasangasse","Ungargasse","Große Ungarbrücke","Am Stadtpark"],"start":[48.185784,16.378123,"Taxistandplatz Gertrude-Fröhlich-Sandner-Straße 4","taxi"],"goal":[48.205987,16.383315,"Hotel Hilton Vienna Park","hotel"]},
+  {"n":87,"kat":1005,"chap":4,"from":"Hauptbahnhof (Taxistandplatz, Polizeikommissariat)","to":"Hotel Hilton Vienna Park","via":"Mohsgasse","hinweis":"","steps":["Am Hauptbahnhof","Gertrude-Fröhlich-Sandner-Straße","Wiedner Gürtel","Landstraßer Gürtel","Jacquingasse","Mohsgasse","Fasangasse","Ungargasse","Große Ungarbrücke","Am Stadtpark"],"start":[48.184441,16.376602,"Taxistandplatz Am Hauptbahnhof ggü. 3","taxi"],"goal":[48.205987,16.383315,"Hotel Hilton Vienna Park","hotel"]},
   {"n":88,"kat":1006,"chap":4,"from":"Hauptbahnhof (Taxistandplatz, Polizeikommissariat)","to":"Am Europlatz","via":"Kundratstraße","hinweis":"","steps":["Am Hauptbahnhof","Sonnwendgasse","Südtiroler Platz","Wiedner Gürtel","Margaretengürtel","Matzleinsdorfer Platz","Triester Straße","Kundratstraße","Unter-Meidlinger Straße","Moosbruggergasse","Wienerbergstraße"],"start":[48.184441,16.376602,"Taxistandplatz Am Hauptbahnhof ggü. 3","taxi"],"goal":[48.170904,16.333116,"Am Europlatz","ort"]},
   {"n":89,"kat":1007,"chap":4,"from":"ÖGK Gesundheitszentrum Favoriten","to":"Westbahnhof/ Felberstraße","via":"Stiegerbrücke","hinweis":"","steps":["Wienerbergstraße","Köglergasse (Sonderspur)","Kerschensteinergasse","Längenfeldgasse","Stiegerbrücke","Stiegergasse","Sechshauser Straße","Mariahilfer Gürtel","Neubaugürtel","Felberstraße"],"start":[48.169423,16.345221,"ÖGK Gesundheitszentrum Favoriten","klinik"],"goal":[48.197172,16.336656,"Westbahnhof/ Felberstraße","bahn"]},
   {"n":90,"kat":109,"chap":5,"from":"Heldenplatz / Hofburg","to":"Münnichplatz – Taxistandplatz","via":"Simmeringer Hauptstraße","hinweis":"","steps":["Heldenplatz","In der Burg (Sonderspur)","Michaelerplatz","Reitschulgasse","Josefsplatz","Augustinerstraße","Albertinaplatz","Philharmonikerstraße","Walfischgasse","Schwarzenbergstraße","Schwarzenbergplatz","Rennweg","Simmeringer Hauptstraße","Simmeringer Platz","Kaiser-Ebersdorfer-Straße"],"start":[48.206693,16.363004,"Heldenplatz / Hofburg","ort"],"goal":[48.158499,16.474785,"Münnichplatz – Taxistandplatz","taxi"]},
@@ -1542,9 +1542,12 @@ function followHead(pt, line) {
 // landet sonst versetzt (sie „rutscht“ bis zum Ende der Straße neben der Fahrbahn her)
 function syncLines(line) { const r = line && line._renderer; if (r) { r._onZoomEnd(); r._update(); } }
 function endFollow() { if (follow) { follow = false; ownCam = false; map._moveEnd(true); } }
-// zoomt der Nutzer gerade (Mausrad/Trackpad, +/−, Doppelklick, zwei Finger)? Dann skaliert Leaflet die Zeichenfläche nur
-// per CSS – eine Linie, die jetzt neu gezeichnet wird, landet daneben. Die Fahrt wartet deshalb, bis der Zoom fertig ist.
+// zoomt der Nutzer gerade (Mausrad/Trackpad, +/−, Doppelklick, zwei Finger)? Die Fahrt läuft dabei weiter (vom Nutzer
+// gewünscht – früher wartete sie, bis der Zoom fertig war). Beim stufenlosen Zoomen (Mausrad, zwei Finger) skaliert
+// Leaflet die Zeichenfläche nur per CSS; nach jedem Neuzeichnen der Linie richtet `zoomSync` sie neu aus, sonst landet
+// sie daneben. Während Leaflets eigener Zoom-Animation (+/−, Doppelklick) passt das Neuzeichnen von selbst.
 const userZooming = () => wheelZ != null || map._animatingZoom || !!(map.touchZoom && map.touchZoom._zooming);
+function zoomSync(line) { if (userZooming() && !map._animatingZoom) syncLines(line); }
 // Knopf „Zum Pfeil“ (ersetzt „Ganze Route zeigen“), sichtbar, sobald ein Pfeil oder der Startpunkt auf der Karte ist:
 // ist der Pfeil nicht im Bild, fliegt die Kamera hin; ist er im Bild, aber weit herausgezoomt, zoomt sie auf die normale
 // Nähe (17) hinein. Ohne Pfeil (Route noch nicht gestartet) gilt dasselbe für den Start.
@@ -1984,8 +1987,8 @@ function drawSeg(i, opts = {}) {
   const finish = async () => {
     if (followCam) { endFollow(); segRunning = false; }
     if (gen !== drawGen) return;
-    if (mapMoving || userZooming()) { map.once('moveend', () => setTimeout(finish, 0)); return; }
-    line.setLatLngs(p); head.setLatLng(p[p.length - 1]);
+    if (mapMoving && !userZooming()) { map.once('moveend', () => setTimeout(finish, 0)); return; }
+    line.setLatLngs(p); head.setLatLng(p[p.length - 1]); zoomSync(line);
     if (!pass) head.setIcon(arrowIcon(color, false));
     rotate(head, p);
     if (gen !== drawGen) return;
@@ -2001,15 +2004,15 @@ function drawSeg(i, opts = {}) {
     let done = 0, last = null, rate = 1;
     if (!opts.layer && ms > 1500) showFfwd(() => { rate = Math.min(rate * 5, 125); stopDrive(); sfx('fahrt', Math.max(0.3, (ms - done) / rate / 1000)); });
     const frame = now => {
-      // falls die Karte gerade bewegt oder gezoomt wird (z. B. vom Nutzer): anhalten, damit nichts verrutscht
-      if (mapMoving || userZooming()) { last = null; anim = requestAnimationFrame(frame); return; }
+      // verschiebt der Nutzer die Karte gerade: anhalten, damit nichts verrutscht (beim Zoomen fährt der Pfeil weiter)
+      if (mapMoving && !userZooming()) { last = null; anim = requestAnimationFrame(frame); return; }
       if (last != null) done += (now - last) * rate;
       last = now;
       const f = Math.min(1, done / ms), part = partialPath(p, f);
       camFrame(f, part[part.length - 1]);
       // nach dem Zoomen durch den Nutzer: Pfeil in der Mitte halten (beim gewählten Zoom); nach Verschieben: loslassen
       if (followCam) { if (userDrag) endFollow(); else if (!cam && userZoom) followHead(part[part.length - 1], line); }
-      line.setLatLngs(part); head.setLatLng(part[part.length - 1]); rotate(head, part, true);
+      line.setLatLngs(part); head.setLatLng(part[part.length - 1]); rotate(head, part, true); zoomSync(line);
       if (f < 1) anim = requestAnimationFrame(frame); else { hideFfwd(); finish(); }
     };
     anim = requestAnimationFrame(frame);
