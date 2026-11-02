@@ -210,10 +210,10 @@ body.karten #sg-row { display: none; }
 /* Schalter wie in den Apple-Einstellungen */
 .switch { appearance: none; -webkit-appearance: none; flex: none; position: relative; width: 51px; height: 31px; margin: 0; border-radius: 999px; background: rgba(20,20,20,.22); cursor: pointer; transition: background .22s; }
 .switch::before { content: ''; position: absolute; top: 2px; left: 2px; width: 27px; height: 27px; border-radius: 50%; background: #fff; box-shadow: 0 2px 6px rgba(0,0,0,.25); transition: transform .22s cubic-bezier(.3,.7,.3,1); }
-.switch:checked { background: #141414; } /* an: schwarz statt Apple-Grün (vom Nutzer gewünscht) */
-/* Knopf selbst: an = Taxi-Gelb, aus = sehr dunkles Grau; darüber klein „an“/„aus“ */
+.switch:checked { background: var(--acc); box-shadow: inset 0 0 0 1.5px rgba(20,20,20,.35); } /* an: Bahn Taxi-Gelb (vom Nutzer gewünscht) */
+/* Knopf selbst: immer sehr dunkles Grau (an schwarz); darüber klein „an“/„aus“ */
 .switch::before { background: #2c2c2a; }
-.switch:checked::before { background: var(--acc); }
+.switch:checked::before { background: #141414; }
 .sw-wrap { flex: none; display: grid; justify-items: center; gap: 2px; }
 .sw-txt { font-size: .62rem; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: rgba(20,20,20,.6); line-height: 1; }
 .switch:checked::before { transform: translateX(20px); }
@@ -671,7 +671,7 @@ body.bilder .fc-keys, body.bilder .fc-melden { display: none; }
       <label id="sg-row" class="sg-row"><span class="sg-text"><b>Startgegend suchen</b><small>Neue Route: erst auf der Wien-Karte antippen, wo sie startet</small></span><span class="sw-wrap"><small id="startsuche-txt" class="sw-txt" aria-hidden="true">aus</small><input id="startsuche" class="switch" type="checkbox" role="switch"></span></label>
       <div class="sec"><h3>Routen <small id="count"></small></h3><button id="shuffle" class="pillbtn" type="button">Zufällig</button></div>
       <div id="routes"></div>
-      <div class="foot"><span>Stand 02.11.2026 20:58 · Routen: WKO-Fragenkatalog 2026 · Daten: Stadt Wien, basemap.at, OpenStreetMap</span><span class="foot-btns"><button id="melden" type="button">Fehler melden</button><button id="reload" type="button">Straßennetz neu laden</button><button id="impressum" type="button">Impressum</button><button id="datenschutz" type="button">Datenschutz</button></span></div>
+      <div class="foot"><span>Stand 02.11.2026 21:35 · Routen: WKO-Fragenkatalog 2026 · Daten: Stadt Wien, basemap.at, OpenStreetMap</span><span class="foot-btns"><button id="melden" type="button">Fehler melden</button><button id="reload" type="button">Straßennetz neu laden</button><button id="impressum" type="button">Impressum</button><button id="datenschutz" type="button">Datenschutz</button></span></div>
     </div>
   </aside>
 </div>
