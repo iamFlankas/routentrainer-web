@@ -407,7 +407,7 @@ body.karten #sg-row { display: none; }
 }
 /* --- Karteikarten (Modus „karten“): statt der Karte ein Kartenstapel, links die Kategorien --- */
 #cards { display: none; }
-body.karten #cards { display: flex; position: absolute; inset: 0; z-index: 1001; flex-direction: column; align-items: center; padding: 168px 24px 28px; background: rgba(46,46,49,.9); overflow: hidden; }
+body.karten #cards { display: flex; position: absolute; inset: 0; z-index: 1001; flex-direction: column; align-items: center; padding: 100px 24px 28px; background: rgba(46,46,49,.9); overflow: hidden; }
 /* dahinter schimmert die Karte durch: dunkel eingefärbt, ohne Linien/Schilder, nicht bedienbar */
 body.karten #map { pointer-events: none; }
 body.karten #map .leaflet-tile-pane { filter: invert(1) hue-rotate(180deg) grayscale(.7) brightness(.85) contrast(.9); }
@@ -504,10 +504,14 @@ body.karten #theme.hell:hover { background: #f1efe8; }
 .k-opts { display: flex; align-items: center; justify-content: flex-end; gap: 5px; flex: none; }
 .k-left { display: flex; align-items: center; gap: 8px; flex: none; }
 .k-div { width: 1.5px; height: 20px; margin-right: 2px; border-radius: 1px; background: color-mix(in srgb, var(--on-panel) 30%, transparent); }
-.k-sec .k-tog, .k-sec .pillbtn { padding: 5px 10px; font-size: .78rem; white-space: nowrap; }
+/* gleiche Größe wie „Zufällig“ bei den Routen (.pillbtn), vom Nutzer gewünscht */
+.k-sec .k-tog, .k-sec .pillbtn { padding: 9px 16px; font-size: .88rem; white-space: nowrap; }
+/* schmale Leiste: gleiche Höhe, weniger seitlicher Abstand, damit Kategorien/Alle/Mischen/Falsch in einer Zeile bleiben */
+@media (max-width: 420px) { .k-sec { gap: 4px; } .k-sec .k-tog, .k-sec .pillbtn { padding: 9px 9px; } .k-sec .k-link { padding: 7.5px 9px 7.5px 6px; } .k-sec .k-led { margin-left: 5px; } }
+@media (max-width: 370px) { .k-sec h3 { font-size: .88rem; } .k-sec .k-tog, .k-sec .pillbtn, .k-sec .k-link { font-size: .8rem; } .k-sec .k-tog, .k-sec .pillbtn { padding: 9px 8px; } }
 .k-sec .k-led { display: inline-block; width: 7px; height: 7px; margin-left: 7px; border-radius: 50%; vertical-align: 1px; background: #141414; transition: background .2s, box-shadow .2s; }
 .k-tog.on .k-led { background: var(--acc); box-shadow: 0 0 6px var(--acc); }
-.k-cnt { font-size: .7rem; }
+.k-sec .k-cnt { font-size: .78rem; }
 .k-info { margin: 0; font-size: .92rem; line-height: 1.45; color: var(--on-panel-muted); }
 .k-tog { border: 0; border-radius: 999px; padding: 9px 16px; background: var(--card); font-size: .88rem; cursor: pointer; }
 .k-tog { color: var(--fg); }
@@ -534,7 +538,7 @@ body.karten #theme.hell:hover { background: #f1efe8; }
 .k-muendlich { margin: 8px 0 0 4px; font-size: .82rem; font-weight: 500; text-decoration: underline; text-underline-offset: 3px; color: #141414; opacity: .75; }
 .k-foot { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
 /* Alle auswählen/abwählen: umrandete Pille (ohne Füllung), damit sie sich von Mischen/Falsch (gefüllt) unterscheidet */
-.k-link { display: inline-flex; align-items: center; gap: 6px; flex: none; border: 1.5px solid rgba(20,20,20,.55); background: none; border-radius: 999px; padding: 4px 10px 4px 6px; font: inherit; font-size: .78rem; font-weight: 500; color: #141414; cursor: pointer; transition: background .15s, border-color .15s; }
+.k-link { display: inline-flex; align-items: center; gap: 6px; flex: none; border: 1.5px solid rgba(20,20,20,.55); background: none; border-radius: 999px; padding: 7.5px 15px 7.5px 10px; font: inherit; font-size: .88rem; font-weight: 500; color: #141414; cursor: pointer; transition: background .15s, border-color .15s; }
 .k-link:hover { background: rgba(0,0,0,.07); border-color: #141414; }
 /* Kästchen im „Alle“-Knopf: leer = keine, Strich = einige, Haken = alle Kategorien gewählt */
 .k-box { position: relative; width: 14px; height: 14px; border-radius: 4px; border: 1.5px solid #141414; }
@@ -567,7 +571,7 @@ body.karten #theme.hell:hover { background: #f1efe8; }
 .bq-frage, .bq-credit, .bq-opts { flex: none; }
 /* Foto so groß wie möglich (vom Nutzer gewünscht): Titel „Bilder“ oben links weg (steht in der Leiste), Fläche beginnt
    direkt unter Logo und Modus-Knöpfen; Tasten-Hinweis und „Fehler melden“ (auch in der Fußzeile) nur in hohen Fenstern */
-body.bilder .maphead h1, body.bilder .maphead p { display: none; }
+body.karten .maphead h1, body.karten .maphead p, body.lernen .maphead h1, body.lernen .maphead p { display: none; } /* alle Modi: Titel und Erklärung auf der Karte weg (vom Nutzer gewünscht) */
 body.bilder #cards { container-type: inline-size; padding-top: 100px; padding-bottom: 18px; }
 body.bilder .fc-keys, body.bilder .fc-melden { display: none; }
 @media (min-height: 980px) { body.bilder .fc-keys, body.bilder .fc-melden { display: block; } }
@@ -626,7 +630,7 @@ body.bilder .fc-keys, body.bilder .fc-melden { display: none; }
 @media (max-width: 760px) {
   body.karten .mapwrap { height: 80vh; height: 80dvh; }
   body.karten #theme { top: calc(max(8px, env(safe-area-inset-top)) + 10px); right: 16px; }
-  body.karten #cards { padding: 112px 16px 100px; } /* unten Platz für die Modus-Knöpfe */
+  body.karten #cards { padding: 76px 16px 100px; } /* unten Platz für die Modus-Knöpfe */
   .fc-stage { margin: 12px 0; min-height: 180px; }
   .fc-seq .fc-face { padding: 12px 10px 10px; }
   .seq-in { gap: 10px; }
@@ -693,7 +697,7 @@ body.bilder .fc-keys, body.bilder .fc-melden { display: none; }
       <label id="sg-row" class="sg-row"><span class="sg-text"><b>Startgegend suchen</b><small>Neue Route: erst auf der Wien-Karte antippen, wo sie startet</small></span><span class="sw-wrap"><small id="startsuche-txt" class="sw-txt" aria-hidden="true">aus</small><input id="startsuche" class="switch" type="checkbox" role="switch"></span></label>
       <div class="sec"><h3>Routen <small id="count"></small></h3><button id="shuffle" class="pillbtn" type="button">Zufällig</button></div>
       <div id="routes"></div>
-      <div class="foot"><span>Stand 02.11.2026 21:42 · Routen: WKO-Fragenkatalog 2026 · Daten: Stadt Wien, basemap.at, OpenStreetMap</span><span class="foot-btns"><button id="melden" type="button">Fehler melden</button><button id="reload" type="button">Straßennetz neu laden</button><button id="impressum" type="button">Impressum</button><button id="datenschutz" type="button">Datenschutz</button></span></div>
+      <div class="foot"><span>Stand 02.11.2026 21:54 · Routen: WKO-Fragenkatalog 2026 · Daten: Stadt Wien, basemap.at, OpenStreetMap</span><span class="foot-btns"><button id="melden" type="button">Fehler melden</button><button id="reload" type="button">Straßennetz neu laden</button><button id="impressum" type="button">Impressum</button><button id="datenschutz" type="button">Datenschutz</button></span></div>
     </div>
   </aside>
 </div>
@@ -2638,7 +2642,7 @@ function render() {
   document.querySelectorAll('.tab').forEach(t => t.classList.toggle('on', t.dataset.mode === state.mode));
   const p = $('#play'); p.innerHTML = '';
   // Karteikarten und Bilder: statt der Karte eine eigene Fläche (#cards) über der abgedunkelten Karte
-  document.body.classList.toggle('karten', ohneKarte()); document.body.classList.toggle('bilder', state.mode === 'bilder');
+  document.body.classList.toggle('karten', ohneKarte()); document.body.classList.toggle('bilder', state.mode === 'bilder'); document.body.classList.toggle('lernen', state.mode === 'lernen');
   // Tag/Nacht-Knopf: bei den Karteikarten oben rechts auf der Karte (wo sonst das Zahnrad ist), sonst in der Leiste
   const tb = $('#theme'), kk = ohneKarte(), home = kk ? $('.mapwrap') : $('.topbar');
   if (tb.parentNode !== home) home.append(tb);
