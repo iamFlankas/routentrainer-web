@@ -685,7 +685,7 @@ body.bilder .fc-keys, body.bilder .fc-melden { display: none; }
       </div>
       <div class="sec"><h3>Routen <small id="count"></small></h3><button id="shuffle" class="pillbtn" type="button">Zufällig</button></div>
       <div id="routes"></div>
-      <div class="foot"><span>Stand 02.11.2026 16:44 · Routen: WKO-Fragenkatalog 2026 · Daten: Stadt Wien, basemap.at, OpenStreetMap</span><span class="foot-btns"><button id="melden" type="button">Fehler melden</button><button id="reload" type="button">Straßennetz neu laden</button><button id="impressum" type="button">Impressum</button><button id="datenschutz" type="button">Datenschutz</button></span></div>
+      <div class="foot"><span>Stand 02.11.2026 17:13 · Routen: WKO-Fragenkatalog 2026 · Daten: Stadt Wien, basemap.at, OpenStreetMap</span><span class="foot-btns"><button id="melden" type="button">Fehler melden</button><button id="reload" type="button">Straßennetz neu laden</button><button id="impressum" type="button">Impressum</button><button id="datenschutz" type="button">Datenschutz</button></span></div>
     </div>
   </aside>
 </div>
@@ -1462,13 +1462,17 @@ function sayStreet(label, delay = 0) {
 }
 // --- Filter: Lernhilfen aus den offenen Daten der Stadt Wien ---
 const FKEY = 'taxi-filter-v1';
-let FILTER = { einbahn: false, fussgeher: false, taxi: false, bezirke: false, starthilfe: true, startsuche: false, stimme: true,
+let FILTER = { einbahn: false, fussgeher: true, bezirke: false, startsuche: false, stimme: true,
   tonRichtig: true, tonFalsch: true, tonZiel: true, tonFlug: true, tonFahrt: true, tonKarte: true };
 try {
   const saved = JSON.parse(localStorage.getItem(FKEY) || '{}');
   if (saved.ton === false) Object.keys(FILTER).forEach(k => { if (k.startsWith('ton')) FILTER[k] = false; }); // früher ein Schalter für alle Töne
   Object.keys(FILTER).forEach(k => { if (k in saved) FILTER[k] = !!saved[k]; });
+  // einmalig: Fußgängerzonen sind jetzt standardmäßig an (vom Nutzer gewünscht), auch bei früher gespeicherter Auswahl
+  if (!saved.fz2) { FILTER.fussgeher = true; FILTER.fz2 = true; localStorage.setItem(FKEY, JSON.stringify(FILTER)); }
 } catch (e) {}
+// Start-Hilfe (gestrichelte Anfahrt vom Taxistand, antippbar) ist immer an – der Schalter wurde entfernt
+const START_HILFE = true;
 map.createPane('hilfen'); map.getPane('hilfen').style.zIndex = 350;
 const hilfenRenderer = L.canvas({ pane: 'hilfen', padding: PAD });
 const OGD = 'https://data.wien.gv.at/daten/geo?service=WFS&request=GetFeature&version=1.1.0&srsName=EPSG:4326&outputFormat=json&typeName=';
@@ -1501,13 +1505,17 @@ const HILFEN = {
     const lines = [];
     j.features.forEach(f => { if (!f.geometry || f.geometry.type !== 'LineString') return; let c = f.geometry.coordinates.map(p => [p[1], p[0]]); if (/gegen/i.test(f.properties.DIRECTION_NAME || '')) c = c.reverse(); lines.push({ c, b: L.latLngBounds(c) }); });
     const g = L.layerGroup();
-    // Pfeile in fester Bildschirmgröße: bei jedem Zoom neu berechnet
+    // Einbahn als blaues Band auf der Straße mit kleinen weißen Winkeln darin (vom Nutzer gewünscht statt loser Pfeile
+    // neben der Straße); Breite und Abstände in Bildschirmgröße, bei jedem Zoom neu berechnet
     const draw = () => {
       g.clearLayers();
       const z = map.getZoom(), mpp = 156543.03 * Math.cos(48.21 * Math.PI / 180) / 2 ** z;
-      // nur, was gerade (mit etwas Rand) im Bild ist – ganz Wien wären zu viele Pfeile
-      const view = map.getBounds().pad(0.6), parts = []; lines.forEach(l => { if (view.intersects(l.b)) chevrons(l.c, parts, 46 * mpp, 5.5 * mpp); });
-      L.polyline(parts, { renderer: hilfenRenderer, color: '#1f3fae', weight: z >= 17 ? 2.2 : z >= 16 ? 1.8 : 1.4, opacity: 0.95, lineCap: 'round', lineJoin: 'round', interactive: false }).addTo(g);
+      const w = z >= 18 ? 12 : z >= 17 ? 9 : z >= 16 ? 6.5 : 5;
+      // nur, was gerade (mit etwas Rand) im Bild ist – ganz Wien wäre zu viel
+      const view = map.getBounds().pad(0.6), band = [], parts = [];
+      lines.forEach(l => { if (!view.intersects(l.b)) return; band.push(l.c); chevrons(l.c, parts, 60 * mpp, w * 0.42 * mpp); });
+      L.polyline(band, { renderer: hilfenRenderer, color: '#2f5bd8', weight: w, opacity: 0.38, lineCap: 'butt', lineJoin: 'round', interactive: false }).addTo(g);
+      if (z >= 16) L.polyline(parts, { renderer: hilfenRenderer, color: '#fff', weight: w >= 9 ? 2.2 : 1.7, opacity: 1, lineCap: 'round', lineJoin: 'round', interactive: false }).addTo(g);
     };
     draw(); map.on('moveend', () => { if (map.hasLayer(g)) draw(); });
     g.on('add', draw);
@@ -1517,20 +1525,6 @@ const HILFEN = {
     const j = await ogd('ogdwien:FUSSGEHERZONEOGD', '&propertyName=ADRESSE,ZEITRAUM,AUSN_TEXT,SHAPE');
     return L.geoJSON(j, { renderer: hilfenRenderer, style: { color: '#b0306a', weight: 1, fillColor: '#e46a9e', fillOpacity: 0.22 },
       onEachFeature: (f, l) => { const p = f.properties; l.bindTooltip(`<b>Fußgängerzone</b> ${p.ADRESSE || ''}${p.ZEITRAUM ? '<br>' + p.ZEITRAUM : ''}${p.AUSN_TEXT ? '<br>' + p.AUSN_TEXT : ''}`, { sticky: true }); } });
-  } },
-  taxi: { async build() {
-    const j = await ogd('ogdwien:TAXIOGD', '&propertyName=ADRESSE,STELLPLATZANZAHL,ZEITRAUM,SHAPE');
-    // ein Standplatz besteht oft aus mehreren Abschnitten -> nach Adresse zusammenfassen
-    const by = new Map();
-    j.features.forEach(f => { const c = f.geometry && f.geometry.coordinates; if (!c || !c.length) return; const p = f.properties, key = (p.ADRESSE || '').replace(/\s+/g, ' ').trim();
-      const m = c[Math.floor(c.length / 2)];
-      const g = by.get(key) || { lat: 0, lng: 0, n: 0, plaetze: 0, zeiten: new Set() };
-      g.lat += m[1]; g.lng += m[0]; g.n++; g.plaetze += +p.STELLPLATZANZAHL || 0; if (p.ZEITRAUM) g.zeiten.add(p.ZEITRAUM); by.set(key, g); });
-    const g = L.layerGroup();
-    by.forEach((v, adr) => L.circleMarker([v.lat / v.n, v.lng / v.n], { renderer: hilfenRenderer, radius: 5.5, color: '#1b1a17', weight: 1.5, fillColor: '#ffd21f', fillOpacity: 1 })
-      .bindTooltip(`<b>Taxistandplatz</b> ${adr}${v.plaetze ? '<br>' + v.plaetze + ' Plätze' : ''}${v.zeiten.size ? '<br>' + [...v.zeiten].join('<br>') : ''}`).addTo(g));
-    HILFEN.taxi.count = by.size;
-    return g;
   } },
   bezirke: { async build() {
     const j = await ogd('ogdwien:BEZIRKSGRENZEOGD', '&propertyName=BEZNR,LABEL,NAMEK,SHAPE');
@@ -1557,11 +1551,9 @@ async function applyHilfe(k) {
 map.on('zoomend', () => Object.keys(HILFEN).forEach(k => { if (HILFEN[k].minZoom && hilfeLayer[k]) applyHilfe(k); }));
 // Einstellungen (Knopf oben rechts auf der Karte): Kartenhilfen und darunter „Sounds“ zum Aufklappen
 const FILTER_ITEMS = [
-  ['einbahn', 'Einbahnen', 'Pfeile in erlaubter Fahrtrichtung, ab näherem Zoom'],
+  ['einbahn', 'Einbahnen', 'blau auf der Straße, Winkel zeigen die Fahrtrichtung; ab näherem Zoom'],
   ['fussgeher', 'Fußgängerzonen', 'mit Zufahrtszeiten beim Drüberfahren'],
-  ['taxi', 'Taxistandplätze', 'Standplätze laut Stadt Wien'],
   ['bezirke', 'Bezirksgrenzen', 'mit Bezirksnamen'],
-  ['starthilfe', 'Start-Hilfe', 'Anfahrt vom Taxistand gestrichelt, antippbar'],
   ['startsuche', 'Startgegend suchen', 'neue Route: erst auf der Wien-Karte die Gegend des Starts antippen'],
 ];
 const SOUND_ITEMS = [
@@ -2205,7 +2197,7 @@ function showPointsInner(withGoal, redo) {
   // Bildschirm-Winkel zwischen zwei Punkten
   const angle = (a, b) => { const pa = map.latLngToContainerPoint(a), pb = map.latLngToContainerPoint(b); return Math.atan2(pb.y - pa.y, pb.x - pa.x) * 180 / Math.PI; };
   const along = (path, m) => { let acc = 0; for (let i = 1; i < path.length; i++) { acc += dist(path[i - 1], path[i]); if (acc >= m) return path[i]; } return path[path.length - 1]; };
-  if (r._lead && FILTER.starthilfe) { const l = L.polyline(r._lead, { color: css('--route'), weight: zoomWeight(4), opacity: 0.6, dashArray: '1 9', lineCap: 'round', interactive: false }).addTo(pointLayer); l._baseW = 4; }
+  if (r._lead && START_HILFE) { const l = L.polyline(r._lead, { color: css('--route'), weight: zoomWeight(4), opacity: 0.6, dashArray: '1 9', lineCap: 'round', interactive: false }).addTo(pointLayer); l._baseW = 4; }
   if (r.start) {
     const all = segs.flat();
     // Schild weg von der Richtung, in die die Route losfährt
@@ -3053,7 +3045,7 @@ function onMapClick(e) {
       || plazaHit(e, key, sg, h, r.steps[k])
       // sehr kurzes Stück (z. B. Nebenfahrbahn am Taxistand, kurz über eine Kreuzung): dieselbe Straße bis 120 m daneben zählt auch
       || (sg && pathLength(sg) < 60 && h.pxDist(key) <= h.TOL && distToPath([e.latlng.lat, e.latlng.lng], sg) < 120)
-      || (k === 0 && FILTER.starthilfe && r._lead && nearLine(e, r._lead, 24)); // Start-Hilfe: Tipp auf die gestrichelte Anfahrt
+      || (k === 0 && START_HILFE && r._lead && nearLine(e, r._lead, 24)); // Start-Hilfe: Tipp auf die gestrichelte Anfahrt
   };
   // richtige nächste Straße: bis zur Abbiegestelle fahren
   if (hitStreet(nextI)) { okPulse(e.latlng); sfx('ok'); advanceStep('ok'); return; }
