@@ -112,7 +112,8 @@ body.questing .maphead p { visibility: hidden; }
 .h-top { display: flex; justify-content: space-between; align-items: flex-end; gap: 12px; }
 .h-left { display: flex; flex-direction: column; gap: 14px; min-width: 0; }
 /* Knöpfe unter der Strecke: rotes ✕ links, ↻ ▲ ▼ rechts (vom Nutzer so gewünscht) */
-.h-nav { flex: none; display: flex; gap: 8px; align-self: stretch; justify-content: flex-end; }
+/* Knöpfe innerhalb der Rundung des Strecke-Kärtchens (Innenabstand wie .card, vom Nutzer so gewünscht) */
+.h-nav { flex: none; display: flex; gap: 8px; align-self: stretch; justify-content: flex-end; padding: 0 20px; }
 .h-nav .rbtn.zu { margin-right: auto; }
 /* auf einer Linie mit dem Kapitel-Schild (unten in der Titelzeile) */
 .flink.h-melden { align-self: flex-end; margin-bottom: 3px; text-align: right; }
@@ -241,6 +242,32 @@ ol.steps li.dest .chip { background: var(--acc); color: var(--acc-ink); padding:
 .r-body p { margin: 0 0 10px; }
 .r-body a { color: inherit; }
 .r-liste { margin: 0 0 12px; padding-left: 1.2em; display: grid; gap: 4px; }
+/* Fehler melden: großes rundes Fenster mit Formular */
+#melden-dlg { width: min(680px, calc(100vw - 24px)); max-height: min(88vh, 760px); padding: 0; border: 0; border-radius: 32px; background: var(--card); color: var(--fg); box-shadow: 0 24px 60px rgba(0,0,0,.35); font: inherit; }
+#melden-dlg[open] { display: flex; }
+#melden-dlg::backdrop { background: rgba(20,20,20,.55); }
+.m-form { display: flex; flex-direction: column; width: 100%; min-height: 0; }
+.m-kopf { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; padding: 24px 26px 8px; }
+.m-kopf b { display: block; font-size: 1.5rem; font-weight: 650; letter-spacing: -.01em; }
+.m-worum { display: inline-block; margin-top: 6px; padding: 4px 12px; border-radius: 999px; background: var(--acc); color: #141414; font-size: .85rem; font-weight: 600; }
+.m-zu { flex: none; width: 40px; height: 40px; border: 0; border-radius: 50%; background: color-mix(in srgb, var(--fg) 8%, transparent); color: var(--fg); font-size: 1.05rem; cursor: pointer; }
+.m-inhalt { overflow-y: auto; padding: 8px 26px 4px; display: grid; gap: 14px; }
+.m-feld { display: grid; gap: 6px; font-weight: 600; font-size: .95rem; }
+.m-feld small { font-weight: 400; color: var(--muted); }
+.m-feld textarea, .m-feld input { width: 100%; border: 2px solid color-mix(in srgb, var(--fg) 14%, transparent); border-radius: 20px; padding: 14px 16px; background: color-mix(in srgb, var(--fg) 4%, transparent); color: var(--fg); font: inherit; font-size: 1rem; font-weight: 400; resize: vertical; }
+.m-feld textarea { min-height: 150px; }
+.m-feld textarea:focus, .m-feld input:focus { outline: none; border-color: var(--acc); }
+.m-kontext { font-size: .85rem; color: var(--muted); }
+.m-kontext summary { cursor: pointer; }
+.m-kontext ul { margin: 8px 0 0; padding-left: 1.2em; display: grid; gap: 3px; }
+.m-fuss { display: flex; justify-content: flex-end; gap: 10px; padding: 16px 26px 24px; }
+.m-fuss .btn { min-width: 120px; height: 48px; border-radius: 999px; font-weight: 600; }
+.m-danke { display: none; padding: 8px 26px 28px; text-align: center; gap: 8px; justify-items: center; }
+.m-danke b { font-size: 1.6rem; }
+.m-err { display: none; margin: 0 26px 18px; color: var(--bad); font-size: .9rem; text-align: right; }
+#melden-dlg.gesendet .m-inhalt, #melden-dlg.gesendet .m-fuss { display: none; }
+#melden-dlg.gesendet .m-danke { display: grid; }
+#melden-dlg.fehler .m-err { display: block; }
 .r-platz { background: var(--acc); color: #141414; padding: 0 5px; border-radius: 5px; font-weight: 600; }
 .flink { justify-self: start; align-self: flex-start; border: 0; background: none; padding: 2px 0; font: inherit; font-size: .82rem; color: var(--on-panel-muted); text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
 .flink:hover { color: var(--on-panel); }
@@ -658,10 +685,21 @@ body.bilder .fc-keys, body.bilder .fc-melden { display: none; }
       </div>
       <div class="sec"><h3>Routen <small id="count"></small></h3><button id="shuffle" class="pillbtn" type="button">Zufällig</button></div>
       <div id="routes"></div>
-      <div class="foot"><span>Stand 02.11.2026 16:28 · Routen: WKO-Fragenkatalog 2026 · Daten: Stadt Wien, basemap.at, OpenStreetMap</span><span class="foot-btns"><button id="melden" type="button">Fehler melden</button><button id="reload" type="button">Straßennetz neu laden</button><button id="impressum" type="button">Impressum</button><button id="datenschutz" type="button">Datenschutz</button></span></div>
+      <div class="foot"><span>Stand 02.11.2026 16:44 · Routen: WKO-Fragenkatalog 2026 · Daten: Stadt Wien, basemap.at, OpenStreetMap</span><span class="foot-btns"><button id="melden" type="button">Fehler melden</button><button id="reload" type="button">Straßennetz neu laden</button><button id="impressum" type="button">Impressum</button><button id="datenschutz" type="button">Datenschutz</button></span></div>
     </div>
   </aside>
 </div>
+<dialog id="melden-dlg" aria-label="Fehler melden"><form class="m-form" novalidate>
+  <div class="m-kopf"><div><b>Fehler melden</b><span class="m-worum"></span></div><button class="m-zu" type="button" aria-label="Schließen">✕</button></div>
+  <div class="m-inhalt">
+    <label class="m-feld"><span>Was stimmt nicht?</span><textarea name="nachricht" rows="6" required placeholder="z. B. „Nach der Reichsbrücke biegt die Route falsch ab – richtig wäre …“"></textarea></label>
+    <label class="m-feld"><span>Deine E-Mail <small>(freiwillig, falls wir nachfragen dürfen)</small></span><input name="email" type="email" autocomplete="email" placeholder="name@beispiel.at"></label>
+    <details class="m-kontext"><summary>Diese Angaben werden mitgeschickt</summary><ul></ul></details>
+  </div>
+  <div class="m-fuss"><button class="btn m-abbrechen" type="button">Abbrechen</button><button class="btn primary m-senden" type="submit">Senden</button></div>
+  <div class="m-danke"><b>Danke!</b><span>Deine Meldung ist angekommen.</span><button class="btn primary m-fertig" type="button">Schließen</button></div>
+  <p class="m-err">Senden hat nicht geklappt – bitte später nochmal versuchen.</p>
+</form></dialog>
 <dialog id="rechtliches" aria-label="Impressum und Datenschutz"><div class="r-kopf"><b>Impressum &amp; Datenschutz</b><button class="r-zu" type="button" aria-label="Schließen">✕</button></div><div class="r-body"></div></dialog>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
 <script>
@@ -3123,12 +3161,43 @@ function applyTheme() {
 }
 $('#theme').onclick = () => { theme = theme === 'dark' ? 'light' : 'dark'; try { localStorage.setItem(THEME_KEY, theme); } catch (e) {} applyTheme(); };
 applyTheme();
-// Fehler melden: öffnet das Mailprogramm mit vorausgefülltem Betreff und Text (Adresse kommt noch vom Nutzer)
+// Fehler melden: großes Fenster mit Formular (Anliegen, freiwillig E-Mail für Rückfragen); die Angaben zur Route bzw.
+// Karte werden automatisch mitgeschickt. Versand über einen Formulardienst (FEHLER_ZIEL, z. B. Formspree – das Konto
+// richtet der Nutzer ein); solange FEHLER_ZIEL leer ist, öffnet „Senden“ das Mailprogramm mit dem geschriebenen Text.
 const FEHLER_MAIL = '';
+const FEHLER_ZIEL = '', FEHLER_DIENST = 'Formspree';
+let fehlerKontext = null;
 function fehlerMelden(betreff, zeilen) {
-  const body = zeilen.concat(['', 'Was stimmt nicht?', '']).join('\n');
-  location.href = `mailto:${FEHLER_MAIL}?subject=${encodeURIComponent('TaxiLernen: ' + betreff)}&body=${encodeURIComponent(body)}`;
+  const d = $('#melden-dlg'), f = d.querySelector('form');
+  fehlerKontext = { betreff, zeilen };
+  f.reset(); d.classList.remove('gesendet', 'fehler');
+  d.querySelector('.m-worum').textContent = betreff === 'Fehler melden' ? 'Allgemein' : betreff;
+  const k = d.querySelector('.m-kontext'), ul = k.querySelector('ul'); ul.innerHTML = '';
+  zeilen.forEach(z => ul.append(el('li', '', z))); k.hidden = !zeilen.length;
+  d.showModal(); setTimeout(() => f.querySelector('textarea').focus(), 50);
 }
+async function fehlerSenden(e) {
+  e.preventDefault();
+  const d = $('#melden-dlg'), f = e.target, text = f.nachricht.value.trim(), mail = f.email.value.trim();
+  if (!text || !fehlerKontext) return;
+  const { betreff, zeilen } = fehlerKontext, stand = document.querySelector('.foot span') ? document.querySelector('.foot span').textContent.split(' · ')[0] : '';
+  const body = [text, '', ...zeilen, stand, mail ? 'Antwort an: ' + mail : ''].filter(z => z !== '').join('\n');
+  if (!FEHLER_ZIEL) {
+    location.href = `mailto:${FEHLER_MAIL}?subject=${encodeURIComponent('TaxiLernen: ' + betreff)}&body=${encodeURIComponent(body)}`;
+    d.close(); return;
+  }
+  const knopf = f.querySelector('.m-senden'); knopf.disabled = true;
+  try {
+    const r = await fetch(FEHLER_ZIEL, { method: 'POST', headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+      body: JSON.stringify({ _subject: 'TaxiLernen: ' + betreff, betreff, nachricht: text, angaben: zeilen.join('\n'), stand, email: mail || undefined }) });
+    if (!r.ok) throw new Error(r.status);
+    d.classList.add('gesendet');
+  } catch (x) { d.classList.add('fehler'); }
+  knopf.disabled = false;
+}
+$('#melden-dlg form').addEventListener('submit', fehlerSenden);
+$('#melden-dlg .m-zu').onclick = $('#melden-dlg .m-abbrechen').onclick = $('#melden-dlg .m-fertig').onclick = () => $('#melden-dlg').close();
+$('#melden-dlg').addEventListener('click', e => { if (e.target === e.currentTarget) e.currentTarget.close(); });
 function fehlerLink(label, betreff, zeilen, cls = 'flink') {
   const b = el('button', cls, label); b.type = 'button'; b.onclick = () => fehlerMelden(betreff, typeof zeilen === 'function' ? zeilen() : zeilen); return b;
 }
@@ -3183,7 +3252,7 @@ function rechtliches(abschnitt) {
    'Google Fonts (Google Ireland Ltd.) – Schriftart'].forEach(t => ul2.append(el('li', '', t)));
   body.append(ul2);
   p('Google Street View öffnet sich nur, wenn du den Knopf „Street View ↗“ antippst – dann gelten die Datenschutzbestimmungen von Google.');
-  p(el('b', '', 'Fehler melden: '), 'Der Link öffnet dein eigenes Mailprogramm. Schreibst du uns, verwenden wir deine E-Mail-Adresse nur, um zu antworten.');
+  p(el('b', '', 'Fehler melden: '), FEHLER_ZIEL ? `Das Formular schickt deine Nachricht, die Angaben zur Route bzw. Karte und – nur wenn du sie einträgst – deine E-Mail-Adresse über den Dienst ${FEHLER_DIENST} an uns. Wir verwenden sie nur, um den Fehler zu beheben und dir zu antworten.` : 'Beim Senden öffnet sich dein eigenes Mailprogramm mit deinem Text. Schreibst du uns, verwenden wir deine E-Mail-Adresse nur, um zu antworten.');
   p(el('b', '', 'Deine Rechte: '), 'Auskunft, Berichtigung, Löschung, Einschränkung, Datenübertragbarkeit und Widerspruch. Beschwerden kannst du bei der österreichischen Datenschutzbehörde einbringen (', link('https://www.dsb.gv.at'), ').');
   p(el('small', '', 'Stand: ' + I.stand));
   d.showModal();
