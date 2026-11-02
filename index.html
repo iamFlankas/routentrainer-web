@@ -229,7 +229,19 @@ ol.steps li.dest .chip { background: var(--acc); color: var(--acc-ink); padding:
 .rt-to { text-align: right; }
 .empty { color: var(--on-panel-muted); text-align: center; padding: 20px 0; margin: 0; }
 .foot { font-size: .78rem; color: var(--on-panel-muted); display: flex; justify-content: space-between; gap: 8px; flex-wrap: wrap; padding-top: 4px; }
-.foot-btns { display: flex; gap: 14px; }
+.foot-btns { display: flex; gap: 6px 14px; flex-wrap: wrap; }
+/* Impressum und Datenschutz: Dialog über allem */
+#rechtliches { width: min(640px, calc(100vw - 32px)); max-height: min(82vh, 820px); padding: 0; border: 0; border-radius: 24px; background: var(--card); color: var(--fg); box-shadow: 0 24px 60px rgba(0,0,0,.35); font: inherit; }
+#rechtliches[open] { display: flex; flex-direction: column; }
+#rechtliches::backdrop { background: rgba(20,20,20,.55); }
+.r-kopf { display: flex; align-items: center; justify-content: space-between; padding: 18px 22px 12px; font-size: 1.05rem; border-bottom: 1px solid color-mix(in srgb, var(--fg) 10%, transparent); }
+.r-zu { width: 36px; height: 36px; border: 0; border-radius: 50%; background: color-mix(in srgb, var(--fg) 8%, transparent); color: var(--fg); font-size: 1rem; cursor: pointer; }
+.r-body { overflow-y: auto; padding: 6px 22px 22px; font-size: .92rem; line-height: 1.5; }
+.r-body h3 { margin: 18px 0 6px; font-size: 1.1rem; }
+.r-body p { margin: 0 0 10px; }
+.r-body a { color: inherit; }
+.r-liste { margin: 0 0 12px; padding-left: 1.2em; display: grid; gap: 4px; }
+.r-platz { background: var(--acc); color: #141414; padding: 0 5px; border-radius: 5px; font-weight: 600; }
 .flink { justify-self: start; align-self: flex-start; border: 0; background: none; padding: 2px 0; font: inherit; font-size: .82rem; color: var(--on-panel-muted); text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
 .flink:hover { color: var(--on-panel); }
 .fc-melden { align-self: center; margin-top: 6px; color: rgba(242,241,237,.55); }
@@ -646,10 +658,11 @@ body.bilder .fc-keys, body.bilder .fc-melden { display: none; }
       </div>
       <div class="sec"><h3>Routen <small id="count"></small></h3><button id="shuffle" class="pillbtn" type="button">Zufällig</button></div>
       <div id="routes"></div>
-      <div class="foot"><span>Stand 02.11.2026 16:15 · Routen: WKO-Fragenkatalog 2026 · Daten: Stadt Wien, basemap.at, OpenStreetMap</span><span class="foot-btns"><button id="melden" type="button">Fehler melden</button><button id="reload" type="button">Straßennetz neu laden</button></span></div>
+      <div class="foot"><span>Stand 02.11.2026 16:28 · Routen: WKO-Fragenkatalog 2026 · Daten: Stadt Wien, basemap.at, OpenStreetMap</span><span class="foot-btns"><button id="melden" type="button">Fehler melden</button><button id="reload" type="button">Straßennetz neu laden</button><button id="impressum" type="button">Impressum</button><button id="datenschutz" type="button">Datenschutz</button></span></div>
     </div>
   </aside>
 </div>
+<dialog id="rechtliches" aria-label="Impressum und Datenschutz"><div class="r-kopf"><b>Impressum &amp; Datenschutz</b><button class="r-zu" type="button" aria-label="Schließen">✕</button></div><div class="r-body"></div></dialog>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
 <script>
 // Prüfungsrouten laut WKO Wien – Fragenkatalog für die Taxilenkerprüfung, Ausgabe 2026, laufend nummeriert; kat = Nummer im Katalog
@@ -3120,6 +3133,66 @@ function fehlerLink(label, betreff, zeilen, cls = 'flink') {
   const b = el('button', cls, label); b.type = 'button'; b.onclick = () => fehlerMelden(betreff, typeof zeilen === 'function' ? zeilen() : zeilen); return b;
 }
 $('#melden').onclick = () => fehlerMelden('Fehler melden', []);
+
+// Impressum und Datenschutz (Fußzeile). Leere Felder erscheinen als gelb markierte Platzhalter.
+// Privat genügt die Offenlegung nach § 25 MedienG (Name, Wohnort); kommerziell: true ergänzt die Angaben nach § 5 ECG.
+const IMPRESSUM = {
+  name: '',            // Vor- und Nachname bzw. Firmenname
+  ort: '',             // privat: Wohnort; kommerziell: vollständige Anschrift
+  email: FEHLER_MAIL,  // Kontakt (dieselbe Adresse wie „Fehler melden“)
+  kommerziell: false,  // true, sobald die App etwas kostet
+  gegenstand: 'Entwicklung und Vertrieb von Lernsoftware',
+  uid: '', firmenbuch: '', gewerbebehoerde: '', kammer: 'Wirtschaftskammer Wien',
+  stand: 'November 2026',
+};
+function rechtliches(abschnitt) {
+  const d = $('#rechtliches'), body = d.querySelector('.r-body'); body.innerHTML = '';
+  const I = IMPRESSUM, h = (t, id) => { const e = el('h3', '', t); if (id) e.id = id; body.append(e); };
+  const p = (...teile) => { const e = el('p'); teile.forEach(t => e.append(t)); body.append(e); return e; };
+  const feld = (wert, platzhalter) => wert ? wert : el('span', 'r-platz', '[' + platzhalter + ']');
+  const link = (href, t) => { const a = el('a', '', t || href.replace(/^https?:\/\//, '')); a.href = href; a.target = '_blank'; a.rel = 'noopener'; return a; };
+  const mail = I.email ? (() => { const a = el('a', '', I.email); a.href = 'mailto:' + I.email; return a; })() : feld('', 'E-Mail-Adresse');
+  h('Impressum', 'r-impressum');
+  p(el('b', '', I.kommerziell ? 'Angaben gemäß § 5 E-Commerce-Gesetz und Offenlegung gemäß § 25 Mediengesetz' : 'Offenlegung gemäß § 25 Mediengesetz'));
+  p('Medieninhaber: ', feld(I.name, I.kommerziell ? 'Name bzw. Firmenname' : 'Vor- und Nachname'), el('br'), I.kommerziell ? 'Anschrift: ' : 'Wohnort: ', feld(I.ort, I.kommerziell ? 'Straße, PLZ Ort' : 'Ort'), el('br'), 'E-Mail: ', mail);
+  if (I.kommerziell) {
+    p('Unternehmensgegenstand: ', I.gegenstand, el('br'), 'UID-Nummer: ', feld(I.uid, 'UID-Nummer oder streichen'), el('br'), 'Firmenbuch: ', feld(I.firmenbuch, 'Firmenbuchnummer und -gericht oder streichen'), el('br'),
+      'Gewerbebehörde: ', feld(I.gewerbebehoerde, 'z. B. Magistratisches Bezirksamt'), el('br'), 'Mitglied der ', I.kammer, el('br'), 'Anwendbare Vorschriften: Gewerbeordnung, abrufbar unter ', link('https://www.ris.bka.gv.at'));
+  }
+  p('Grundlegende Richtung: Lernhilfe zur Vorbereitung auf die Wiener Taxilenkerprüfung.');
+  p(el('b', '', 'Haftung: '), 'Kein Angebot der Wirtschaftskammer Wien. Alle Angaben ohne Gewähr – maßgeblich sind der WKO-Fragenkatalog und die geltenden Gesetze. Die Antworten zu den Theorie-Fragen sind selbst erarbeitet; bei jeder Antwort steht die Gesetzesstelle.');
+  h('Quellen und Lizenzen');
+  const ul = el('ul', 'r-liste');
+  [['Routen, Adressen, Fragen: WKO-Fragenkatalog für die Taxilenkerprüfung, Ausgabe 2026 (Fachgruppe Beförderungsgewerbe mit PKW, WK Wien)', 'https://www.wko.at/wien/transport-verkehr/befoerderungsgewerbe-personenkraftwagen/fragenkatalog.pdf'],
+   ['Karte: basemap.at (CC BY 4.0)', 'https://basemap.at'],
+   ['Straßennetz, Einbahnen, Bezirksgrenzen, Taxistandplätze: Stadt Wien – data.wien.gv.at (CC BY 4.0)', 'https://data.wien.gv.at'],
+   ['Autobahnen und Auffahrten: © OpenStreetMap-Mitwirkende (ODbL)', 'https://www.openstreetmap.org/copyright'],
+   ['Fotos der Sehenswürdigkeiten: Wikimedia Commons – Urheber und Lizenz stehen unter jedem Foto', 'https://commons.wikimedia.org'],
+   ['Gesetzestexte: Rechtsinformationssystem des Bundes (RIS)', 'https://www.ris.bka.gv.at'],
+   ['Kartenbibliothek: Leaflet (BSD-2-Clause)', 'https://leafletjs.com']].forEach(([t, u]) => { const li = el('li', '', t + ' – '); li.append(link(u)); ul.append(li); });
+  body.append(ul);
+  h('Datenschutz', 'r-datenschutz');
+  p(el('b', '', 'Verantwortlich: '), feld(I.name, 'Vor- und Nachname'), ', ', mail.cloneNode ? mail.cloneNode(true) : mail);
+  p(el('b', '', 'Keine Konten, keine Werbung, keine Analyse: '), 'Die App sammelt keine Daten über dich. Lernstand, Auswahl und Einstellungen werden nur im Browser auf deinem Gerät gespeichert (localStorage bzw. IndexedDB) und nie an uns übertragen. Du kannst sie jederzeit löschen – in der App („Lernstand löschen“) oder in den Browser-Einstellungen.');
+  p(el('b', '', 'Dienste, die beim Aufruf deine IP-Adresse erhalten: '), 'Damit die Seite funktioniert, lädt dein Browser Inhalte von diesen Anbietern. Sie erhalten dabei technisch bedingt deine IP-Adresse und Browserdaten:');
+  const ul2 = el('ul', 'r-liste');
+  ['GitHub Pages (GitHub Inc., USA) – Bereitstellung der Seite',
+   'basemap.at (Stadt Wien u. a.) – Kartenbilder',
+   'data.wien.gv.at (Stadt Wien) – Straßennetz, Einbahnen, Bezirksgrenzen, Taxistandplätze',
+   'cdnjs (Cloudflare Inc., USA) – Kartenbibliothek Leaflet',
+   'Google Fonts (Google Ireland Ltd.) – Schriftart'].forEach(t => ul2.append(el('li', '', t)));
+  body.append(ul2);
+  p('Google Street View öffnet sich nur, wenn du den Knopf „Street View ↗“ antippst – dann gelten die Datenschutzbestimmungen von Google.');
+  p(el('b', '', 'Fehler melden: '), 'Der Link öffnet dein eigenes Mailprogramm. Schreibst du uns, verwenden wir deine E-Mail-Adresse nur, um zu antworten.');
+  p(el('b', '', 'Deine Rechte: '), 'Auskunft, Berichtigung, Löschung, Einschränkung, Datenübertragbarkeit und Widerspruch. Beschwerden kannst du bei der österreichischen Datenschutzbehörde einbringen (', link('https://www.dsb.gv.at'), ').');
+  p(el('small', '', 'Stand: ' + I.stand));
+  d.showModal();
+  const ziel = $('#r-' + abschnitt); if (ziel) ziel.scrollIntoView(); else body.scrollTop = 0;
+}
+$('#impressum').onclick = () => rechtliches('impressum');
+$('#datenschutz').onclick = () => rechtliches('datenschutz');
+$('#rechtliches .r-zu').onclick = () => $('#rechtliches').close();
+$('#rechtliches').addEventListener('click', e => { if (e.target === e.currentTarget) e.currentTarget.close(); });
 $('#reload').onclick = async () => { await idbDel(IDB_KEY); STREETS = null; render(); loadStreets(); };
 renderList(); render(); loadStreets();
 
