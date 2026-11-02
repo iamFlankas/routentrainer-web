@@ -583,6 +583,28 @@ body.bilder .fc-keys, body.bilder .fc-melden { display: none; }
   .bq-opts { grid-area: opts; }
 }
 @container (min-width: 760px) { .bq-opts { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+/* Theorie „4 Antworten“: Frage auf einer Karte, darunter die Antworten (Aufbau wie das Bilderspiel) */
+.th-art { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; padding: 4px; border-radius: 999px; background: rgba(20,20,20,.1); }
+.th-art-b { border: 0; border-radius: 999px; padding: 10px 12px; background: none; color: #141414; font: inherit; font-size: .9rem; font-weight: 600; cursor: pointer; }
+.th-art-b.on { background: #141414; color: var(--acc); }
+.th-mc-sub { font-size: .85rem; }
+/* Text-Frage: Karte so hoch wie ihr Text (kein Größen-Container), bei wenig Platz scrollt die ganze Frage */
+.bq.th-mc { overflow-y: auto; }
+/* Frage und Antworten senkrecht mittig, ohne dass bei Platzmangel oben etwas abgeschnitten wird */
+.bq.th-mc > :first-child { margin-top: auto; } .bq.th-mc > :last-child { margin-bottom: auto; }
+.th-mc .bq-img.th-text { container-type: normal; flex: none; min-height: 0; height: auto; }
+.th-mc .bq-opts { flex: none; }
+.th-mc-karte { max-width: min(760px, 100%); max-height: 100%; overflow: auto; padding: 22px 26px; border-radius: 22px; background: var(--card); color: var(--fg); text-align: center; box-shadow: 0 16px 40px rgba(0,0,0,.25); display: grid; gap: 10px; }
+.th-mc-karte b { font-size: clamp(1.15rem, 2.6vw, 1.6rem); font-weight: 650; line-height: 1.3; text-wrap: balance; }
+.th-mc-karte b.lang { font-size: clamp(1rem, 2vw, 1.2rem); }
+.th-mc-quelle { font-size: .78rem; color: var(--muted); }
+.bq-opts.lang { grid-template-columns: minmax(0, 1fr) !important; gap: 8px; }
+.bq-opts.lang .bq-opt { min-height: 0; padding: 10px 14px; font-size: .95rem; font-weight: 500; }
+/* falsche Antwort blinkt zweimal rot, bleibt dann blass rot und gesperrt */
+.bq-opt.blink { animation: thBlink .9s ease-in-out forwards; }
+@keyframes thBlink { 0%, 50% { background: #d23b2f; color: #fff; } 25%, 75% { background: var(--card); color: var(--fg); } 100% { background: color-mix(in srgb, #d23b2f 30%, var(--card)); color: var(--fg); } }
+.bq-opt.versucht, .bq-opt.versucht:disabled, .bq-opt.blink:disabled { opacity: 1; }
+.bq-opt.versucht { background: color-mix(in srgb, #d23b2f 30%, var(--card)); text-decoration: line-through; text-decoration-color: rgba(210,59,47,.7); }
 /* --- Theorie (Modus „theorie“): Karteikarten mit Frage vorne, Antwort als Liste hinten --- */
 .fc-stage.th-stage { max-height: 560px; }
 .th-face { padding: 26px 28px 30px; }
@@ -671,7 +693,7 @@ body.bilder .fc-keys, body.bilder .fc-melden { display: none; }
       <label id="sg-row" class="sg-row"><span class="sg-text"><b>Startgegend suchen</b><small>Neue Route: erst auf der Wien-Karte antippen, wo sie startet</small></span><span class="sw-wrap"><small id="startsuche-txt" class="sw-txt" aria-hidden="true">aus</small><input id="startsuche" class="switch" type="checkbox" role="switch"></span></label>
       <div class="sec"><h3>Routen <small id="count"></small></h3><button id="shuffle" class="pillbtn" type="button">Zufällig</button></div>
       <div id="routes"></div>
-      <div class="foot"><span>Stand 02.11.2026 21:35 · Routen: WKO-Fragenkatalog 2026 · Daten: Stadt Wien, basemap.at, OpenStreetMap</span><span class="foot-btns"><button id="melden" type="button">Fehler melden</button><button id="reload" type="button">Straßennetz neu laden</button><button id="impressum" type="button">Impressum</button><button id="datenschutz" type="button">Datenschutz</button></span></div>
+      <div class="foot"><span>Stand 02.11.2026 21:42 · Routen: WKO-Fragenkatalog 2026 · Daten: Stadt Wien, basemap.at, OpenStreetMap</span><span class="foot-btns"><button id="melden" type="button">Fehler melden</button><button id="reload" type="button">Straßennetz neu laden</button><button id="impressum" type="button">Impressum</button><button id="datenschutz" type="button">Datenschutz</button></span></div>
     </div>
   </aside>
 </div>
@@ -3794,7 +3816,9 @@ function renderBilderPanel() {
   sec.append(left, opts); p.append(sec);
   const list = el('div', 'b-list');
   BILDER.forEach(b => {
-    const s = bstat[b.name], row = el('div', 'b-row' + (s ? (s[2] ? ' on ok' : ' on nein') : ''));
+    // schwarz erst, wenn das Bild in dieser Runde schon beantwortet wurde (Punkt grün/rot = in dieser Runde erkannt/nicht)
+    const h = brun && Array.isArray(brun.hist) ? brun.hist.filter(x => x[0] === b.name).pop() : null;
+    const row = el('div', 'b-row' + (h ? (h[1] ? ' on ok' : ' on nein') : ''));
     row.append(el('span', 'b-dot'), el('span', 'k-name', b.name));
     list.append(row);
   });
@@ -3809,12 +3833,15 @@ function renderBilderPanel() {
 // Der Katalog enthält nur die Fragen; die Antworten sind selbst formuliert nach den Gesetzen (RIS) bzw. dem
 // Kollektivvertrag, mit Fundstelle (quelle). „alt“: nur in der alten Wiener Betriebsordnung (bis 2020) geregelt.
 // Bedienung wie bei den Karteikarten: Tippen/Leertaste dreht um, rechts/→ gewusst, links/← nicht gewusst, ↓ zurück.
+// Zweite Art (tset.art = 'mc', Schalter in der Leiste): Frage mit 4 Antworten, eine richtig – wie bei der Computerprüfung.
+// Richtig → grün und weiter; falsch → blinkt zweimal rot, man versucht es nochmal. Gewertet wird der erste Versuch.
 const THEORIE_ALL = THEORIE.flatMap((k, ki) => k.fragen.map(q => ({ id: k.nr + '|' + q.nr, kap: ki, ...q })));
 const THEORIE_BY_ID = new Map(THEORIE_ALL.map(q => [q.id, q]));
 const TSTAT_KEY = 'taxi-theorie-v1', TSET_KEY = 'taxi-theorie-auswahl-v1', TRUN_KEY = 'taxi-theorie-stapel-v1';
 // Lernstand je Frage: [wie oft gewusst, wie oft nicht, zuletzt gewusst?]
 let tstat = kLoad(TSTAT_KEY, {});
-let tset = Object.assign({ kap: THEORIE.map((_, i) => i), falsch: false, mischen: true }, kLoad(TSET_KEY, {}));
+let tset = Object.assign({ kap: THEORIE.map((_, i) => i), falsch: false, mischen: true, art: 'karten' }, kLoad(TSET_KEY, {}));
+if (!['karten', 'mc'].includes(tset.art)) tset.art = 'karten';
 if (tset.falsch && tset.mischen) tset.mischen = false;
 tset.kap = (Array.isArray(tset.kap) ? tset.kap : []).filter(i => Number.isInteger(i) && i >= 0 && i < THEORIE.length);
 let trun = kLoad(TRUN_KEY, null);
@@ -3904,6 +3931,7 @@ function drawTheorie() {
     stage.append(e); return;
   }
   const q = THEORIE_BY_ID.get(trun.ids[trun.i]);
+  if (tset.art === 'mc') { stage.remove(); return tMcZeigen(box, q, n); }
   const fc = el('div', 'fc' + (tflip ? ' flipped' : ''));
   fc.tabIndex = 0; fc.setAttribute('role', 'button'); fc.setAttribute('aria-label', 'Karte umdrehen');
   const inner = el('div', 'fc-inner'); inner.append(tFront(q), tBack(q)); fc.append(inner);
@@ -3920,6 +3948,57 @@ function drawTheorie() {
   box.append(el('p', 'fc-keys', 'Leertaste: umdrehen · Pfeil rechts: gewusst · Pfeil links: nicht gewusst · Pfeil runter: zurück'));
   box.append(fehlerLink('Fehler bei dieser Frage melden', `Theorie ${THEORIE[q.kap].nr}/${q.nr}`, [`Kapitel: ${tKapName(q)}`, `Frage: ${q.frage}`, `Antwort (App): ${q.antwort.replace(/\n/g, ' / ')}`, `Fundstelle: ${q.quelle}`], 'flink fc-melden'));
   tDragInit(fc);
+}
+// --- 4 Antworten: Zustand der aktuellen Frage (Antworten gemischt, falsche Versuche, gelöst?) ---
+let tmc = null, tmcWeiter = null, tmcBlink = null;
+function tMcState(q) {
+  if (!tmc || tmc.id !== q.id || tmc.i !== trun.i) tmc = { id: q.id, i: trun.i, opts: shuffle([q.richtig, ...q.falsch]), versuche: [], geloest: false };
+  return tmc;
+}
+function tMcPick(k) {
+  if (!trun || trun.i >= trun.ids.length) return;
+  const q = THEORIE_BY_ID.get(trun.ids[trun.i]), st = tMcState(q), richtig = st.opts[k] === q.richtig;
+  if (st.geloest || st.versuche.includes(k)) return;
+  if (!richtig) { st.versuche.push(k); sfx('wrong'); tmcBlink = k; drawTheorie(); tmcBlink = null; return; }
+  st.geloest = true; sfx('ok'); drawTheorie();
+  clearTimeout(tmcWeiter);
+  // erst jetzt zählt die Frage: gewusst nur, wenn der erste Versuch stimmte
+  tmcWeiter = setTimeout(() => {
+    if (state.mode !== 'theorie' || tset.art !== 'mc' || tmc !== st || trun.i !== st.i) return;
+    const ok = !st.versuche.length, s = tstat[q.id] || [0, 0, false], before = s[2];
+    s[ok ? 0 : 1]++; s[2] = ok; tstat[q.id] = s; kSave(TSTAT_KEY, tstat);
+    trun.hist.push([q.id, ok, before]); trun.i++; kSave(TRUN_KEY, trun);
+    if (trun.i >= trun.ids.length) sfx('goal');
+    drawTheorie(); renderTheoriePanel();
+  }, ok0(st) ? 1100 : 1700);
+}
+const ok0 = st => !st.versuche.length;
+function tMcZeigen(box, q, n) {
+  const st = tMcState(q), wrap = el('div', 'bq th-mc'), kopf = el('div', 'bq-kopf');
+  const rund = (cls, title, svg, fn, aus) => { const x = el('button', 'fc-btn bq-nav ' + cls); x.type = 'button'; x.title = title; x.setAttribute('aria-label', title); x.innerHTML = svg; x.onclick = fn; x.disabled = aus; return x; };
+  const zur = rund('zur', 'Letzte Frage zurück (Pfeil runter)', '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg>', () => { clearTimeout(tmcWeiter); tUndo(); }, !trun.hist.length);
+  const vor = rund('vor', 'Frage überspringen – kommt ans Ende', '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5l7 7-7 7"/></svg>', () => {
+    if (st.geloest || trun.i >= trun.ids.length - 1) return;
+    trun.ids.push(trun.ids.splice(trun.i, 1)[0]); kSave(TRUN_KEY, trun); sfx('skip'); drawTheorie();
+  }, st.geloest || trun.i >= n - 1);
+  kopf.append(zur, el('p', 'bq-frage th-mc-sub', `${tKapName(q)} · Frage ${q.nr}`), vor);
+  const fig = el('div', 'bq-img th-text'), karte = el('div', 'th-mc-karte');
+  karte.append(el('b', q.frage.length > 120 ? 'lang' : '', q.frage)); fig.append(karte);
+  // nach dem Lösen: die ausführliche Antwort mit Fundstelle unter der Frage
+  if (st.geloest) karte.append(el('span', 'th-mc-quelle', q.quelle));
+  wrap.append(kopf, fig);
+  const opts = el('div', 'bq-opts th-mc-opts' + (st.opts.some(o => o.length > 42) ? ' lang' : ''));
+  st.opts.forEach((o, k) => {
+    const btn = el('button', 'bq-opt'); btn.type = 'button';
+    btn.append(el('span', 'bq-nr', String(k + 1)), el('span', '', o));
+    if (st.geloest && o === q.richtig) btn.classList.add('ok');
+    else if (st.versuche.includes(k)) btn.classList.add(k === tmcBlink ? 'blink' : 'versucht');
+    if (st.geloest || st.versuche.includes(k)) btn.disabled = true; else btn.onclick = () => tMcPick(k);
+    opts.append(btn);
+  });
+  wrap.append(opts); box.append(wrap);
+  box.append(el('p', 'fc-keys', 'Tasten 1–4: Antwort · Pfeil runter: zurück'));
+  box.append(fehlerLink('Fehler bei dieser Frage melden', `Theorie ${THEORIE[q.kap].nr}/${q.nr}`, [`Kapitel: ${tKapName(q)}`, `Frage: ${q.frage}`, `Richtige Antwort (App): ${q.richtig}`, `Falsche Antworten: ${q.falsch.join(' / ')}`, `Fundstelle: ${q.quelle}`], 'flink fc-melden'));
 }
 // Wischen wie bei den Karteikarten: ab ~90 px zählt es als Antwort, sonst ist es ein Tipp zum Umdrehen
 function tDragInit(fc) {
@@ -3949,6 +4028,11 @@ function tDragInit(fc) {
 document.addEventListener('keydown', e => {
   if (state.mode !== 'theorie' || e.metaKey || e.ctrlKey || e.altKey || (e.target instanceof Element && e.target.closest('input, textarea, select'))) return;
   if (e.repeat && [' ', 'ArrowUp', 'ArrowRight', 'ArrowLeft', 'ArrowDown'].includes(e.key)) { e.preventDefault(); return; }
+  if (tset.art === 'mc') {
+    if (/^[1-4]$/.test(e.key)) { e.preventDefault(); tMcPick(+e.key - 1); }
+    else if (e.key === 'ArrowDown') { e.preventDefault(); clearTimeout(tmcWeiter); tUndo(); }
+    return;
+  }
   if (e.key === ' ' || e.key === 'ArrowUp') { e.preventDefault(); if (document.activeElement && document.activeElement.blur) document.activeElement.blur(); tFlip(); }
   else if (e.key === 'ArrowRight') { e.preventDefault(); tAnswer(true); }
   else if (e.key === 'ArrowLeft') { e.preventDefault(); tAnswer(false); }
@@ -3960,7 +4044,17 @@ function renderTheorie(p) { p.append(el('div', 'kpanel')); renderTheoriePanel();
 function renderTheoriePanel() {
   const p = $('#play .kpanel'); if (!p) return; p.innerHTML = '';
   p.append(el('h2', 'h-title', 'Theorie lernen'));
-  p.append(el('p', 'k-info', `Die ${THEORIE_ALL.length} Theorie-Fragen aus dem Prüfungskatalog (Betriebsordnung, Tarif, StVO, KFG, Arbeitsrecht, Diverses): vorne die Frage, hinten die Antwort mit Gesetzesstelle. Weißt du sie, wisch nach rechts, sonst nach links.`));
+  p.append(el('p', 'k-info', tset.art === 'mc'
+    ? `Die ${THEORIE_ALL.length} Theorie-Fragen aus dem Prüfungskatalog mit je 4 Antworten, eine stimmt – wie bei der Computerprüfung. Gewertet wird dein erster Versuch.`
+    : `Die ${THEORIE_ALL.length} Theorie-Fragen aus dem Prüfungskatalog (Betriebsordnung, Tarif, StVO, KFG, Arbeitsrecht, Diverses): vorne die Frage, hinten die Antwort mit Gesetzesstelle. Weißt du sie, wisch nach rechts, sonst nach links.`));
+  // Art der Abfrage: Karteikarten (für die mündliche Prüfung) oder 4 Antworten (wie die Computerprüfung)
+  const art = el('div', 'th-art');
+  [['karten', 'Karteikarten'], ['mc', '4 Antworten']].forEach(([k, label]) => {
+    const b = el('button', 'th-art-b' + (tset.art === k ? ' on' : ''), label); b.type = 'button'; b.setAttribute('aria-pressed', tset.art === k);
+    b.onclick = () => { if (tset.art === k) return; tset.art = k; tflip = false; tmc = null; clearTimeout(tmcWeiter); kSave(TSET_KEY, tset); drawTheorie(); renderTheoriePanel(); };
+    art.append(b);
+  });
+  p.append(art);
   const save = () => { kSave(TSET_KEY, tset); tNewDeck(); drawTheorie(); renderTheoriePanel(); };
   const opts = el('div', 'k-opts');
   const tog = (key, label) => {
