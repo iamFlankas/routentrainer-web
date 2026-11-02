@@ -202,6 +202,17 @@ ol.steps li.dest .chip { background: var(--acc); color: var(--acc-ink); padding:
 /* Routenliste: dunkle Karten */
 .sec { display: flex; justify-content: space-between; align-items: center; gap: 10px; margin-top: 6px; }
 .sec h3 { margin: 0; font-weight: 500; font-size: 1.4rem; letter-spacing: -.01em; }
+.sg-row { display: flex; align-items: center; justify-content: space-between; gap: 14px; padding: 12px 16px; border-radius: 20px; background: color-mix(in srgb, #141414 8%, transparent); cursor: pointer; }
+.sg-text { display: grid; gap: 2px; }
+.sg-text b { font-weight: 600; font-size: .98rem; color: #141414; }
+.sg-text small { font-size: .8rem; color: var(--on-panel-muted); line-height: 1.3; }
+body.karten #sg-row { display: none; }
+/* Schalter wie in den Apple-Einstellungen */
+.switch { appearance: none; -webkit-appearance: none; flex: none; position: relative; width: 51px; height: 31px; margin: 0; border-radius: 999px; background: rgba(20,20,20,.22); cursor: pointer; transition: background .22s; }
+.switch::before { content: ''; position: absolute; top: 2px; left: 2px; width: 27px; height: 27px; border-radius: 50%; background: #fff; box-shadow: 0 2px 6px rgba(0,0,0,.25); transition: transform .22s cubic-bezier(.3,.7,.3,1); }
+.switch:checked { background: #34c759; }
+.switch:checked::before { transform: translateX(20px); }
+.switch:focus-visible { outline: 2px solid #141414; outline-offset: 2px; }
 .sec h3 small { font-size: .85rem; color: var(--on-panel-muted); font-weight: 400; margin-left: 4px; }
 .pillbtn { border: 0; background: var(--card); border-radius: 999px; padding: 9px 16px; font-size: .88rem; cursor: pointer; }
 .pillbtn:hover { box-shadow: inset 0 0 0 1px var(--line); }
@@ -684,8 +695,9 @@ body.bilder .fc-keys, body.bilder .fc-melden { display: none; }
         <button class="iconbtn" id="theme" type="button"></button>
       </div>
       <div class="sec"><h3>Routen <small id="count"></small></h3><button id="shuffle" class="pillbtn" type="button">Zufällig</button></div>
+      <label id="sg-row" class="sg-row"><span class="sg-text"><b>Startgegend suchen</b><small>Neue Route: erst auf der Wien-Karte antippen, wo sie startet</small></span><input id="startsuche" class="switch" type="checkbox" role="switch"></label>
       <div id="routes"></div>
-      <div class="foot"><span>Stand 02.11.2026 17:17 · Routen: WKO-Fragenkatalog 2026 · Daten: Stadt Wien, basemap.at, OpenStreetMap</span><span class="foot-btns"><button id="melden" type="button">Fehler melden</button><button id="reload" type="button">Straßennetz neu laden</button><button id="impressum" type="button">Impressum</button><button id="datenschutz" type="button">Datenschutz</button></span></div>
+      <div class="foot"><span>Stand 02.11.2026 17:20 · Routen: WKO-Fragenkatalog 2026 · Daten: Stadt Wien, basemap.at, OpenStreetMap</span><span class="foot-btns"><button id="melden" type="button">Fehler melden</button><button id="reload" type="button">Straßennetz neu laden</button><button id="impressum" type="button">Impressum</button><button id="datenschutz" type="button">Datenschutz</button></span></div>
     </div>
   </aside>
 </div>
@@ -1554,7 +1566,6 @@ const FILTER_ITEMS = [
   ['einbahn', 'Einbahnen', 'blau auf der Straße, Winkel zeigen die Fahrtrichtung; ab näherem Zoom'],
   ['fussgeher', 'Fußgängerzonen', 'mit Zufahrtszeiten beim Drüberfahren'],
   ['bezirke', 'Bezirksgrenzen', 'mit Bezirksnamen'],
-  ['startsuche', 'Startgegend suchen', 'neue Route: erst auf der Wien-Karte die Gegend des Starts antippen'],
 ];
 const SOUND_ITEMS = [
   ['stimme', 'Straßennamen vorlesen', 'bei jeder aufgedeckten Straße'],
@@ -3194,6 +3205,9 @@ function fehlerLink(label, betreff, zeilen, cls = 'flink') {
   const b = el('button', cls, label); b.type = 'button'; b.onclick = () => fehlerMelden(betreff, typeof zeilen === 'function' ? zeilen() : zeilen); return b;
 }
 $('#melden').onclick = () => fehlerMelden('Fehler melden', []);
+// Startgegend suchen: Schalter in der Leiste über der Routenliste (vom Nutzer gewünscht statt in den Einstellungen)
+$('#startsuche').checked = !!FILTER.startsuche;
+$('#startsuche').addEventListener('change', e => { FILTER.startsuche = e.target.checked; try { localStorage.setItem(FKEY, JSON.stringify(FILTER)); } catch (x) {} });
 
 // Impressum und Datenschutz (Fußzeile). Leere Felder erscheinen als gelb markierte Platzhalter.
 // Privat genügt die Offenlegung nach § 25 MedienG (Name, Wohnort); kommerziell: true ergänzt die Angaben nach § 5 ECG.
