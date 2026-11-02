@@ -473,6 +473,7 @@ body.karten #theme svg { width: 22px; height: 22px; }
 .k-bar { position: relative; grid-column: 2 / span 2; height: 4px; border-radius: 999px; background: rgba(255,255,255,.12); overflow: hidden; }
 .k-bar i { display: block; height: 100%; background: var(--acc); }
 .k-reset { font-size: .82rem; }
+.k-cnt.k-falsch { margin: 0 8px 0 0; vertical-align: 1px; }
 .k-muendlich { margin: 8px 0 0 4px; font-size: .82rem; font-weight: 500; text-decoration: underline; text-underline-offset: 3px; color: #141414; opacity: .75; }
 .k-foot { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
 /* Alle auswählen/abwählen: umrandete Pille (ohne Füllung), damit sie sich von Mischen/Falsch (gefüllt) unterscheidet */
@@ -645,7 +646,7 @@ body.bilder .fc-keys, body.bilder .fc-melden { display: none; }
       </div>
       <div class="sec"><h3>Routen <small id="count"></small></h3><button id="shuffle" class="pillbtn" type="button">Zufällig</button></div>
       <div id="routes"></div>
-      <div class="foot"><span>Stand 02.11.2026 16:09 · Routen: WKO-Fragenkatalog 2026 · Daten: Stadt Wien, basemap.at, OpenStreetMap</span><span class="foot-btns"><button id="melden" type="button">Fehler melden</button><button id="reload" type="button">Straßennetz neu laden</button></span></div>
+      <div class="foot"><span>Stand 02.11.2026 16:15 · Routen: WKO-Fragenkatalog 2026 · Daten: Stadt Wien, basemap.at, OpenStreetMap</span><span class="foot-btns"><button id="melden" type="button">Fehler melden</button><button id="reload" type="button">Straßennetz neu laden</button></span></div>
     </div>
   </aside>
 </div>
@@ -3542,7 +3543,11 @@ function renderKartenPanel() {
     const k = KARTEN[i], ids = KARTEN_ALL.filter(c => c.kat === i).map(c => c.id), kk = ids.filter(known).length, on = kset.kat.includes(i);
     const b = el('button', 'k-kat' + (on ? ' on' : '')); b.type = 'button'; b.setAttribute('aria-pressed', on);
     const dots = el('span', 'k-bar'), f = el('i'); f.style.width = (100 * kk / ids.length) + '%'; dots.append(f);
-    b.append(el('span', 'k-check'), el('span', 'k-name', k.name), el('span', 'k-n', `${kk}/${ids.length}`), dots);
+    // rote Zahl: so viele Karten dieser Kategorie zuletzt nicht gewusst (wie bei „Falsch“)
+    const nw = ids.filter(wrong).length, zahl = el('span', 'k-n');
+    if (nw) { const w = el('span', 'k-cnt k-falsch', String(nw)); w.title = `${nw} zuletzt nicht gewusst`; zahl.append(w); }
+    zahl.append(`${kk}/${ids.length}`);
+    b.append(el('span', 'k-check'), el('span', 'k-name', k.name), zahl, dots);
     b.onclick = () => { kset.kat = on ? kset.kat.filter(x => x !== i) : kset.kat.concat(i).sort((a, b2) => a - b2); kSave(KSET_KEY, kset); kNewDeck(); drawKarten(); renderKartenPanel(); };
     list.append(b);
   });
@@ -3896,7 +3901,10 @@ function renderTheoriePanel() {
     const ids = THEORIE_ALL.filter(q => q.kap === i).map(q => q.id), kk = ids.filter(tKnown).length, on = tset.kap.includes(i);
     const b = el('button', 'k-kat' + (on ? ' on' : '')); b.type = 'button'; b.setAttribute('aria-pressed', on);
     const dots = el('span', 'k-bar'), f = el('i'); f.style.width = (100 * kk / ids.length) + '%'; dots.append(f);
-    b.append(el('span', 'k-check'), el('span', 'k-name', `${k.nr}. ${k.name}`), el('span', 'k-n', `${kk}/${ids.length}`), dots);
+    const nw = ids.filter(tWrong).length, zahl = el('span', 'k-n');
+    if (nw) { const w = el('span', 'k-cnt k-falsch', String(nw)); w.title = `${nw} zuletzt nicht gewusst`; zahl.append(w); }
+    zahl.append(`${kk}/${ids.length}`);
+    b.append(el('span', 'k-check'), el('span', 'k-name', `${k.nr}. ${k.name}`), zahl, dots);
     b.onclick = () => { tset.kap = on ? tset.kap.filter(x => x !== i) : tset.kap.concat(i).sort((a, c) => a - c); save(); };
     list.append(b);
   });
