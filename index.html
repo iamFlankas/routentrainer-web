@@ -600,12 +600,12 @@ body.bilder .fc-keys, body.bilder .fc-melden { display: none; }
 .bq.th-mc > :first-child { margin-top: auto; } .bq.th-mc > :last-child { margin-bottom: auto; }
 .th-mc .bq-img.th-text { container-type: normal; flex: none; min-height: 0; height: auto; }
 .th-mc .bq-opts { flex: none; }
-.th-mc-karte { max-width: min(760px, 100%); max-height: 100%; overflow: auto; padding: 22px 26px; border-radius: 22px; background: var(--acc); color: #141414; text-align: center; box-shadow: 0 16px 40px rgba(0,0,0,.25); display: grid; gap: 10px; } /* gelb wie die Rückseite der Karteikarten (vom Nutzer gewünscht) */
-.th-mc-karte b { font-size: clamp(1.15rem, 2.6vw, 1.6rem); font-weight: 650; line-height: 1.3; text-wrap: balance; }
-.th-mc-karte b.lang { font-size: clamp(1rem, 2vw, 1.2rem); }
+/* einheitlich (vom Nutzer gewünscht): Karte immer volle Breite und mindestens 3 Zeilen hoch, eine Schriftgröße, Antworten immer 2×2 (Handy untereinander) */
+.th-mc-karte { width: 100%; min-height: 150px; align-content: center; max-height: 100%; overflow: auto; padding: 22px 26px; border-radius: 22px; background: var(--acc); color: #141414; text-align: center; box-shadow: 0 16px 40px rgba(0,0,0,.25); display: grid; gap: 10px; } /* gelb wie die Rückseite der Karteikarten (vom Nutzer gewünscht) */
+.th-mc-karte b { font-size: clamp(1.05rem, 2.1vw, 1.4rem); font-weight: 650; line-height: 1.3; text-wrap: balance; }
 .th-mc-quelle { font-size: .78rem; color: rgba(20,20,20,.62); }
-.bq-opts.lang { grid-template-columns: minmax(0, 1fr) !important; gap: 8px; }
-.bq-opts.lang .bq-opt { min-height: 0; padding: 10px 14px; font-size: .95rem; font-weight: 500; }
+.th-mc .bq-opt { min-height: 76px; font-size: .98rem; font-weight: 500; line-height: 1.25; }
+@media (max-width: 560px) { .th-mc .bq-opts { grid-template-columns: minmax(0, 1fr); gap: 8px; } .th-mc .bq-opt { min-height: 52px; } .th-mc-karte { min-height: 88px; padding: 16px 18px; } .bq.th-mc ~ .fc-melden { display: none; } } /* Handy: „Fehler melden“ steht in der Fußzeile, wie bei Bilder */
 /* falsche Antwort blinkt zweimal rot, bleibt dann blass rot und gesperrt */
 .bq-opt.blink { animation: thBlink .9s ease-in-out forwards; }
 @keyframes thBlink { 0%, 50% { background: #d23b2f; color: #fff; } 25%, 75% { background: var(--card); color: var(--fg); } 100% { background: color-mix(in srgb, #d23b2f 30%, var(--card)); color: var(--fg); } }
@@ -699,7 +699,7 @@ body.bilder .fc-keys, body.bilder .fc-melden { display: none; }
       <label id="sg-row" class="sg-row"><span class="sg-text"><b>Startgegend suchen</b><small>Neue Route: erst auf der Wien-Karte antippen, wo sie startet</small></span><span class="sw-wrap"><small id="startsuche-txt" class="sw-txt" aria-hidden="true">aus</small><input id="startsuche" class="switch" type="checkbox" role="switch"></span></label>
       <div class="sec"><h3>Routen <small id="count"></small></h3><button id="shuffle" class="pillbtn" type="button">Zufällig</button></div>
       <div id="routes"></div>
-      <div class="foot"><span>Stand 03.11.2026 11:07 · Routen: WKO-Fragenkatalog 2026 · Daten: Stadt Wien, basemap.at, OpenStreetMap</span><span class="foot-btns"><button id="melden" type="button">Fehler melden</button><button id="reload" type="button">Straßennetz neu laden</button><button id="impressum" type="button">Impressum</button><button id="datenschutz" type="button">Datenschutz</button></span></div>
+      <div class="foot"><span>Stand 03.11.2026 11:17 · Routen: WKO-Fragenkatalog 2026 · Daten: Stadt Wien, basemap.at, OpenStreetMap</span><span class="foot-btns"><button id="melden" type="button">Fehler melden</button><button id="reload" type="button">Straßennetz neu laden</button><button id="impressum" type="button">Impressum</button><button id="datenschutz" type="button">Datenschutz</button></span></div>
     </div>
   </aside>
 </div>
@@ -3691,7 +3691,7 @@ function bValid() {
   if (brun.opts && !brun.opts.every(n => BILD_BY_NAME.has(n))) brun.opts = null;
   return true;
 }
-function bDeck(ids) { brun = { ids: shuffle(ids.slice()), i: 0, hist: [], opts: null, pick: null }; kSave(BRUN_KEY, brun); }
+function bDeck(ids) { brun = { ids: shuffle(ids.slice()), i: 0, hist: [], spr: [], opts: null, pick: null }; kSave(BRUN_KEY, brun); }
 function bNewDeck() { let ids = BILDER.map(b => b.name); if (bset.falsch) ids = ids.filter(bWrong); bDeck(ids); }
 // vier Namen: der richtige und drei falsche – möglichst von derselben Art (Denkmal zu Denkmal, Kirche zu Kirche),
 // damit es wie bei der Prüfung nicht zu leicht ist
@@ -3719,6 +3719,7 @@ function bNext() {
   clearTimeout(bweiter);
   if (brun.pick == null) {
     if (brun.i >= brun.ids.length - 1) return;
+    (brun.spr = brun.spr || []).push({ name: brun.ids[brun.i], i: brun.i, h: brun.hist.length, opts: brun.opts });
     brun.ids.push(brun.ids.splice(brun.i, 1)[0]); brun.opts = null; kSave(BRUN_KEY, brun); sfx('skip'); drawBilder(); return;
   }
   brun.i++; brun.pick = null; brun.opts = null; kSave(BRUN_KEY, brun);
@@ -3727,8 +3728,18 @@ function bNext() {
 }
 // zurück: letzte Antwort zurücknehmen (Lernstand wie vorher) und das Bild mit denselben vier Namen nochmal fragen
 function bBack() {
-  if (!brun || !brun.hist.length) return;
+  if (!brun) return;
   clearTimeout(bweiter);
+  // war das Letzte ein Überspringen (›), kommt das übersprungene Bild mit denselben Namen vom Ende zurück
+  const sp = brun.spr || [];
+  while (sp.length && sp[sp.length - 1].h > brun.hist.length) sp.pop();
+  const l = sp[sp.length - 1];
+  if (l && brun.pick == null && l.h === brun.hist.length && l.i === brun.i) {
+    sp.pop(); const j = brun.ids.lastIndexOf(l.name);
+    if (j >= 0) { brun.ids.splice(j, 1); brun.ids.splice(brun.i, 0, l.name); }
+    brun.opts = l.opts || null; kSave(BRUN_KEY, brun); sfx('zurueck'); drawBilder(); return;
+  }
+  if (!brun.hist.length) return;
   const [name, ok, before, opts] = brun.hist.pop(), s = bstat[name];
   if (s) { s[ok ? 0 : 1] = Math.max(0, s[ok ? 0 : 1] - 1); s[2] = !!before; if (!s[0] && !s[1]) delete bstat[name]; }
   kSave(BSTAT_KEY, bstat);
@@ -3776,7 +3787,7 @@ function drawBilder() {
   if (beantwortet) { frage.classList.add('bq-adr'); frage.append(el('b', '', b.name), el('span', '', b.adr.replace(/^(\d+)\.,\s*/, '$1. Bezirk, '))); }
   else frage.textContent = 'Wie heißt diese Sehenswürdigkeit?';
   const rund = (cls, title, svg, fn, aus) => { const x = el('button', 'fc-btn bq-nav ' + cls); x.type = 'button'; x.title = title; x.setAttribute('aria-label', title); x.innerHTML = svg; x.onclick = fn; x.disabled = aus; return x; };
-  const zur = rund('zur', 'Zurück (Pfeil links)', '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg>', bBack, !brun.hist.length);
+  const zur = rund('zur', 'Zurück (Pfeil links)', '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg>', bBack, !brun.hist.length && !(brun.spr || []).some(l => l.h === brun.hist.length));
   const vor = rund('vor', beantwortet ? 'Weiter (Leertaste)' : 'Überspringen (Leertaste)', '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5l7 7-7 7"/></svg>', bNext, !beantwortet && brun.i >= n - 1);
   kopf.append(zur, frage, vor);
   q.append(kopf, fig, fotoCredit(b));
@@ -3858,12 +3869,12 @@ const tKnown = id => tstat[id] && tstat[id][2];
 const tWrong = id => !!tstat[id] && !tstat[id][2] && tstat[id][1] > 0;
 const tWrongIds = () => THEORIE_ALL.filter(q => tset.kap.includes(q.kap) && tWrong(q.id)).map(q => q.id);
 
-function tDeck(ids) { trun = { ids: tset.mischen ? shuffle(ids.slice()) : ids.slice(), i: 0, hist: [] }; tflip = false; kSave(TRUN_KEY, trun); }
+function tDeck(ids) { trun = { ids: tset.mischen ? shuffle(ids.slice()) : ids.slice(), i: 0, hist: [], spr: [] }; tflip = false; kSave(TRUN_KEY, trun); }
 function tNewDeck() { let ids = THEORIE_ALL.filter(q => tset.kap.includes(q.kap)).map(q => q.id); if (tset.falsch) ids = ids.filter(tWrong); tDeck(ids); }
 function tValid() {
   if (!trun || !Array.isArray(trun.ids) || !Array.isArray(trun.hist)) return false;
   trun.ids = trun.ids.filter(id => THEORIE_BY_ID.has(id)); trun.hist = trun.hist.filter(h => THEORIE_BY_ID.has(h[0]));
-  trun.i = Math.min(trun.i, trun.ids.length);
+  trun.i = Math.min(trun.i, trun.ids.length); if (!Array.isArray(trun.spr)) trun.spr = [];
   return true;
 }
 function tAnswer(ok) {
@@ -3891,6 +3902,21 @@ function tUndo() {
   const f = $('#cards .fc'), dir = ok ? 1 : -1;
   if (f && f.animate && !reduced()) f.animate([{ transform: `translateX(${dir * 120}%) rotate(${dir * 14}deg)`, opacity: 0 }, { transform: 'none', opacity: 1 }], { duration: 340, easing: 'cubic-bezier(.2,.8,.2,1)' });
 }
+// ‹ bei „4 Antworten“: war das Letzte ein Überspringen (›), holt es die übersprungene Frage vom Ende zurück, sonst wie tUndo
+function tZurueck() {
+  clearTimeout(tmcWeiter);
+  const sp = trun.spr || [];
+  while (sp.length && sp[sp.length - 1].h > trun.hist.length) sp.pop();
+  const l = sp[sp.length - 1];
+  if (l && l.h === trun.hist.length && l.i === trun.i) {
+    sp.pop(); const j = trun.ids.lastIndexOf(l.id);
+    if (j >= 0) { trun.ids.splice(j, 1); trun.ids.splice(trun.i, 0, l.id); }
+    tmc = l.opts ? { id: l.id, i: trun.i, opts: l.opts, versuche: [], geloest: false } : null;
+    kSave(TRUN_KEY, trun); sfx('zurueck'); drawTheorie(); return;
+  }
+  tUndo();
+}
+const tKannZurueck = () => trun.hist.length > 0 || (trun.spr || []).some(l => l.h === trun.hist.length);
 function tFlip() { if (!trun || trun.i >= trun.ids.length) return; tflip = !tflip; sfx('umdrehen'); const f = $('#cards .fc'); if (f) f.classList.toggle('flipped', tflip); }
 
 const tKapName = q => `${THEORIE[q.kap].nr}. ${THEORIE[q.kap].name}`;
@@ -3984,18 +4010,19 @@ const ok0 = st => !st.versuche.length;
 function tMcZeigen(box, q, n) {
   const st = tMcState(q), wrap = el('div', 'bq th-mc'), kopf = el('div', 'bq-kopf');
   const rund = (cls, title, svg, fn, aus) => { const x = el('button', 'fc-btn bq-nav ' + cls); x.type = 'button'; x.title = title; x.setAttribute('aria-label', title); x.innerHTML = svg; x.onclick = fn; x.disabled = aus; return x; };
-  const zur = rund('zur', 'Letzte Frage zurück (Pfeil runter)', '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg>', () => { clearTimeout(tmcWeiter); tUndo(); }, !trun.hist.length);
+  const zur = rund('zur', 'Letzte Frage zurück (Pfeil runter)', '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg>', tZurueck, !tKannZurueck());
   const vor = rund('vor', 'Frage überspringen – kommt ans Ende', '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5l7 7-7 7"/></svg>', () => {
     if (st.geloest || trun.i >= trun.ids.length - 1) return;
+    (trun.spr = trun.spr || []).push({ id: q.id, i: trun.i, h: trun.hist.length, opts: st.opts });
     trun.ids.push(trun.ids.splice(trun.i, 1)[0]); kSave(TRUN_KEY, trun); sfx('skip'); drawTheorie();
   }, st.geloest || trun.i >= n - 1);
   kopf.append(zur, el('p', 'bq-frage th-mc-sub', `${tKapName(q)} · Frage ${q.nr}`), vor);
   const fig = el('div', 'bq-img th-text'), karte = el('div', 'th-mc-karte');
-  karte.append(el('b', q.frage.length > 120 ? 'lang' : '', q.frage)); fig.append(karte);
+  karte.append(el('b', '', q.frage)); fig.append(karte);
   // nach dem Lösen: die ausführliche Antwort mit Fundstelle unter der Frage
   if (st.geloest) karte.append(el('span', 'th-mc-quelle', q.quelle));
   wrap.append(kopf, fig);
-  const opts = el('div', 'bq-opts th-mc-opts' + (st.opts.some(o => o.length > 42) ? ' lang' : ''));
+  const opts = el('div', 'bq-opts th-mc-opts');
   st.opts.forEach((o, k) => {
     const btn = el('button', 'bq-opt'); btn.type = 'button';
     btn.append(el('span', 'bq-nr', String(k + 1)), el('span', '', o));
@@ -4038,7 +4065,7 @@ document.addEventListener('keydown', e => {
   if (e.repeat && [' ', 'ArrowUp', 'ArrowRight', 'ArrowLeft', 'ArrowDown'].includes(e.key)) { e.preventDefault(); return; }
   if (tset.art === 'mc') {
     if (/^[1-4]$/.test(e.key)) { e.preventDefault(); tMcPick(+e.key - 1); }
-    else if (e.key === 'ArrowDown') { e.preventDefault(); clearTimeout(tmcWeiter); tUndo(); }
+    else if (e.key === 'ArrowDown') { e.preventDefault(); tZurueck(); }
     return;
   }
   if (e.key === ' ' || e.key === 'ArrowUp') { e.preventDefault(); if (document.activeElement && document.activeElement.blur) document.activeElement.blur(); tFlip(); }
