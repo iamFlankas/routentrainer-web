@@ -591,6 +591,8 @@ body.bilder .fc-keys, body.bilder .fc-melden { display: none; }
 .th-art { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; padding: 4px; border-radius: 999px; background: rgba(20,20,20,.1); }
 .th-art-b { border: 0; border-radius: 999px; padding: 10px 12px; background: none; color: #141414; font: inherit; font-size: .9rem; font-weight: 600; cursor: pointer; }
 .th-art-b.on { background: #141414; color: var(--acc); }
+.th-art-b small { display: block; margin-top: 1px; font-size: .7rem; font-weight: 500; opacity: .7; } /* wofür: Computerprüfung / Mündliche Prüfung */
+.th-art-b.on small { color: #f2f1ed; }
 .th-mc-sub { font-size: .85rem; }
 /* Text-Frage: Karte so hoch wie ihr Text (kein Größen-Container), bei wenig Platz scrollt die ganze Frage */
 .bq.th-mc { overflow-y: auto; }
@@ -697,7 +699,7 @@ body.bilder .fc-keys, body.bilder .fc-melden { display: none; }
       <label id="sg-row" class="sg-row"><span class="sg-text"><b>Startgegend suchen</b><small>Neue Route: erst auf der Wien-Karte antippen, wo sie startet</small></span><span class="sw-wrap"><small id="startsuche-txt" class="sw-txt" aria-hidden="true">aus</small><input id="startsuche" class="switch" type="checkbox" role="switch"></span></label>
       <div class="sec"><h3>Routen <small id="count"></small></h3><button id="shuffle" class="pillbtn" type="button">Zufällig</button></div>
       <div id="routes"></div>
-      <div class="foot"><span>Stand 02.11.2026 21:57 · Routen: WKO-Fragenkatalog 2026 · Daten: Stadt Wien, basemap.at, OpenStreetMap</span><span class="foot-btns"><button id="melden" type="button">Fehler melden</button><button id="reload" type="button">Straßennetz neu laden</button><button id="impressum" type="button">Impressum</button><button id="datenschutz" type="button">Datenschutz</button></span></div>
+      <div class="foot"><span>Stand 03.11.2026 11:07 · Routen: WKO-Fragenkatalog 2026 · Daten: Stadt Wien, basemap.at, OpenStreetMap</span><span class="foot-btns"><button id="melden" type="button">Fehler melden</button><button id="reload" type="button">Straßennetz neu laden</button><button id="impressum" type="button">Impressum</button><button id="datenschutz" type="button">Datenschutz</button></span></div>
     </div>
   </aside>
 </div>
@@ -3844,8 +3846,10 @@ const THEORIE_BY_ID = new Map(THEORIE_ALL.map(q => [q.id, q]));
 const TSTAT_KEY = 'taxi-theorie-v1', TSET_KEY = 'taxi-theorie-auswahl-v1', TRUN_KEY = 'taxi-theorie-stapel-v1';
 // Lernstand je Frage: [wie oft gewusst, wie oft nicht, zuletzt gewusst?]
 let tstat = kLoad(TSTAT_KEY, {});
-let tset = Object.assign({ kap: THEORIE.map((_, i) => i), falsch: false, mischen: true, art: 'karten' }, kLoad(TSET_KEY, {}));
-if (!['karten', 'mc'].includes(tset.art)) tset.art = 'karten';
+let tset = Object.assign({ kap: THEORIE.map((_, i) => i), falsch: false, mischen: true, art: 'mc' }, kLoad(TSET_KEY, {}));
+// „4 Antworten“ ist seit 3.11.2026 Standard (vom Nutzer gewünscht) – einmalig auch bei alter gespeicherter Auswahl
+if (!tset.mc1) { tset.art = 'mc'; tset.mc1 = true; kSave(TSET_KEY, tset); }
+if (!['karten', 'mc'].includes(tset.art)) tset.art = 'mc';
 if (tset.falsch && tset.mischen) tset.mischen = false;
 tset.kap = (Array.isArray(tset.kap) ? tset.kap : []).filter(i => Number.isInteger(i) && i >= 0 && i < THEORIE.length);
 let trun = kLoad(TRUN_KEY, null);
@@ -4053,8 +4057,8 @@ function renderTheoriePanel() {
     : `Die ${THEORIE_ALL.length} Theorie-Fragen aus dem Prüfungskatalog (Betriebsordnung, Tarif, StVO, KFG, Arbeitsrecht, Diverses): vorne die Frage, hinten die Antwort mit Gesetzesstelle. Weißt du sie, wisch nach rechts, sonst nach links.`));
   // Art der Abfrage: Karteikarten (für die mündliche Prüfung) oder 4 Antworten (wie die Computerprüfung)
   const art = el('div', 'th-art');
-  [['karten', 'Karteikarten'], ['mc', '4 Antworten']].forEach(([k, label]) => {
-    const b = el('button', 'th-art-b' + (tset.art === k ? ' on' : ''), label); b.type = 'button'; b.setAttribute('aria-pressed', tset.art === k);
+  [['mc', '4 Antworten', 'Computerprüfung'], ['karten', 'Karteikarten', 'Mündliche Prüfung']].forEach(([k, label, wofuer]) => {
+    const b = el('button', 'th-art-b' + (tset.art === k ? ' on' : ''), label); b.append(el('small', '', wofuer)); b.type = 'button'; b.setAttribute('aria-pressed', tset.art === k);
     b.onclick = () => { if (tset.art === k) return; tset.art = k; tflip = false; tmc = null; clearTimeout(tmcWeiter); kSave(TSET_KEY, tset); drawTheorie(); renderTheoriePanel(); };
     art.append(b);
   });
