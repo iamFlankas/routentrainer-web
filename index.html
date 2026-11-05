@@ -699,7 +699,7 @@ body.bilder .fc-keys, body.bilder .fc-melden { display: none; }
       <label id="sg-row" class="sg-row"><span class="sg-text"><b>Startgegend suchen</b><small>Neue Route: erst auf der Wien-Karte antippen, wo sie startet</small></span><span class="sw-wrap"><small id="startsuche-txt" class="sw-txt" aria-hidden="true">aus</small><input id="startsuche" class="switch" type="checkbox" role="switch"></span></label>
       <div class="sec"><h3>Routen <small id="count"></small></h3><button id="shuffle" class="pillbtn" type="button">Zufällig</button></div>
       <div id="routes"></div>
-      <div class="foot"><span>Stand 03.11.2026 11:17 · Routen: WKO-Fragenkatalog 2026 · Daten: Stadt Wien, basemap.at, OpenStreetMap</span><span class="foot-btns"><button id="melden" type="button">Fehler melden</button><button id="reload" type="button">Straßennetz neu laden</button><button id="impressum" type="button">Impressum</button><button id="datenschutz" type="button">Datenschutz</button></span></div>
+      <div class="foot"><span>Stand 05.11.2026 12:42 · Routen: WKO-Fragenkatalog 2026 · Daten: Stadt Wien, basemap.at, OpenStreetMap</span><span class="foot-btns"><button id="melden" type="button">Fehler melden</button><button id="reload" type="button">Straßennetz neu laden</button><button id="impressum" type="button">Impressum</button><button id="datenschutz" type="button">Datenschutz</button></span></div>
     </div>
   </aside>
 </div>
@@ -1159,7 +1159,8 @@ function extendNet(G, from, away, key, limit, penalty = 8) {
 // Abbiegen gehört zur nächsten Straße: biegt eine Straße kurz vor dem Übergang noch ab (z. B. um die Ecke eines Platzes),
 // endet sie an dieser Ecke und das Stück danach kommt zur nächsten Straße – sonst zeigt der Pfeil schon in die
 // Weiterfahrt und verrät sie. skip(i): Straße i nicht kürzen (z. B. „umkehren“).
-function handOverTurns(segs, skip, tail = 60, turn = 35) {
+// keep: Ecken (Punkte), die noch zur Straße gehören, obwohl dort abgebogen wird – dort wird nicht übergeben
+function handOverTurns(segs, skip, tail = 60, turn = 35, keep = []) {
   const out = segs.map(s => s && s.slice());
   const kx = 111320 * Math.cos(48.21 * Math.PI / 180), ky = 110540;
   const head = (a, b) => Math.atan2((b[0] - a[0]) * ky, (b[1] - a[1]) * kx);
@@ -1176,6 +1177,7 @@ function handOverTurns(segs, skip, tail = 60, turn = 35) {
       if (d > turn * Math.PI / 180) cut = k; // von hinten gesucht: am Ende steht die früheste Ecke im Endstück
     }
     if (cut < 1 || pathLength(a.slice(0, cut + 1)) < 25) continue;
+    if (keep.some(p => dist(p, a[cut]) < 10)) continue;
     const b = out[j], end = a[a.length - 1];
     out[i] = a.slice(0, cut + 1);
     out[j] = a.slice(cut).concat(dist(b[0], end) < 1 ? b.slice(1) : b);
@@ -1767,6 +1769,12 @@ const ANSCHLUESSE = [
 const FORK_STOPS = [
   [48.218079, 16.332346], // Elterleinplatz: Jörgerstraße geradeaus oder Hernalser Hauptstraße rechts
 ];
+// Ecken, an denen das Abbiegen noch zur Straße gehört (sonst gibt handOverTurns das Endstück der nächsten Straße):
+// Freyung – der Knick bei Nr. 4/Heidenschuß ist noch Freyung, die Strauchgasse beginnt erst an der Kreuzung mit Tiefer
+// Graben/Heidenschuß (vom Nutzer gemeldet; Routen 6, 10, 14, 20)
+const ECKEN_BEHALTEN = [
+  [48.211507, 16.365763],
+];
 // Abbiegeverbote: an Punkt `at` nicht von Straße `from` in Straße `to`
 const TURN_BANS = [
   // Schottentor: von der Universitätsstraße nicht quer über den Universitätsring, sondern nördlich ums Jonasreindl in die Schottengasse
@@ -1930,7 +1938,7 @@ function routePaths(route) {
   try { out = searchPaths(route); } catch (e) { console.error(e); }
   if (!out) out = streetwisePaths(route);
   if (route._net) out = splitLead(route, handOverForeign(route, out));
-  out = handOverTurns(out, i => /umkehren/i.test(route.steps[i]));
+  out = handOverTurns(out, i => /umkehren/i.test(route.steps[i]), 60, 35, ECKEN_BEHALTEN);
   out = handOverAt(out, FORK_STOPS);
   // reine Durchfahrten (Kreuzung/Platz) als Punkt
   out = out.map(p => (p && p.length > 1 && pathLength(p) < 6 ? [p[p.length - 1]] : p));
